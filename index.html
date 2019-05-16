@@ -18,6 +18,21 @@
 	<meta name="description" content="Play With Code:  Write the code to play card games.  Its humans vs computers."> <!-- TODO: write -->
 	<meta name="author" content="Play With Cards">
 
+    <link rel="stylesheet" href="index.css">
+	
+    <script type="text/javascript" src="index.js"></script>
+
+    <script>
+        //
+        // Initialize
+        //
+        window.onload = function () {
+            Initialize();
+        };
+
+    </script>
+    
+    <!-- TODO: turn this on before going live 
 	<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.1.0/cookieconsent.min.css" />
 	<script src="//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.1.0/cookieconsent.min.js"></script>
 	<script>
@@ -41,23 +56,22 @@
 			}
 			})});
 	</script>
-
+-->
 </head>
 
 <body>
-	<div id="game_title">
+	<div id="playwithcode_title">
 		<center>
-			<div class="t1">PLAY WITH</div>
-			<div class="t2">CODE</div>
+			<div class="t1">PLAY</div>
+			<div class="t2">WITH CODE</div>
 		</center>
 	</div>
 
 	<div id="menu_main" class="menu_view">
-		<button id="menu_main_close_button" class="close_button" onclick="menu_main_close_click()">X</button>
-		<button id="start_game_button" class="menu_button" onclick="ShowStartAGameMenu()">Start A Game</button>
-		<button id="settings_button" class="menu_button" onclick="ShowSettingsMenu()">Settings</button>
-		<button id="statistics_button" class="menu_button" onclick="ShowStatisticsMenu()">Statistics</button>
-		<button id="rules_button" class="menu_button" onclick="ShowRulesMenu()">Rules</button>
+		<button class="menu_button" onclick="PlayWithCardsGameClick('hearts')">Hearts</button>
+		<button class="menu_button" onclick="PlayWithCardsGameClick('spades')">Spades</button>
+		<button class="menu_button" onclick="PlayWithCardsGameClick('pinochle')">Pinochle</button>
+		<button class="menu_button" onclick="PlayWithCardsGameClick('cribbage')">Cribbage</button>
 	</div>
 </body>
 

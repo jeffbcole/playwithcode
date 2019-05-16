@@ -1,0 +1,90 @@
+html {
+	overflow: hidden;
+	background: none no-repeat center center fixed;
+	-webkit-background-size: cover;
+	-moz-background-size: cover;
+	-o-background-size: cover;
+	background-size: cover;
+	font-family: Arial;
+	color: white;
+}
+
+body {
+	/* No Select for the whole page */
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+.t1, .t2 {
+	line-height: 90%; 
+	font-family: 'Times New Roman', Times, serif; 
+	text-shadow: 5pt 3pt rgba(0,0,0,0.5); 
+	font-weight: bold;
+}
+
+.t1 {
+	font-size: 100px;
+}
+
+.t2 {
+	font-size: 40px;
+}
+
+#playwithcode_title {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	margin: auto;
+	pointer-events: none;
+
+	user-select: none;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	-moz-user-focus: none;
+}
+
+.menu_view {
+	z-index: 999;
+	opacity:0;
+	pointer-events: none;
+	background:#000000;
+	border:#FFFFFF 2px solid;
+	border-radius:30px;
+	box-shadow: 30px 30px 0px rgba(0,0,0,0.5);
+	position: absolute;
+	top:0%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	margin: auto;
+}
+
+.menu_button {
+	cursor: pointer;
+	border:#FFFFFF 2px solid;
+	border-radius:15px;
+	background:linear-gradient(0deg, #000000 50%, #404040 50%);
+	color:white;
+	width:90%;
+	height:50pt;
+	font-size:24pt;
+	margin-left:5%;
+	margin-right:5%;
+	margin-top:5pt;
+	margin-bottom:5pt;
+}
+
+.menu_button:hover {
+	background:linear-gradient(0deg, #222222 50%, #555555 50%);
+}
+
+#menu_main {
+	width:350px;
+	top:100%;
+}
