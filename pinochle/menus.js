@@ -111,12 +111,6 @@ function menu_main_close_click() {
 	ShowMenuButton();
 }
 
-function ShowPlayAsAComputerMenu() {
-	var menuName = visibleMenuCards[visibleMenuCards.length-1];
-	MenuCardPressDown(menuName);
-	MenuCardAppear("menu_start_a_game");
-}
-
 function ShowStartAGameMenu() {
 	var menuName = visibleMenuCards[visibleMenuCards.length-1];
 	MenuCardPressDown(menuName);

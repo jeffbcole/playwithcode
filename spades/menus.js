@@ -45,7 +45,7 @@ function ShowTitle() {
 	var el = document.getElementById("game_title");
 	with(el.style) {
 		WebkitTransition = MozTransition = OTransition = msTransition = "0.8s cubic-bezier(0.175, 0.885, 0.320, 1.275)";
-		top = "20%";
+		top = "17%";
 		opacity = 1;
 	}
 }
