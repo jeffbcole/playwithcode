@@ -1,10 +1,10 @@
-var Scoreboard = function () {
+var PinochleScoreboard = function () {
     
     this.isExpanded = false;
     this.isSlidDown = false;
 
     this.Initialize = function() {
-        var difficultyView = document.getElementById('scoreboardDifficulty');
+        var difficultyView = document.getElementById('PinochleScoreboardDifficulty');
         difficultyView.innerHTML = game.skillLevel;
         document.getElementById('scoreboardNameNorthSouth').innerText = "You &\n" + game.players[2].name; 
         document.getElementById('scoreboardNameEastWest').innerText = game.players[1].name + " & " + game.players[3].name; 
@@ -63,52 +63,52 @@ var Scoreboard = function () {
         var singleRoundWidth = 150;
         var roundScoresLeftMargin = 5;
         var roundScoresRowHeight = 20;
-        var scoreboardBackground = document.getElementById('scoreboardBackground');
-        var container = document.getElementById('scoreboardRoundScoresRegion');
+        var scoreboardBackground = document.getElementById('pinochle_scoreboardBackground');
+        var container = document.getElementById('PinochleScoreboardRoundScoresRegion');
         while (container.firstChild) {
             container.removeChild(container.firstChild);
         }
 
         for (var i=0; i<game.roundScores.length; i++) {
             var roundSeparator = document.createElement('div');
-            roundSeparator.className = 'scoreboardRoundEntrySeparator';
+            roundSeparator.className = 'pinochle_scoreboard_round_entry_separator';
             roundSeparator.style.left = i*singleRoundWidth + roundScoresLeftMargin + 'px';
             container.appendChild(roundSeparator);
 
             var roundNumber = document.createElement('div');
-            roundNumber.className = 'scoreboardRoundNumber';
+            roundNumber.className = 'pinochle_scoreboard_round_number';
             roundNumber.style.left = i*singleRoundWidth + roundScoresLeftMargin + 'px';
             roundNumber.innerText = "Round " + (i+1);
             container.appendChild(roundNumber);
 
             var roundPlayerName = document.createElement('div');
-            roundPlayerName.className = 'scoreboardRoundNameNorthSouth';
+            roundPlayerName.className = 'pinochle_scoreboard_round_name_north_south';
             roundPlayerName.style.left = i*singleRoundWidth + roundScoresLeftMargin + 5 + 'px';
             roundPlayerName.innerHTML = 'Y&' + game.players[2].name.charAt(0);
             container.appendChild(roundPlayerName);
 
             roundPlayerName = document.createElement('div');
-            roundPlayerName.className = 'scoreboardRoundNameEastWest';
+            roundPlayerName.className = 'pinochle_scoreboard_round_name_east_west';
             roundPlayerName.style.left = i*singleRoundWidth + roundScoresLeftMargin + 75 + 'px';
             roundPlayerName.innerHTML = game.players[1].name.charAt(0) + '&' + game.players[3].name.charAt(0);
             container.appendChild(roundPlayerName);
 
             var roundLabel = document.createElement('div');
-            roundLabel.className = 'scoreboardRoundLabel';
+            roundLabel.className = 'pinochle_scoreboard_round_label';
             roundLabel.style.left = i*singleRoundWidth + roundScoresLeftMargin + 'px';
             roundLabel.style.top = 60 + 'px';
             roundLabel.innerHTML = 'Bid';
             container.appendChild(roundLabel);
 
             roundLabel = document.createElement('div');
-            roundLabel.className = 'scoreboardRoundLabel';
+            roundLabel.className = 'pinochle_scoreboard_round_label';
             roundLabel.style.left = i*singleRoundWidth + roundScoresLeftMargin + 'px';
             roundLabel.style.top = 60 + roundScoresRowHeight + 'px';
             roundLabel.innerHTML = 'Meld';
             container.appendChild(roundLabel);
 
             roundLabel = document.createElement('div');
-            roundLabel.className = 'scoreboardRoundLabel';
+            roundLabel.className = 'pinochle_scoreboard_round_label';
             roundLabel.style.left = i*singleRoundWidth + roundScoresLeftMargin + 'px';
             roundLabel.style.top = 60 + 2*roundScoresRowHeight + 'px';
             roundLabel.innerHTML = 'Ctrs';
@@ -116,14 +116,14 @@ var Scoreboard = function () {
 
             var roundContracts = game.roundContracts[i];
             var roundValue = document.createElement('div');
-            roundValue.className = 'scoreboardRoundValueNorthSouth';
+            roundValue.className = 'pinochle_scoreboard_round_value_north_south';
             roundValue.style.left = i*singleRoundWidth + roundScoresLeftMargin + 'px';
             roundValue.style.top = 60 + 'px';
             roundValue.innerHTML = roundContracts[0] > 0 ? '(' + roundContracts[0] + ')' : "";
             container.appendChild(roundValue);
 
             roundValue = document.createElement('div');
-            roundValue.className = 'scoreboardRoundValueEastWest';
+            roundValue.className = 'pinochle_scoreboard_round_value_east_west';
             roundValue.style.left = i*singleRoundWidth + roundScoresLeftMargin + 80 + 'px';
             roundValue.style.top = 60 + 'px';
             roundValue.innerHTML = roundContracts[1] > 0 ? '(' + roundContracts[1] + ')' : "";
@@ -131,14 +131,14 @@ var Scoreboard = function () {
 
             var roundMelds = game.roundMelds[i];
             roundValue = document.createElement('div');
-            roundValue.className = 'scoreboardRoundValueNorthSouth';
+            roundValue.className = 'pinochle_scoreboard_round_value_north_south';
             roundValue.style.left = i*singleRoundWidth + roundScoresLeftMargin + 'px';
             roundValue.style.top = 60 + roundScoresRowHeight + 'px';
             roundValue.innerHTML = roundMelds[0] > 0 ? + roundMelds[0] : "";
             container.appendChild(roundValue);
 
             roundValue = document.createElement('div');
-            roundValue.className = 'scoreboardRoundValueEastWest';
+            roundValue.className = 'pinochle_scoreboard_round_value_east_west';
             roundValue.style.left = i*singleRoundWidth + roundScoresLeftMargin + 80 + 'px';
             roundValue.style.top = 60 + roundScoresRowHeight + 'px';
             roundValue.innerHTML = roundMelds[1] > 0 ? roundMelds[1] : "";
@@ -146,35 +146,35 @@ var Scoreboard = function () {
 
             var roundCounters = game.roundCountersTaken[i];
             roundValue = document.createElement('div');
-            roundValue.className = 'scoreboardRoundValueNorthSouth';
+            roundValue.className = 'pinochle_scoreboard_round_value_north_south';
             roundValue.style.left = i*singleRoundWidth + roundScoresLeftMargin + 'px';
             roundValue.style.top = 60 + 2*roundScoresRowHeight + 'px';
             roundValue.innerHTML = roundCounters[0] >= 0 ? + roundCounters[0] : "-";
             container.appendChild(roundValue);
 
             roundValue = document.createElement('div');
-            roundValue.className = 'scoreboardRoundValueEastWest';
+            roundValue.className = 'pinochle_scoreboard_round_value_east_west';
             roundValue.style.left = i*singleRoundWidth + roundScoresLeftMargin + 80 + 'px';
             roundValue.style.top = 60 + 2*roundScoresRowHeight + 'px';
             roundValue.innerHTML = roundCounters[1] >= 0 ? roundCounters[1] : "-";
             container.appendChild(roundValue);
 
             var roundTotalDivider = document.createElement('div');
-            roundTotalDivider.className = 'scoreboardRoundHorizontalDivider';
+            roundTotalDivider.className = 'pinochle_scoreboard_round_horizontal_divider';
             roundTotalDivider.style.left = i*singleRoundWidth + roundScoresLeftMargin + 5 + 'px';
             roundTotalDivider.style.top = 65 + 3*roundScoresRowHeight + 'px';
             container.appendChild(roundTotalDivider);
 
             var roundScores = game.roundScores[i];
             var roundScore = document.createElement('div');
-            roundScore.className = 'scoreboardRoundScoreNorthSouth';
+            roundScore.className = 'pinochle_scoreboard_round_score_north_south';
             roundScore.style.left = i*singleRoundWidth + roundScoresLeftMargin + 'px';
             roundScore.style.top = 65 + 3*roundScoresRowHeight + 10 + 'px';
             roundScore.innerHTML = roundScores[0] > 0 ? "+" + roundScores[0] : roundScores[0];
             container.appendChild(roundScore);
 
             roundScore = document.createElement('div');
-            roundScore.className = 'scoreboardRoundScoreEastWest';
+            roundScore.className = 'pinochle_scoreboard_round_score_east_west';
             roundScore.style.left = i*singleRoundWidth + roundScoresLeftMargin + 80 + 'px';
             roundScore.style.top = 65 + 3*roundScoresRowHeight + 10 + 'px';
             roundScore.innerHTML = roundScores[1] > 0 ? "+" + roundScores[1] : roundScores[1];
@@ -183,8 +183,8 @@ var Scoreboard = function () {
 
         var containerWidth = singleRoundWidth*game.roundScores.length + roundScoresLeftMargin;
         container.scrollLeft = containerWidth;
-        if (containerWidth + 400 > window.innerWidth) {
-            containerWidth = window.innerWidth - 400;
+        if (containerWidth + 400 > gameContainer.innerWidth) {
+            containerWidth = gameContainer.innerWidth - 400;
         }
         container.style.width = containerWidth + "px";
         with (scoreboardBackground.style) {
@@ -194,7 +194,7 @@ var Scoreboard = function () {
             height = 160 + 'px';
         }
         
-        var scoreboard = document.getElementById('scoreboard');
+        var scoreboard = document.getElementById('pinochle_scoreboard');
         scoreboard.style.zIndex = 1000;
     }
 
@@ -204,12 +204,12 @@ var Scoreboard = function () {
         }
         this.isExpanded = false;
 
-        var scoreboard = document.getElementById('scoreboard');
+        var scoreboard = document.getElementById('pinochle_scoreboard');
         with (scoreboard.style) {
             transition = "0.3s linear";
             zIndex = 999;
         }
-        var scoreboardBackground = document.getElementById('scoreboardBackground');
+        var scoreboardBackground = document.getElementById('pinochle_scoreboardBackground');
         with (scoreboardBackground.style) {
             transition = "0.3s linear";
             background = "#00000077";
@@ -224,7 +224,7 @@ var Scoreboard = function () {
         }
 
         this.isSlidDown = true;
-        var element = document.getElementById('scoreboard');
+        var element = document.getElementById('pinochle_scoreboard');
         with (element.style) {
             transition = "1s ease-in-out";
             top = "0px";
@@ -237,7 +237,7 @@ var Scoreboard = function () {
         }
 
         this.isSlidDown = false;
-        var element = document.getElementById('scoreboard');
+        var element = document.getElementById('pinochle_scoreboard');
         with (element.style) {
             transition = "1s ease-in-out";
             top = "-152px";
@@ -245,7 +245,7 @@ var Scoreboard = function () {
 
         this.Contract();
 
-        var difficultyView = document.getElementById('scoreboardDifficulty');
+        var difficultyView = document.getElementById('PinochleScoreboardDifficulty');
         difficultyView.innerHTML = "";
     }
 
@@ -257,22 +257,22 @@ var Scoreboard = function () {
             return;
         }
 
-        var isUsingScoreMultiplier = GetSetting('setting_score_multiplier');
+        var isUsingScoreMultiplier = game.settings.GetSetting('setting_score_multiplier');
 
         var score = game.players[0].gameScore;
         var scorePercent = 100*score/game.winningScore;
-        document.getElementById('scoreboardScoreFillNorthSouth').style.width = scorePercent + "%";
+        document.getElementById('PinochleScoreboardScoreFillNorthSouth').style.width = scorePercent + "%";
         document.getElementById('scoreboardScoreNorthSouth').innerText = score;
 
         score = game.players[1].gameScore;
         scorePercent = 100*score/game.winningScore;
-        document.getElementById('scoreboardScoreFillEastWest').style.width = scorePercent + "%";
+        document.getElementById('PinochleScoreboardScoreFillEastWest').style.width = scorePercent + "%";
         document.getElementById('scoreboardScoreEastWest').innerText = score;
 
         var rowHeight = 25;
         var frameHeight = 80;
         var isVerticalExpanded = false;
-        var bidRow = document.getElementById('scoreboardRowBid');
+        var bidRow = document.getElementById('PinochleScoreboardRowBid');
         if (isBidVisible) {
             frameHeight += rowHeight;
             isVerticalExpanded = true;
@@ -294,7 +294,7 @@ var Scoreboard = function () {
             bidRow.style.visibility = 'hidden';
         }
 
-        var meldRow = document.getElementById('scoreboardRowMeld');
+        var meldRow = document.getElementById('PinochleScoreboardRowMeld');
         if (isMeldVisible) {
             frameHeight += rowHeight;
             isVerticalExpanded = true;
@@ -315,7 +315,7 @@ var Scoreboard = function () {
             meldRow.style.visibility = 'hidden';
         }
 
-        var countersRow = document.getElementById('scoreboardRowCounters');
+        var countersRow = document.getElementById('PinochleScoreboardRowCounters');
         if (isCountersVisible) {
             frameHeight += rowHeight;
             isVerticalExpanded = true;
@@ -341,7 +341,7 @@ var Scoreboard = function () {
             frameHeight += 5;
             radius = '5px';
         }
-        var scoreboardBackground = document.getElementById('scoreboardBackground');
+        var scoreboardBackground = document.getElementById('pinochle_scoreboardBackground');
         with (scoreboardBackground.style) {
             transition = '0.3s linear';
             borderBottomLeftRadius = radius;
@@ -353,7 +353,7 @@ var Scoreboard = function () {
 
     this.UpdateScoresAfterRound = function() {
 
-        var barFill = document.getElementById('scoreboardScoreFillNorthSouth');
+        var barFill = document.getElementById('PinochleScoreboardScoreFillNorthSouth');
         barFill.style.transition = "1s linear";
         var percent = 100 * game.players[0].gameScore / game.winningScore;
         if (percent > 100) {
@@ -365,7 +365,7 @@ var Scoreboard = function () {
         var teamScore = document.getElementById('scoreboardScoreNorthSouth');
         teamScore.innerText = game.players[0].gameScore;
 
-        barFill = document.getElementById('scoreboardScoreFillEastWest');
+        barFill = document.getElementById('PinochleScoreboardScoreFillEastWest');
         barFill.style.transition = "1s linear";
         var percent = 100 * game.players[1].gameScore / game.winningScore;
         if (percent > 100) {

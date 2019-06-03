@@ -160,16 +160,16 @@ var FindRoundBidAnalysis = function(aGame, passingCardsCount, currentPlayerSkill
     simGame.dealerIndex = aGame.dealerIndex;
     simGame.turnIndex = aGame.turnIndex;
     simGame.players = [];
-    var player = new Player();
+    var player = new PinochlePlayer();
     player.Initialize('You', true, 'Standard', 'South');
     simGame.players.push(player);
-    player = new Player();
+    player = new PinochlePlayer();
     player.Initialize('Catalina', false, 'Standard', 'West');
     simGame.players.push(player);
-    player = new Player();
+    player = new PinochlePlayer();
     player.Initialize('Amelia', false, 'Standard', 'North');
     simGame.players.push(player);
-    player = new Player();
+    player = new PinochlePlayer();
     player.Initialize('Seward', false, 'Standard', 'East');
     simGame.players.push(player);
 

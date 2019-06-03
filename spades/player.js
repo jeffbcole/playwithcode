@@ -1,4 +1,4 @@
-var Player = function() {
+var SpadesPlayer = function() {
 
     this.name = "";
     this.isHuman = false;
@@ -53,7 +53,7 @@ var Player = function() {
             case 'Easy':
                 return Math.floor(Math.random() * 4) + 1;
             default:
-                return FindBidForPlayer(aGame, this);
+                return SpadesFindBidForPlayer(aGame, this);
         }
     }
 
@@ -74,7 +74,7 @@ var Player = function() {
             case 'Standard':
                 return this.FindStandardPlayingCard(aGame, possiblePlays);
             default:
-                return FindOptimalPlayForCurrentPlayer(aGame);
+                return SpadesFindOptimalPlayForCurrentPlayer(aGame);
         }
     }
 

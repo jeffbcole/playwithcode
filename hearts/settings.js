@@ -1,59 +1,49 @@
-var setting_hints_default = false;
-var setting_losing_score_default = 100;
-var setting_board_color_default = 'wood';
-var setting_card_color_default = 'blue';
+var HeartsSettings = function() {
 
-function GetSetting(setting) {
-	switch (setting) {
-		case "setting_hints":
-			var settingVal = window.localStorage.getItem(setting);
-			return settingVal == null ? setting_hints_default : (settingVal == 'true');
-			break;
-		case "setting_losing_score":
-			var settingVal = window.localStorage.getItem(setting);
-			return settingVal == null ? setting_losing_score_default : settingVal;
-			break;
-		case "setting_board_color":
-			var settingVal = window.localStorage.getItem(setting);
-			return settingVal == null ? setting_board_color_default : settingVal;
-			break;
-		case "setting_card_color":
-			var settingVal = window.localStorage.getItem(setting);
-			return settingVal == null ? setting_card_color_default : settingVal;
-			break;
+	this.game_suffix = '_Hearts';
+	this.setting_hints_default = false;
+	this.setting_losing_score_default = 100;
+
+	this.GetSetting = function(setting) {
+		switch (setting) {
+			case "setting_hints":
+				var settingVal = window.localStorage.getItem(setting + this.game_suffix);
+				return settingVal == null ? this.setting_hints_default : (settingVal == 'true');
+				break;
+			case "setting_losing_score":
+				var settingVal = window.localStorage.getItem(setting + this.game_suffix);
+				return settingVal == null ? this.setting_losing_score_default : settingVal;
+				break;
+		}
 	}
-}
 
-function SetSetting(setting, val) {
-	window.localStorage.setItem(setting, val);
-}
-
-function GetStatistic(statistic) {
-    var val = window.localStorage.getItem(statistic);
-    return val == null ? Number(0) : Number(val);
-}
-
-function GetStatisticString(statistic) {
-	var val = window.localStorage.getItem(statistic);
-	return val == null ? "" : val;
-}
-
-function SetStatistic(statistic, value) {
-	window.localStorage.setItem(statistic, value);
-}
-
-function redirectToAppStore() {
-	var userAgent = navigator.userAgent || navigator.vendor || window.opera;
-  
-	if (/android/i.test(userAgent)) {
-		window.location.replace("https://play.google.com/store/apps/details?id=com.gamesbypost.heartscardclassic");
-		return true;
+	this.SetSetting = function(setting, val) {
+		window.localStorage.setItem(setting + this.game_suffix, val);
 	}
-  
-	if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
-		window.location.replace("https://itunes.apple.com/us/app/hearts-card-classic/id1365096468?mt=8");
-		return true;
+
+	this.GetStatistic = function(statistic) {
+		var val = window.localStorage.getItem(statistic + this.game_suffix);
+		return val == null ? Number(0) : Number(val);
 	}
-	
-	return false;
+
+	this.SetStatistic = function(statistic, value) {
+		window.localStorage.setItem(statistic + this.game_suffix, value);
+	}
+
+	this.ResetStatistics = function() {
+		var difficulties = ['Easy', 'Standard', 'Pro'];
+        var statsToReset = [
+            'stat_wins_',
+            'stat_2nd_',
+            'stat_3rd_',
+            'stat_4th_',
+            'stat_moons_shot_'
+        ];
+        for (var i=0; i<statsToReset.length; i++) {
+            for (var j=0; j<difficulties.length; j++) {
+                var statName = statsToReset[i] + difficulties[j];
+                window.localStorage.removeItem(statName + this.game_suffix);
+            }
+        }
+	}
 }

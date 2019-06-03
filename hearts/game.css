@@ -1,4 +1,4 @@
-.player_name {
+.hearts_player_name {
     visibility: hidden;
     position: absolute;
     width: 100px;
@@ -9,7 +9,7 @@
     pointer-events: none;
 }
 
-.player_score {
+.hearts_player_score {
     visibility: hidden;
     position: absolute;
     width: 100px;
@@ -20,7 +20,7 @@
     pointer-events: none;
 }
 
-#select_passing_cards_message {
+#hearts_select_passing_cards_message {
     visibility: hidden;
     position: absolute;
     width: 100%;
@@ -31,7 +31,7 @@
     pointer-events: none;
 }
 
-.select_passing_card_region {
+.hearts_select_passing_card_region {
     position: absolute;
     opacity: 0;
     border-radius: 8px;
@@ -41,7 +41,7 @@
     height: 157px;
 }
 
-#confirm_passing_cards_region {
+#hearts_confirm_passing_cards_region {
     position: absolute;
     transform: translate(-50%, 0%);
     width: 140px;
@@ -50,7 +50,7 @@
     opacity: 0;
 }
 
-#confirm_passing_cards_button {
+#hearts_confirm_passing_cards_button {
     position: absolute;
     cursor: pointer;
     border:#FFFFFF 2px solid;
@@ -62,11 +62,11 @@
     font-size:14pt;
 }
 
-#confirm_passing_cards_button:hover {
+#hearts_confirm_passing_cards_button:hover {
     background:#222222;
 }
 
-#confirm_passing_cards_shadow {
+#hearts_confirm_passing_cards_shadow {
     position: absolute;
     background: rgba(0,0,0,0.5);
     border-radius: 8px;
@@ -76,7 +76,7 @@
     top: 10px;
 }
 
-#player_play_prompt {
+#hearts_player_play_prompt {
     position: absolute;
     width: 200px;
     transform: translate(-50%,-50%);
@@ -87,7 +87,7 @@
     pointer-events: none;
 }
 
-#moon_shoot_text {
+#hearts_moon_shoot_text {
     position: absolute;
     width: 100%;
     top: 15%;
@@ -107,7 +107,7 @@
     position: absolute;
     width: 112px;
     height: 100px;
-    background-image: url('images/score_heart.png');
+    background-image: url('../shared/images/score_heart.png');
     text-align: center;
     pointer-events: none;
 }
@@ -115,7 +115,6 @@
 .BubbleScoreHeartsPoints {
     font-size: 22pt;
     line-height: 50px;
-    font-weight: bold;
 }
 
 #BubbleScoreSpadeTemplate {
@@ -127,7 +126,7 @@
     position: absolute;
     width: 85px;
     height: 100px;
-    background-image: url('images/score_spade.png');
+    background-image: url('../shared/images/score_spade.png');
     text-align: center;
     pointer-events: none;
 }
@@ -135,10 +134,9 @@
 .BubbleScoreSpadesPoints {
     font-size: 20pt;
     line-height: 50px;
-    font-weight: bold;
 }
 
-#hint_button {
+#hearts_hint_button {
     position: absolute;
     cursor: pointer;
     width: 70px;
@@ -153,11 +151,11 @@
     opacity: 0;
 }
 
-#hint_button:hover {
+#hearts_hint_button:hover {
     background: rgba(255, 255, 255, 0.3);
 }
 
-#GameOverView {
+#HeartsGameOverView {
     z-index: 999;
     width: 340px;
     height:100px;
@@ -176,12 +174,130 @@
     opacity: 0;
 }
 
-#GameOverResultText {
+#HeartsGameOverResultText {
     margin-top: 10px;
     font-size: 24pt;
 }
 
-#GameOverResultText2 {
+#HeartsGameOverResultText2 {
     margin-top: 10px;
     font-size: 20pt;
+}
+
+/*
+*
+*  Scoreboard
+*
+*/
+
+#hearts_scoreboard {
+    position: absolute;
+    width: 200px;
+    height: 172px;
+    left: 20px;
+    top: -152px;
+}
+
+#hearts_scoreboardBackground {
+    position: absolute;
+    width: 200px;
+    height: 152px;
+    left: 0px;
+    top: 0px;
+    background: #00000077;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    overflow: hidden;
+}
+
+#hearts_scoreboardDifficulty {
+    position: absolute;
+    width: 100%;
+    height: 20px;
+    font-size: 12pt;
+    color: #000000;
+    text-align: center;
+    top: 152px;
+}
+
+.hearts_scoreboardPlayerRegion {
+    position: absolute;
+    width: 200px;
+    height: 38px;
+}
+
+#hearts_scoreboardPlayerRegionWest {
+    top: 38px;
+}
+
+#hearts_scoreboardPlayerRegionNorth {
+    top: 76px;
+}
+
+#hearts_scoreboardPlayerRegionEast {
+    top: 114px;
+}
+
+.hearts_scoreboardPlayerName {
+    position: absolute;
+    left: 10px;
+    top: 4px;
+    text-shadow: 2pt 2pt rgba(0, 0, 0, 0.5);
+    font-size: 12pt;
+}
+
+.hearts_scoreboardPlayerBar {
+    position: absolute;
+    height: 5px;
+    width: 180px;
+    top: 27px;
+    left: 10px;
+    background: white;
+    box-shadow: 2pt 2pt rgba(0, 0, 0, 0.5);
+}
+
+.hearts_scoreboardPlayerBarFill {
+    width: 50%;
+    height: 100%;
+    background: red;
+}
+
+.hearts_scoreboardPlayerScore {
+    position: absolute;
+    width: 30px;
+    left: 150px;
+    top: 0px;
+    text-align: center;
+    text-shadow: 2pt 2pt rgba(0, 0, 0, 0.5);
+    font-size: 17pt;
+}
+
+#hearts_scoreboardRoundScoresRegion {
+    position: absolute;
+    left: 200px;
+    width: 50px;
+    height: 100%;
+    background: black;
+}
+
+.hearts_scoreboardRoundNumber {
+    position: absolute;
+    width: 50px;
+    font-size: 8pt;
+    text-align: center;
+}
+
+.hearts_scoreboardRoundEntry {
+    position: absolute;
+    font-size: 12pt;
+    text-align: center;
+    width: 50px;
+    top: 15px;
+}
+
+.hearts_scoreboardRoundEntrySeparator {
+    position: absolute;
+    width: 1px;
+    background: #999999;
+    height: 150px;
 }

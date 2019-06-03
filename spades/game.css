@@ -1,4 +1,4 @@
-.player_name {
+.spades_player_name {
     visibility: hidden;
     position: absolute;
     width: 100px;
@@ -9,7 +9,7 @@
     pointer-events: none;
 }
 
-.player_score {
+.spades_player_score {
     visibility: hidden;
     position: absolute;
     width: 100px;
@@ -20,7 +20,7 @@
     pointer-events: none;
 }
 
-#player_play_prompt {
+#spades_player_play_prompt {
     position: absolute;
     width: 200px;
     transform: translate(-50%,-50%);
@@ -31,7 +31,7 @@
     pointer-events: none;
 }
 
-#hint_button {
+#spades_hint_button {
     position: absolute;
     cursor: pointer;
     width: 70px;
@@ -46,11 +46,11 @@
     opacity: 0;
 }
 
-#hint_button:hover {
+#spades_hint_button:hover {
     background: rgba(255, 255, 255, 0.3);
 }
 
-#GameOverView {
+#SpadesGameOverView {
     z-index: 999;
     width: 340px;
     height:100px;
@@ -69,12 +69,129 @@
     opacity: 0;
 }
 
-#GameOverResultText {
+#SpadesGameOverResultText {
     margin-top: 10px;
     font-size: 24pt;
 }
 
-#GameOverResultText2 {
+#SpadesGameOverResultText2 {
     margin-top: 10px;
     font-size: 20pt;
+}
+
+/*
+*  Scoreboard
+*/
+
+#spades_scoreboard {
+    position: absolute;
+    width: 200px;
+    height: 172px;
+    left: 20px;
+    top: -152px;
+}
+
+#spades_scoreboardBackground {
+    position: absolute;
+    width: 200px;
+    height: 152px;
+    left: 0px;
+    top: 0px;
+    background: #00000077;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    overflow: hidden;
+}
+
+#spades_scoreboardDifficulty {
+    position: absolute;
+    width: 100%;
+    height: 20px;
+    font-size: 12pt;
+    color: #000000;
+    text-align: center;
+    top: 152px;
+}
+
+.spades_scoreboardPlayerRegion {
+    position: absolute;
+    width: 200px;
+    height: 38px;
+}
+
+#spades_scoreboardPlayerRegionWest {
+    top: 38px;
+}
+
+#spades_scoreboardPlayerRegionNorth {
+    top: 76px;
+}
+
+#spades_scoreboardPlayerRegionEast {
+    top: 114px;
+}
+
+.spades_scoreboardPlayerName {
+    position: absolute;
+    left: 10px;
+    top: 4px;
+    text-shadow: 2pt 2pt rgba(0, 0, 0, 0.5);
+    font-size: 12pt;
+}
+
+.spades_scoreboardPlayerBar {
+    position: absolute;
+    height: 5px;
+    width: 180px;
+    top: 27px;
+    left: 10px;
+    background: white;
+    box-shadow: 2pt 2pt rgba(0, 0, 0, 0.5);
+}
+
+.spades_scoreboardPlayerBarFill {
+    width: 50%;
+    height: 100%;
+    background: red;
+}
+
+.spades_scoreboardPlayerScore {
+    position: absolute;
+    width: 30px;
+    left: 150px;
+    top: 0px;
+    text-align: center;
+    text-shadow: 2pt 2pt rgba(0, 0, 0, 0.5);
+    font-size: 17pt;
+}
+
+#spadesScoreboardRoundScoresRegion {
+    position: absolute;
+    left: 200px;
+    width: 50px;
+    height: 100%;
+    background: black;
+}
+
+.spades_scoreboardRoundEntry {
+    position: absolute;
+    font-size: 12pt;
+    text-align: center;
+    width: 50px;
+    top: 15px;
+}
+
+.spades_scoreboardRoundBidsEntry {
+    position: absolute;
+    font-size: 9pt;
+    text-align: center;
+    width: 50px;
+    top: 15px;
+}
+
+.spades_scoreboardRoundEntrySeparator {
+    position: absolute;
+    width: 1px;
+    background: #999999;
+    height: 150px;
 }

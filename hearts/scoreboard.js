@@ -1,4 +1,4 @@
-var Scoreboard = function () {
+var HeartsScoreboard = function () {
     
     this.isExpanded = false;
     this.isSlidDown = false;
@@ -10,7 +10,7 @@ var Scoreboard = function () {
             delay = 1000;
         }
         setTimeout(function() {
-            var difficultyView = document.getElementById('scoreboardDifficulty');
+            var difficultyView = document.getElementById('hearts_scoreboardDifficulty');
             difficultyView.innerHTML = "Difficulty: " + game.skillLevel;
             for (var i=0; i<game.players.length; i++) {
                 var player = game.players[i];
@@ -43,8 +43,8 @@ var Scoreboard = function () {
 
         this.isExpanded = true;
 
-        var scoreboardBackground = document.getElementById('scoreboardBackground');
-        var container = document.getElementById('scoreboardRoundScoresRegion');
+        var scoreboardBackground = document.getElementById('hearts_scoreboardBackground');
+        var container = document.getElementById('hearts_scoreboardRoundScoresRegion');
         while (container.firstChild) {
             container.removeChild(container.firstChild);
         }
@@ -59,19 +59,19 @@ var Scoreboard = function () {
         
         for (var i=0; i<game.roundScores.length; i++) {
             var roundSeparator = document.createElement('div');
-            roundSeparator.className = 'scoreboardRoundEntrySeparator';
+            roundSeparator.className = 'hearts_scoreboardRoundEntrySeparator';
             roundSeparator.style.left = i*50 + 'px'
             container.appendChild(roundSeparator);
 
             var roundNumber = document.createElement('div');
-            roundNumber.className = "scoreboardRoundNumber";
+            roundNumber.className = "hearts_scoreboardRoundNumber";
             roundNumber.innerHTML = "Round " + (i + 1);
             roundNumber.style.left = i*50 + 'px';
             container.appendChild(roundNumber);
             for (var j=0; j<4; j++) {
                 var roundScore = document.createElement('div');
                 var curPlayerIndex = p[j].playerPositionInt;
-                roundScore.className = 'scoreboardRoundEntry';
+                roundScore.className = 'hearts_scoreboardRoundEntry';
                 roundScore.innerHTML = "+" + game.roundScores[i][curPlayerIndex];
                 roundScore.style.left = i*50 + 'px';
                 roundScore.style.top = 15 + j*38 + 'px';
@@ -94,7 +94,7 @@ var Scoreboard = function () {
         }
         this.isExpanded = false;
 
-        var scoreboardBackground = document.getElementById('scoreboardBackground');
+        var scoreboardBackground = document.getElementById('hearts_scoreboardBackground');
         with (scoreboardBackground.style) {
             transition = "0.3s linear";
             background = "#00000077";
@@ -108,7 +108,7 @@ var Scoreboard = function () {
         }
 
         this.isSlidDown = true;
-        var element = document.getElementById('scoreboard');
+        var element = document.getElementById('hearts_scoreboard');
         with (element.style) {
             transition = "1s ease-in-out";
             top = "0px";
@@ -121,7 +121,7 @@ var Scoreboard = function () {
         }
 
         this.isSlidDown = false;
-        var element = document.getElementById('scoreboard');
+        var element = document.getElementById('hearts_scoreboard');
         with (element.style) {
             transition = "1s ease-in-out";
             top = "-152px";
@@ -129,7 +129,7 @@ var Scoreboard = function () {
 
         this.Contract();
 
-        var difficultyView = document.getElementById('scoreboardDifficulty');
+        var difficultyView = document.getElementById('hearts_scoreboardDifficulty');
         difficultyView.innerHTML = "";
     }
 
@@ -163,7 +163,7 @@ var Scoreboard = function () {
                 });
                 for (var i=0; i<4; i++) {
                     var player = p[i];
-                    var elem = document.getElementById('scoreboardPlayerRegion' + player.playerPosition);
+                    var elem = document.getElementById('hearts_scoreboardPlayerRegion' + player.playerPosition);
                     elem.style.transition = "0.5s ease-in-out";
                     elem.style.top = i*38 + 'px';
                 }
@@ -178,7 +178,7 @@ var Scoreboard = function () {
                 });
                 for (var i=0; i<4; i++) {
                     var player = p[i];
-                    var elem = document.getElementById('scoreboardPlayerRegion' + player.playerPosition);
+                    var elem = document.getElementById('hearts_scoreboardPlayerRegion' + player.playerPosition);
                     elem.style.transition = "none";
                     elem.style.top = i*38 + 'px';
                 }

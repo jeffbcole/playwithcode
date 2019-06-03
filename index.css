@@ -17,74 +17,271 @@ body {
 	-moz-user-select: none;
 	-ms-user-select: none;
 	user-select: none;
+	margin: 0px;
 }
 
-.t1, .t2 {
+#humansvscomputerstitle {
 	line-height: 90%; 
-	font-family: 'Times New Roman', Times, serif; 
-	text-shadow: 5pt 3pt rgba(0,0,0,0.5); 
-	font-weight: bold;
-}
-
-.t1 {
-	font-size: 100px;
-}
-
-.t2 {
+	text-shadow: 2pt 2pt rgba(0,0,0,0.5); 
 	font-size: 40px;
 }
 
-#playwithcode_title {
+#humansvscomputers_title {
 	position: absolute;
-	top: 50%;
+	top: 100%;
 	left: 50%;
-	transform: translate(-50%, -50%);
-	margin: auto;
-	pointer-events: none;
-
-	user-select: none;
-	-webkit-user-select: none;
-	-moz-user-select: none;
-	-moz-user-select: none;
-	-ms-user-select: none;
-	-moz-user-focus: none;
-}
-
-.menu_view {
-	z-index: 999;
-	opacity:0;
-	pointer-events: none;
-	background:#000000;
-	border:#FFFFFF 2px solid;
-	border-radius:30px;
-	box-shadow: 30px 30px 0px rgba(0,0,0,0.5);
-	position: absolute;
-	top:0%;
-	left: 50%;
+	opacity: 0;
 	transform: translate(-50%, -50%);
 	margin: auto;
 }
 
-.menu_button {
+.select_game {
+	display: block;
+	font-size: 60px;
+	text-align: center;
+	color: white;
+	line-height: 1.3;
+	padding: 0px;
+	width: 500px;
+	height: 90px;
+	margin-top: 10px;
+	border: 2px solid white;
+	box-shadow: 10px 10px 0px rgba(0,0,0,0.5);
+	border-radius: 15px;
+	-moz-appearance: none;
+	-webkit-appearance: none;
+	appearance: none;
+	background-color: #fff;
+	background-image: linear-gradient(0deg, #000000 50%, #404040 50%);
+	background-repeat: repeat;
+	background-position: 0 0;
+	background-size: 100%;
+	cursor: pointer;
+}
+.select_game::-ms-expand {
+	display: none;
+}
+.select_game:hover {
+	background-image: linear-gradient(0deg, #222222 50%, #555555 50%);
+}
+.select_game:focus {
+	border-color: #aaa;
+	color: white; 
+	outline: none;
+}
+
+.down_arrow {
+	position: absolute;
+	right: 15px;
+	top: 65px;
+	pointer-events: none;
+}
+
+#select_human_or_computer {
+	position: absolute;
+	width: 500px;
+	top:100%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	opacity: 0;
+	margin: auto;
+}
+
+.human_or_computer_option {
+	position: absolute;
+	width: 220px;
+	text-align: center;
+	text-shadow: 2pt 2pt rgba(0,0,0,0.5); 
+	margin-top: 10px;
+}
+
+.human_or_computer_option_explained {
+	margin: 10px;
+	font-size: 18px;
+}
+
+.human_or_computer_button {
 	cursor: pointer;
 	border:#FFFFFF 2px solid;
 	border-radius:15px;
 	background:linear-gradient(0deg, #000000 50%, #404040 50%);
+	box-shadow: 10px 10px 0px rgba(0,0,0,0.5);
 	color:white;
-	width:90%;
-	height:50pt;
-	font-size:24pt;
-	margin-left:5%;
-	margin-right:5%;
+	width:100%;
+	height:80px;
+	font-size:34px;
+	line-height: 34x;
 	margin-top:5pt;
 	margin-bottom:5pt;
 }
 
-.menu_button:hover {
+.human_or_computer_button:hover {
 	background:linear-gradient(0deg, #222222 50%, #555555 50%);
 }
 
-#menu_main {
-	width:350px;
-	top:100%;
+.human_or_computer_button_play_as {
+	font-size: 16px;
+	line-height: 16px;
+}
+
+#select_human_or {
+	position: absolute;
+	transform: translate(-50%,-50%);
+	left: 50%;
+	top: 50px;
+	font-size: 20px;
+	text-shadow: 2pt 2pt rgba(0,0,0,0.5); 
+}
+
+#game_main_container {
+	position: absolute;
+	top: 50px;
+	width: 100%;
+	height: calc(100% - 50px);
+	overflow: hidden;
+}
+
+#menu_bar {
+	position: absolute;
+	width: 100%;
+	height: 50px;
+	background: black;
+	border-bottom: 1px solid white;
+	transition: 0.3s ease-out;
+	transform: translateY(-50px);
+	z-index: 99999;
+}
+
+.menu_bar_select_game {
+	font-size: 30px;
+	text-align: center;
+	color: white;
+	line-height: 1.3;
+	padding: 0px;
+	width: 200px;
+	height: 40px;
+	margin-top: 0px;
+	border: none;
+	-moz-appearance: none;
+	-webkit-appearance: none;
+	appearance: none;
+	background-color: #fff;
+	background-image: linear-gradient(0deg, #000000 50%, #404040 50%);
+	background-repeat: repeat;
+	background-position: 0 0;
+	background-size: 100%;
+	cursor: pointer;
+}
+.menu_bar_select_game::-ms-expand {
+	display: none;
+}
+.menu_bar_select_game:hover {
+	background-image: linear-gradient(0deg, #222222 50%, #555555 50%);
+}
+.menu_bar_select_game:focus {
+	border-color: #aaa;
+	color: white; 
+	outline: none;
+}
+.menu_down_arrow {
+	position: absolute;
+	right: calc(50% - 100px);
+	top: 10px;
+	pointer-events: none;
+}
+#menu_bar_left_arrow {
+	position: absolute;
+	top: 21px;
+	left: 15px;
+	border: solid white;
+	border-width: 0 3px 3px 0;
+	display: inline-block;
+	padding: 3px;
+	transform: rotate(135deg);
+	-webkit-transform: rotate(135deg);
+}
+#menu_bar_play_as_human_button {
+	position: absolute;
+	left: 5px;
+	top: 10px;
+	font-size: 16px;
+	line-height: 20px;
+	text-align: center;
+	color: white;
+	padding: 5px;
+	padding-left: 30px;
+	padding-right: 15px;
+	border: none;
+	-moz-appearance: none;
+	-webkit-appearance: none;
+	appearance: none;
+	background-color: #fff;
+	background-image: linear-gradient(0deg, #000000 50%, #404040 50%);
+	background-repeat: repeat;
+	background-position: 0 0;
+	background-size: 100%;
+	cursor: pointer;
+}
+#menu_bar_right_arrow {
+	position: absolute;
+	top: 21px;
+	right: 15px;
+	border: solid white;
+	border-width: 0 3px 3px 0;
+	display: inline-block;
+	padding: 3px;
+	transform: rotate(-45deg);
+	-webkit-transform: rotate(-45deg);
+}
+#menu_bar_play_as_computer_button {
+	position: absolute;
+	right: 5px;
+	top: 10px;
+	font-size: 16px;
+	line-height: 20px;
+	text-align: center;
+	color: white;
+	padding: 5px;
+	padding-left: 15px;
+	padding-right: 30px;
+	border: none;
+	-moz-appearance: none;
+	-webkit-appearance: none;
+	appearance: none;
+	background-color: #fff;
+	background-image: linear-gradient(0deg, #000000 50%, #404040 50%);
+	background-repeat: repeat;
+	background-position: 0 0;
+	background-size: 100%;
+	cursor: pointer;
+}
+
+#code_container {
+    position: absolute;
+    top: 0px;
+    bottom: 0px;
+    right: 0px;
+    width: 0px;
+    background: red;
+    z-index: 2000;
+}
+
+#code_container_gutter {
+    position: absolute;
+    right: 10px;
+    width: 2px;
+    height: 100%;
+    background: white;
+    cursor: ew-resize;
+    z-index: 2001;  
+}
+
+#code_container_gutter::after {
+    content: "";
+    display: block;
+    height: 100%;
+    width: 10px;
+    position: absolute;
+    left: -5px;
+    z-index: 10;
 }

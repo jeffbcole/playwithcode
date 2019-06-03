@@ -1,11 +1,14 @@
-var Game = function () {
+var HeartsGame = function () {
+
+    // Global Game Settings
+    this.settings = new HeartsSettings();
 
     // Constants
     var cardLoweredWidth = 115;
     var cardLoweredHeight = 162;
     
     // Local variables
-    var scoreboard = new Scoreboard();
+    var scoreboard = new HeartsScoreboard();
     var currentDraggedCardView;
     var currentPlayerHandCardSpacing = 0;
     var autoPlayBoundaryY = 0;
@@ -23,60 +26,358 @@ var Game = function () {
     this.cardsPlayedThisRound = [];
     this.roundScores = [];
 
+    // Inject all the html elements
+    gameContainer.innerHTML = 
+        '<div id="below_cards_messages_region">\
+        <div class="hearts_player_name" id="player_name_South"></div>\
+        <div class="hearts_player_name" id="player_name_West"></div>\
+        <div class="hearts_player_name" id="player_name_North"></div>\
+        <div class="hearts_player_name" id="player_name_East"></div>\
+        \
+        <div class="hearts_player_score" id="player_score_South"></div>\
+        <div class="hearts_player_score" id="player_score_West"></div>\
+        <div class="hearts_player_score" id="player_score_North"></div>\
+        <div class="hearts_player_score" id="player_score_East"></div>\
+        \
+        <div id="hearts_select_passing_cards_message">Select 3 cards to pass left:</div>\
+        <div id="select_passing_cards_region_0" class="hearts_select_passing_card_region"></div>\
+        <div id="select_passing_cards_region_1" class="hearts_select_passing_card_region"></div>\
+        <div id="select_passing_cards_region_2" class="hearts_select_passing_card_region"></div>\
+        \
+        <div id="hearts_confirm_passing_cards_region">\
+            <div id="hearts_confirm_passing_cards_shadow"></div>\
+            <button id="hearts_confirm_passing_cards_button" onclick="game.passingCardsConfirmed()">Pass Cards</button>\
+        </div>\
+        \
+        <div id="hearts_player_play_prompt">Drop a card here</div>\
+        \
+        <div id="hearts_moon_shoot_text"></div>\
+        \
+        <button id="hearts_hint_button" onclick="game.OnHintButtonClick()">Hint</button>\
+        \
+        <div id="hearts_scoreboard">\
+            <div id="hearts_scoreboardBackground" onclick="game.OnScoreboardClick()">\
+                <div id="hearts_scoreboardPlayerRegionSouth" class="hearts_scoreboardPlayerRegion">\
+                    <div id="scoreboardPlayerNameSouth" class="hearts_scoreboardPlayerName">South</div>\
+                    <div id="scoreboardPlayerBarSouth" class="hearts_scoreboardPlayerBar">\
+                        <div id="scoreboardPlayerBarFillSouth" class="hearts_scoreboardPlayerBarFill"></div>\
+                    </div>\
+                    <div id="scoreboardPlayerScoreSouth" class="hearts_scoreboardPlayerScore">10</div>\
+                </div>\
+                <div id="hearts_scoreboardPlayerRegionWest" class="hearts_scoreboardPlayerRegion">\
+                    <div id="scoreboardPlayerNameWest" class="hearts_scoreboardPlayerName">West</div>\
+                    <div id="scoreboardPlayerBarWest" class="hearts_scoreboardPlayerBar">\
+                        <div id="scoreboardPlayerBarFillWest" class="hearts_scoreboardPlayerBarFill"></div>\
+                    </div>\
+                    <div id="scoreboardPlayerScoreWest" class="hearts_scoreboardPlayerScore">10</div>\
+                </div>\
+                <div id="hearts_scoreboardPlayerRegionNorth" class="hearts_scoreboardPlayerRegion">\
+                    <div id="scoreboardPlayerNameNorth" class="hearts_scoreboardPlayerName">North</div>\
+                    <div id="scoreboardPlayerBarNorth" class="hearts_scoreboardPlayerBar">\
+                        <div id="scoreboardPlayerBarFillNorth" class="hearts_scoreboardPlayerBarFill"></div>\
+                    </div>\
+                    <div id="scoreboardPlayerScoreNorth" class="hearts_scoreboardPlayerScore">10</div>\
+                </div>\
+                <div id="hearts_scoreboardPlayerRegionEast" class="hearts_scoreboardPlayerRegion">\
+                    <div id="scoreboardPlayerNameEast" class="hearts_scoreboardPlayerName">East</div>\
+                    <div id="scoreboardPlayerBarEast" class="hearts_scoreboardPlayerBar">\
+                        <div id="scoreboardPlayerBarFillEast" class="hearts_scoreboardPlayerBarFill"></div>\
+                    </div>\
+                    <div id="scoreboardPlayerScoreEast" class="hearts_scoreboardPlayerScore">10</div>\
+                </div>\
+                \
+                <div id="hearts_scoreboardRoundScoresRegion"></div>\
+                \
+            </div>\
+            <div id="hearts_scoreboardDifficulty"></div>\
+        </div>\
+    </div>\
+    \
+    <div id="cards_region"></div>\
+    \
+    <div id="adView" align="center">\
+        \
+    </div>\
+    \
+    <div id="HeartsGameOverView">\
+        <div id="HeartsGameOverResultText">You won!</div>\
+        <div id="HeartsGameOverResultText2">vs the easy players</div>\
+    </div>\
+    \
+    <div id="BubbleScoreHeartTemplate" class="BubbleScoreHeart">\
+        <table style="width: 95px; margin-top: 15px;">\
+            <tr>\
+                <td class="BubbleScoreHeartsPoints">+1</td>\
+            </tr>\
+        </table>\
+    </div>\
+    \
+    <div id="BubbleScoreSpadeTemplate" class="BubbleScoreSpade">\
+        <table style="width: 75px; margin-top: 15px;">\
+            <tr>\
+                <td class="BubbleScoreSpadesPoints">+13</td>\
+            </tr>\
+        </table>\
+    </div>\
+    \
+    <button id="menu_button" onclick="MenuButtonPressed()">\
+        <img src="shared/images/MenuButton.png" ondragstart="return false;" />\
+    </button>\
+    \
+    <div id="menu_main" class="menu_view">\
+        <button id="menu_main_close_button" class="close_button" onclick="menu_main_close_click()">X</button>\
+        <button id="start_game_button" class="menu_button" onclick="game.ShowStartAGameMenu()">Start A Game</button>\
+        <button id="statistics_button" class="menu_button" onclick="game.ShowStatisticsMenu()">Statistics</button>\
+        <button id="settings_button" class="menu_button" onclick="game.ShowSettingsMenu()">Settings</button>\
+    </div>\
+    \
+    <div id="menu_start_a_game" class="menu_view">\
+        <div id="menu_start_a_game_title" class="menu_card_title">Choose a difficulty level:</div>\
+        <button id="menu_start_a_game_close_button" class="close_button" onclick="menu_card_close_click()">X</button>\
+        <button id="easy_game_button" class="menu_button" onclick="game.menu_start_game_click(\'Easy\')">Easy</button>\
+        <button id="standard_game_button" class="menu_button" onclick="game.menu_start_game_click(\'Standard\')">Standard</button>\
+        <button id="pro_game_button" class="menu_button" onclick="game.menu_start_game_click(\'Pro\')">Pro</button>\
+        <div style="text-align:center;font-size:12pt; pointer-events: none;">Cards are dealt randomly for all difficulty levels.</div>\
+        <a id="menu_start_a_game_difficulties_link" onclick="game.ShowDifficultiesExplainedMenu()" href="#">Click here to learn how difficulties work</a>\
+    </div>\
+    \
+    <div id="menu_difficulties_explained" class="menu_view">\
+        <div id="menu_difficulties_explained_title" class="menu_card_title">Computer Difficulty Levels Explained</div>\
+        <button id="menu_difficulties_explained_close_button" class="close_button" onclick="menu_card_close_click()">X</button>\
+        <div id="menu_difficulties_explained_body">\
+            For all three difficulty levels the cards are dealt completely at random to both you and to the computer players. Computer players are not given any special advantage and they do not know what cards are in your hand or in any other players\' hands. The difference between the easy, standard, and pro players is the strategy used to choose their plays.  If you are finding that the computer is beating you, you will likely benefit from understanding how the computer chooses its next move.\
+            <br>\
+            <br>\
+            <center>\
+                <div style="font-size:16pt">\
+                    <u>Easy Computer Strategy</u>\
+                </div>\
+            </center>\
+            <table style="width:100%; text-align:left; font-size:12pt;">\
+                <tr>\
+                    <td valign="top" width="80pt">Passing:</td>\
+                    <td>Chooses a random set of cards.</td>\
+                </tr>\
+                <tr>\
+                    <td valign="top" width="80pt">Playing:</td>\
+                    <td>Chooses a random valid card.</td>\
+                </tr>\
+            </table>\
+            <br>\
+            <center>\
+                <div style="font-size:16pt">\
+                    <u>Standard Computer Strategy</u>\
+                </div>\
+            </center>\
+            <table style="width:100%; text-align:left; font-size:12pt;">\
+                <tr>\
+                    <td valign="top" width="80pt">Passing:</td>\
+                    <td>Chooses the three highest valued cards where value is determined by the card number (Ace, King, Queen, etc...) and suit (Spades, Hearts, Diamonds, Clubs).</td>\
+                </tr>\
+                <tr>\
+                    <td valign="top" width="80pt">Playing:</td>\
+                <td>When playing first, chooses the lowest card in hand.  When playing 2nd or 3rd, plays the highest card that will not take the trick, otherwise, plays the lowest card of suit.  When playing last, if there are points in the trick, plays the highest card that will not take the trick or if it must take the trick, plays the highest card of suit (avoiding the Queen of Spades).  If playing last and there are no points in the trick, plays the highest card in hand.  When the player is void in the lead suit, it will play its highest valued cards starting with QS, AS, AH, AD, AC, KS, KH, KD, KC, QH, QD, QC, etc...</td>\
+                </tr>\
+            </table>\
+            <br>\
+            <center>\
+                <div style="font-size:16pt">\
+                    <u>Pro Computer Strategy</u>\
+                </div>\
+            </center>\
+            <table style="width:100%; text-align:left; font-size:12pt;">\
+                <tr>\
+                    <td valign="top" width="80pt">Passing:</td>\
+                    <td>Chooses the three highest valued cards where value is determined by the card number (Ace, King, Queen, etc...) and suit (Spades, Hearts, Diamonds, Clubs).</td>\
+                </tr>\
+                <tr>\
+                    <td valign="top" width="80pt">Playing:</td>\
+                    <td>The pro computer evaluates each valid play by simulating random card distributions of the unseen cards taking into account which players are known to be void in particular suits.  When simulating a game, each player plays the rest of the round using the Standard Playing algorithm (see above).  At the end of each simulated round, the final score is recorded and the average round score is determined for each valid play.  The play that results in the lowest average simulated round score is used.</td>\
+                </tr>\
+            </table>\
+        </div>\
+    </div>\
+    \
+    <div id="menu_settings" class="menu_view">\
+        <div id="menu_settings_title" class="menu_card_title">Settings</div>\
+        <button id="menu_settings_close_button" class="close_button" onclick="menu_card_close_click()">X</button>\
+        <table style="margin-left:5%; width:95%; margin-top:55pt; margin-bottom: 10px; text-align:left; font-size:16pt;">\
+            <tr>\
+                <td>Hint button on all levels:</td>\
+                <td>\
+                    <label class="switch">\
+                        <input id="setting_hints_checkbox" type="checkbox" onclick="game.SettingHintsClicked(this)">\
+                        <span class="slider round"></span>\
+                    </label>\
+                </td>\
+            </tr>\
+            <tr>\
+                <td>Losing score:</td>\
+                <td>\
+                    <select id="losing_score_dropdown" name="losing_score_dropdown" onchange="game.SettingLosingScoreChanged(this)">\
+                        <option value="50">50</option>\
+                        <option value="100">100</option>\
+                        <option value="200">200</option>\
+                        <option value="500">500</option>\
+                    </select>\
+                </td>\
+            </tr>\
+        </table>\
+        <div style="margin-left:5%; width:95%; text-align:left; font-size:16pt;">Board Background:</div>\
+        <div class="image-selector">\
+            <input id="wood_light" type="radio" name="settings_boardbackground_selector" value="wood_light" onclick="BoardSelectorClick(this)"/>\
+            <label class="board-selector-item background_wood_light" for="wood_light"></label>\
+            <input id="wood" type="radio" name="settings_boardbackground_selector" value="wood" onclick="BoardSelectorClick(this)" />\
+            <label class="board-selector-item background_wood" for="wood"></label>\
+            <input id="wood_dark" type="radio" name="settings_boardbackground_selector" value="wood_dark" onclick="BoardSelectorClick(this)"/>\
+            <label class="board-selector-item background_wood_dark" for="wood_dark"></label>\
+            <input id="wood_gray" type="radio" name="settings_boardbackground_selector" value="wood_gray" onclick="BoardSelectorClick(this)"/>\
+            <label class="board-selector-item background_wood_gray" for="wood_gray"></label>\
+            <input id="green" type="radio" name="settings_boardbackground_selector" value="green" onclick="BoardSelectorClick(this)"/>\
+            <label class="board-selector-item background_green" for="green"></label>\
+            <input id="red" type="radio" name="settings_boardbackground_selector" value="red" onclick="BoardSelectorClick(this)" />\
+            <label class="board-selector-item background_red" for="red"></label>\
+            <input id="blue" type="radio" name="settings_boardbackground_selector" value="blue" onclick="BoardSelectorClick(this)" />\
+            <label class="board-selector-item background_blue" for="blue"></label>\
+        </div>\
+        \
+        <div style="margin-left:5%; width:95%; text-align:left; font-size:16pt;">Card Color:</div>\
+        <div class="image-selector">\
+            <input id="card_blue" type="radio" name="settings_card_color_selector" value="blue" onclick="CardSelectorClick(this)" />\
+            <label class="card-selector-item card_back_blue" for="card_blue"></label>\
+            <input id="card_red" type="radio" name="settings_card_color_selector" value="red" onclick="CardSelectorClick(this)" />\
+            <label class="card-selector-item card_back_red" for="card_red"></label>\
+            <input id="card_green" type="radio" name="settings_card_color_selector" value="green" onclick="CardSelectorClick(this)" />\
+            <label class="card-selector-item card_back_green" for="card_green"></label>\
+        </div>\
+    </div>\
+    \
+    <div id="menu_statistics" class="menu_view">\
+        <div id="menu_statistics_title" class="menu_card_title">Statistics</div>\
+        <button id="menu_statistics_close_button" class="close_button" onclick="menu_card_close_click()">X</button>\
+        <table id="menu_statistics_table">\
+            <tr>\
+                <td></td>\
+                <td class="menu_statistics_table_stat">Easy</td>\
+                <td class="menu_statistics_table_stat">Standard</td>\
+                <td class="menu_statistics_table_stat">Pro</td>\
+                <td class="menu_statistics_table_stat_total">Total</td>\
+            </tr>\
+            <tr>\
+                <td class="menu_statistics_table_category">Games Played</td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_games_played_Easy"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_games_played_Standard"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_games_played_Pro"></td>\
+                <td class="menu_statistics_table_stat_total" id="menu_stat_games_played_Total">0</td>\
+            </tr>\
+            <tr>\
+                <td class="menu_statistics_table_category">Wins</td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_wins_Easy"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_wins_Standard"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_wins_Pro"></td>\
+                <td class="menu_statistics_table_stat_total" id="menu_stat_wins_Total">0</td>\
+            </tr>\
+            <tr>\
+                <td class="menu_statistics_table_category">2nd Places</td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_2nd_Easy"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_2nd_Standard"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_2nd_Pro"></td>\
+                <td class="menu_statistics_table_stat_total" id="menu_stat_2nd_Total">0</td>\
+            </tr>\
+            <tr>\
+                <td class="menu_statistics_table_category">3rd Places</td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_3rd_Easy"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_3rd_Standard"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_3rd_Pro"></td>\
+                <td class="menu_statistics_table_stat_total" id="menu_stat_3rd_Total">0</td>\
+            </tr>\
+            <tr>\
+                <td class="menu_statistics_table_category">4th Places</td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_4th_Easy"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_4th_Standard"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_4th_Pro"></td>\
+                <td class="menu_statistics_table_stat_total" id="menu_stat_4th_Total">0</td>\
+            </tr>\
+            <tr>\
+                <td class="menu_statistics_table_category">Moons Shot</td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_moons_shot_Easy"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_moons_shot_Standard"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_moons_shot_Pro"></td>\
+                <td class="menu_statistics_table_stat_total" id="menu_stat_moons_shot_Total">0</td>\
+            </tr>\
+            <tr>\
+                <td class="menu_statistics_table_category">Win Percentage</td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_win_percent_Easy"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_win_percent_Standard"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_win_percent_Pro"></td>\
+                <td class="menu_statistics_table_stat_total" id="menu_stat_win_percent_Total"></td>\
+            </tr>\
+        </table>\
+        <table id="menu_statistics_buttons_table">\
+            <tr>\
+                <td>\
+                    <center>\
+                        <button id="menu_statistics_reset_button" onclick="game.ResetStatisticsButtonClick()">Reset<br>Statistics</button>\
+                    </center>\
+                </td>\
+            </tr>\
+        </table>\
+    </div>';
+
     var deckTopIndex = 0;
     var cards = [
-        { id: 'AS', rank: 1, value: 14, suit: 'S', suitInt: 2, image: "url('images/Card_Spade_Ace.jpg')" },
-        { id: '2S', rank: 2, value: 2, suit: 'S', suitInt: 2, image: "url('images/Card_Spade_2.jpg')" },
-        { id: '3S', rank: 3, value: 3, suit: 'S', suitInt: 2, image: "url('images/Card_Spade_3.jpg')" },
-        { id: '4S', rank: 4, value: 4, suit: 'S', suitInt: 2, image: "url('images/Card_Spade_4.jpg')" },
-        { id: '5S', rank: 5, value: 5, suit: 'S', suitInt: 2, image: "url('images/Card_Spade_5.jpg')" },
-        { id: '6S', rank: 6, value: 6, suit: 'S', suitInt: 2, image: "url('images/Card_Spade_6.jpg')" },
-        { id: '7S', rank: 7, value: 7, suit: 'S', suitInt: 2, image: "url('images/Card_Spade_7.jpg')" },
-        { id: '8S', rank: 8, value: 8, suit: 'S', suitInt: 2, image: "url('images/Card_Spade_8.jpg')" },
-        { id: '9S', rank: 9, value: 9, suit: 'S', suitInt: 2, image: "url('images/Card_Spade_9.jpg')" },
-        { id: 'TS', rank: 10, value: 10, suit: 'S', suitInt: 2, image: "url('images/Card_Spade_10.jpg')" },
-        { id: 'JS', rank: 11, value: 11, suit: 'S', suitInt: 2, image: "url('images/Card_Spade_Jack.jpg')" },
-        { id: 'QS', rank: 12, value: 12, suit: 'S', suitInt: 2, image: "url('images/Card_Spade_Queen.jpg')" },
-        { id: 'KS', rank: 13, value: 13, suit: 'S', suitInt: 2, image: "url('images/Card_Spade_King.jpg')" },
-        { id: 'AD', rank: 1, value: 14, suit: 'D', suitInt: 1, image: "url('images/Card_Diamond_Ace.jpg')" },
-        { id: '2D', rank: 2, value: 2, suit: 'D', suitInt: 1, image: "url('images/Card_Diamond_2.jpg')" },
-        { id: '3D', rank: 3, value: 3, suit: 'D', suitInt: 1, image: "url('images/Card_Diamond_3.jpg')" },
-        { id: '4D', rank: 4, value: 4, suit: 'D', suitInt: 1, image: "url('images/Card_Diamond_4.jpg')" },
-        { id: '5D', rank: 5, value: 5, suit: 'D', suitInt: 1, image: "url('images/Card_Diamond_5.jpg')" },
-        { id: '6D', rank: 6, value: 6, suit: 'D', suitInt: 1, image: "url('images/Card_Diamond_6.jpg')" },
-        { id: '7D', rank: 7, value: 7, suit: 'D', suitInt: 1, image: "url('images/Card_Diamond_7.jpg')" },
-        { id: '8D', rank: 8, value: 8, suit: 'D', suitInt: 1, image: "url('images/Card_Diamond_8.jpg')" },
-        { id: '9D', rank: 9, value: 9, suit: 'D', suitInt: 1, image: "url('images/Card_Diamond_9.jpg')" },
-        { id: 'TD', rank: 10, value: 10, suit: 'D', suitInt: 1, image: "url('images/Card_Diamond_10.jpg')" },
-        { id: 'JD', rank: 11, value: 11, suit: 'D', suitInt: 1, image: "url('images/Card_Diamond_Jack.jpg')" },
-        { id: 'QD', rank: 12, value: 12, suit: 'D', suitInt: 1, image: "url('images/Card_Diamond_Queen.jpg')" },
-        { id: 'KD', rank: 13, value: 13, suit: 'D', suitInt: 1, image: "url('images/Card_Diamond_King.jpg')" },
-        { id: 'AC', rank: 1, value: 14, suit: 'C', suitInt: 0, image: "url('images/Card_Club_Ace.jpg')" },
-        { id: '2C', rank: 2, value: 2, suit: 'C', suitInt: 0, image: "url('images/Card_Club_2.jpg')" },
-        { id: '3C', rank: 3, value: 3, suit: 'C', suitInt: 0, image: "url('images/Card_Club_3.jpg')" },
-        { id: '4C', rank: 4, value: 4, suit: 'C', suitInt: 0, image: "url('images/Card_Club_4.jpg')" },
-        { id: '5C', rank: 5, value: 5, suit: 'C', suitInt: 0, image: "url('images/Card_Club_5.jpg')" },
-        { id: '6C', rank: 6, value: 6, suit: 'C', suitInt: 0, image: "url('images/Card_Club_6.jpg')" },
-        { id: '7C', rank: 7, value: 7, suit: 'C', suitInt: 0, image: "url('images/Card_Club_7.jpg')" },
-        { id: '8C', rank: 8, value: 8, suit: 'C', suitInt: 0, image: "url('images/Card_Club_8.jpg')" },
-        { id: '9C', rank: 9, value: 9, suit: 'C', suitInt: 0, image: "url('images/Card_Club_9.jpg')" },
-        { id: 'TC', rank: 10, value: 10, suit: 'C', suitInt: 0, image: "url('images/Card_Club_10.jpg')" },
-        { id: 'JC', rank: 11, value: 11, suit: 'C', suitInt: 0, image: "url('images/Card_Club_Jack.jpg')" },
-        { id: 'QC', rank: 12, value: 12, suit: 'C', suitInt: 0, image: "url('images/Card_Club_Queen.jpg')" },
-        { id: 'KC', rank: 13, value: 13, suit: 'C', suitInt: 0, image: "url('images/Card_Club_King.jpg')" },
-        { id: 'AH', rank: 1, value: 14, suit: 'H', suitInt: 3, image: "url('images/Card_Heart_Ace.jpg')" },
-        { id: '2H', rank: 2, value: 2, suit: 'H', suitInt: 3, image: "url('images/Card_Heart_2.jpg')" },
-        { id: '3H', rank: 3, value: 3, suit: 'H', suitInt: 3, image: "url('images/Card_Heart_3.jpg')" },
-        { id: '4H', rank: 4, value: 4, suit: 'H', suitInt: 3, image: "url('images/Card_Heart_4.jpg')" },
-        { id: '5H', rank: 5, value: 5, suit: 'H', suitInt: 3, image: "url('images/Card_Heart_5.jpg')" },
-        { id: '6H', rank: 6, value: 6, suit: 'H', suitInt: 3, image: "url('images/Card_Heart_6.jpg')" },
-        { id: '7H', rank: 7, value: 7, suit: 'H', suitInt: 3, image: "url('images/Card_Heart_7.jpg')" },
-        { id: '8H', rank: 8, value: 8, suit: 'H', suitInt: 3, image: "url('images/Card_Heart_8.jpg')" },
-        { id: '9H', rank: 9, value: 9, suit: 'H', suitInt: 3, image: "url('images/Card_Heart_9.jpg')" },
-        { id: 'TH', rank: 10, value: 10, suit: 'H', suitInt: 3, image: "url('images/Card_Heart_10.jpg')" },
-        { id: 'JH', rank: 11, value: 11, suit: 'H', suitInt: 3, image: "url('images/Card_Heart_Jack.jpg')" },
-        { id: 'QH', rank: 12, value: 12, suit: 'H', suitInt: 3, image: "url('images/Card_Heart_Queen.jpg')" },
-        { id: 'KH', rank: 13, value: 13, suit: 'H', suitInt: 3, image: "url('images/Card_Heart_King.jpg')" }
+        { id: 'AS', rank: 1, value: 14, suit: 'S', suitInt: 2, image: "url('shared/images/Card_Spade_Ace.jpg')" },
+        { id: '2S', rank: 2, value: 2, suit: 'S', suitInt: 2, image: "url('shared/images/Card_Spade_2.jpg')" },
+        { id: '3S', rank: 3, value: 3, suit: 'S', suitInt: 2, image: "url('shared/images/Card_Spade_3.jpg')" },
+        { id: '4S', rank: 4, value: 4, suit: 'S', suitInt: 2, image: "url('shared/images/Card_Spade_4.jpg')" },
+        { id: '5S', rank: 5, value: 5, suit: 'S', suitInt: 2, image: "url('shared/images/Card_Spade_5.jpg')" },
+        { id: '6S', rank: 6, value: 6, suit: 'S', suitInt: 2, image: "url('shared/images/Card_Spade_6.jpg')" },
+        { id: '7S', rank: 7, value: 7, suit: 'S', suitInt: 2, image: "url('shared/images/Card_Spade_7.jpg')" },
+        { id: '8S', rank: 8, value: 8, suit: 'S', suitInt: 2, image: "url('shared/images/Card_Spade_8.jpg')" },
+        { id: '9S', rank: 9, value: 9, suit: 'S', suitInt: 2, image: "url('shared/images/Card_Spade_9.jpg')" },
+        { id: 'TS', rank: 10, value: 10, suit: 'S', suitInt: 2, image: "url('shared/images/Card_Spade_10.jpg')" },
+        { id: 'JS', rank: 11, value: 11, suit: 'S', suitInt: 2, image: "url('shared/images/Card_Spade_Jack.jpg')" },
+        { id: 'QS', rank: 12, value: 12, suit: 'S', suitInt: 2, image: "url('shared/images/Card_Spade_Queen.jpg')" },
+        { id: 'KS', rank: 13, value: 13, suit: 'S', suitInt: 2, image: "url('shared/images/Card_Spade_King.jpg')" },
+        { id: 'AD', rank: 1, value: 14, suit: 'D', suitInt: 1, image: "url('shared/images/Card_Diamond_Ace.jpg')" },
+        { id: '2D', rank: 2, value: 2, suit: 'D', suitInt: 1, image: "url('shared/images/Card_Diamond_2.jpg')" },
+        { id: '3D', rank: 3, value: 3, suit: 'D', suitInt: 1, image: "url('shared/images/Card_Diamond_3.jpg')" },
+        { id: '4D', rank: 4, value: 4, suit: 'D', suitInt: 1, image: "url('shared/images/Card_Diamond_4.jpg')" },
+        { id: '5D', rank: 5, value: 5, suit: 'D', suitInt: 1, image: "url('shared/images/Card_Diamond_5.jpg')" },
+        { id: '6D', rank: 6, value: 6, suit: 'D', suitInt: 1, image: "url('shared/images/Card_Diamond_6.jpg')" },
+        { id: '7D', rank: 7, value: 7, suit: 'D', suitInt: 1, image: "url('shared/images/Card_Diamond_7.jpg')" },
+        { id: '8D', rank: 8, value: 8, suit: 'D', suitInt: 1, image: "url('shared/images/Card_Diamond_8.jpg')" },
+        { id: '9D', rank: 9, value: 9, suit: 'D', suitInt: 1, image: "url('shared/images/Card_Diamond_9.jpg')" },
+        { id: 'TD', rank: 10, value: 10, suit: 'D', suitInt: 1, image: "url('shared/images/Card_Diamond_10.jpg')" },
+        { id: 'JD', rank: 11, value: 11, suit: 'D', suitInt: 1, image: "url('shared/images/Card_Diamond_Jack.jpg')" },
+        { id: 'QD', rank: 12, value: 12, suit: 'D', suitInt: 1, image: "url('shared/images/Card_Diamond_Queen.jpg')" },
+        { id: 'KD', rank: 13, value: 13, suit: 'D', suitInt: 1, image: "url('shared/images/Card_Diamond_King.jpg')" },
+        { id: 'AC', rank: 1, value: 14, suit: 'C', suitInt: 0, image: "url('shared/images/Card_Club_Ace.jpg')" },
+        { id: '2C', rank: 2, value: 2, suit: 'C', suitInt: 0, image: "url('shared/images/Card_Club_2.jpg')" },
+        { id: '3C', rank: 3, value: 3, suit: 'C', suitInt: 0, image: "url('shared/images/Card_Club_3.jpg')" },
+        { id: '4C', rank: 4, value: 4, suit: 'C', suitInt: 0, image: "url('shared/images/Card_Club_4.jpg')" },
+        { id: '5C', rank: 5, value: 5, suit: 'C', suitInt: 0, image: "url('shared/images/Card_Club_5.jpg')" },
+        { id: '6C', rank: 6, value: 6, suit: 'C', suitInt: 0, image: "url('shared/images/Card_Club_6.jpg')" },
+        { id: '7C', rank: 7, value: 7, suit: 'C', suitInt: 0, image: "url('shared/images/Card_Club_7.jpg')" },
+        { id: '8C', rank: 8, value: 8, suit: 'C', suitInt: 0, image: "url('shared/images/Card_Club_8.jpg')" },
+        { id: '9C', rank: 9, value: 9, suit: 'C', suitInt: 0, image: "url('shared/images/Card_Club_9.jpg')" },
+        { id: 'TC', rank: 10, value: 10, suit: 'C', suitInt: 0, image: "url('shared/images/Card_Club_10.jpg')" },
+        { id: 'JC', rank: 11, value: 11, suit: 'C', suitInt: 0, image: "url('shared/images/Card_Club_Jack.jpg')" },
+        { id: 'QC', rank: 12, value: 12, suit: 'C', suitInt: 0, image: "url('shared/images/Card_Club_Queen.jpg')" },
+        { id: 'KC', rank: 13, value: 13, suit: 'C', suitInt: 0, image: "url('shared/images/Card_Club_King.jpg')" },
+        { id: 'AH', rank: 1, value: 14, suit: 'H', suitInt: 3, image: "url('shared/images/Card_Heart_Ace.jpg')" },
+        { id: '2H', rank: 2, value: 2, suit: 'H', suitInt: 3, image: "url('shared/images/Card_Heart_2.jpg')" },
+        { id: '3H', rank: 3, value: 3, suit: 'H', suitInt: 3, image: "url('shared/images/Card_Heart_3.jpg')" },
+        { id: '4H', rank: 4, value: 4, suit: 'H', suitInt: 3, image: "url('shared/images/Card_Heart_4.jpg')" },
+        { id: '5H', rank: 5, value: 5, suit: 'H', suitInt: 3, image: "url('shared/images/Card_Heart_5.jpg')" },
+        { id: '6H', rank: 6, value: 6, suit: 'H', suitInt: 3, image: "url('shared/images/Card_Heart_6.jpg')" },
+        { id: '7H', rank: 7, value: 7, suit: 'H', suitInt: 3, image: "url('shared/images/Card_Heart_7.jpg')" },
+        { id: '8H', rank: 8, value: 8, suit: 'H', suitInt: 3, image: "url('shared/images/Card_Heart_8.jpg')" },
+        { id: '9H', rank: 9, value: 9, suit: 'H', suitInt: 3, image: "url('shared/images/Card_Heart_9.jpg')" },
+        { id: 'TH', rank: 10, value: 10, suit: 'H', suitInt: 3, image: "url('shared/images/Card_Heart_10.jpg')" },
+        { id: 'JH', rank: 11, value: 11, suit: 'H', suitInt: 3, image: "url('shared/images/Card_Heart_Jack.jpg')" },
+        { id: 'QH', rank: 12, value: 12, suit: 'H', suitInt: 3, image: "url('shared/images/Card_Heart_Queen.jpg')" },
+        { id: 'KH', rank: 13, value: 13, suit: 'H', suitInt: 3, image: "url('shared/images/Card_Heart_King.jpg')" }
     ];
 
     this.GetCards = function () {
@@ -111,7 +412,7 @@ var Game = function () {
     cardHighlight.className = "cardFrontHighlight";
     front.appendChild(cardHighlight);
 
-    var cardBackURI = "url('images/card_back_" + GetSetting('setting_card_color') + ".jpg')";
+    var cardBackURI = "url('shared/images/card_back_" + GetSetting('setting_card_color') + ".jpg')";
 
     for (var i = 0; i < cards.length; i++) {
         var newCard = cardElement.cloneNode(true);
@@ -427,7 +728,7 @@ var Game = function () {
                 var firstLeft = -40;
                 var lastLeft = -40;
                 var firstTop = 250;
-                var lastTop = window.innerHeight-300;
+                var lastTop = gameContainer.innerHeight-300;
                 var handWidth = lastTop - firstTop;
                 var cardSpacing = handWidth/cardCount;
                 var curTop = firstTop;
@@ -440,8 +741,8 @@ var Game = function () {
                 curLeft = (firstLeft + lastLeft)*0.5;
                 return [curLeft-cardWidthHalf, curTop-cardHeightHalf, 90];
             case 'North':
-                var firstLeft = window.innerWidth*0.5 - 120;
-                var lastLeft = window.innerWidth*0.5 + 120;
+                var firstLeft = gameContainer.innerWidth*0.5 - 120;
+                var lastLeft = gameContainer.innerWidth*0.5 + 120;
                 var firstTop = -40;
                 var lastTop = -40;
                 var handWidth = lastLeft - firstLeft;
@@ -456,10 +757,10 @@ var Game = function () {
                 curLeft = curLeft + index*cardSpacing;
                 return [curLeft-cardWidthHalf, curTop-cardHeightHalf, 0];
             case 'East':
-                var firstLeft = window.innerWidth+40;
-                var lastLeft = window.innerWidth+40;
+                var firstLeft = gameContainer.innerWidth+40;
+                var lastLeft = gameContainer.innerWidth+40;
                 var firstTop = 250;
-                var lastTop = window.innerHeight - 300;
+                var lastTop = gameContainer.innerHeight - 300;
                 var handWidth = lastTop - firstTop;
                 var cardSpacing = handWidth/cardCount;
                 var curTop = firstTop;
@@ -473,22 +774,21 @@ var Game = function () {
                 return [curLeft-cardWidthHalf, curTop-cardHeightHalf, -90];
             default:
                 var firstLeft = 150;
-                var lastLeft = window.innerWidth-150;
-                var firstTop = window.innerHeight-180;
-                var lastTop = window.innerHeight-180;
+                var lastLeft = gameContainer.innerWidth-150;
+                var firstTop = gameContainer.innerHeight-180;
+                var lastTop = gameContainer.innerHeight-180;
                 var handWidth = lastLeft-firstLeft;
                 var cardSpacing = handWidth/(cardCount-1);
-                var curLeft = firstLeft;
                 var maxSpacing = cardWidthHalf;
                 if (cardSpacing > maxSpacing) {
                     cardSpacing = maxSpacing;
-                    curLeft = firstLeft + (handWidth-cardSpacing*(cardCount-1))*0.5;
-                    firstTop = window.innerHeight-150;
-                    lastTop = window.innerHeight-150;
+                    handWidth = cardSpacing*(cardCount-1);
+                    firstLeft = (gameContainer.innerWidth - handWidth)*0.5;
+                    lastLeft = (gameContainer.innerWidth + handWidth)*0.5;
                 }
-                curLeft = curLeft + index*cardSpacing;
-                var percent = (curLeft - firstLeft)/handWidth;
-                var radius = handWidth*3;
+                var curLeft = firstLeft + index*cardSpacing;
+                var percent = handWidth > 0 ? (curLeft - firstLeft)/handWidth : 0.5;
+                var radius = 2000;
                 var distanceFromCenter = handWidth*(0.5 - percent);
                 var curveHeight = Math.sqrt(radius*radius-distanceFromCenter*distanceFromCenter) - Math.sqrt(radius*radius - handWidth*0.5*handWidth*0.5); 
                 var curveRotation = Math.asin(-distanceFromCenter/radius)*180/Math.PI;
@@ -500,7 +800,7 @@ var Game = function () {
     this.InitializeGame = function(difficulty) {
         // Game properties
         this.skillLevel = difficulty;
-        this.losingScore = Number(GetSetting('setting_losing_score'));
+        this.losingScore = Number(this.settings.GetSetting('setting_losing_score'));
         this.cardsPlayedThisRound = [];
         this.trickCards = [];
         this.roundNumber = 0;
@@ -508,46 +808,46 @@ var Game = function () {
         this.roundScores = [];
 
         this.players = [];
-        var player = new Player();
+        var player = new HeartsPlayer();
         player.Initialize('You', true, 'Pro', 'South');
         this.players.push(player);
         switch(difficulty)
         {
             case 'Easy':
             {
-                player = new Player();
+                player = new HeartsPlayer();
                 player.Initialize('Conrad', false, difficulty, 'West');
                 this.players.push(player);
-                player = new Player();
+                player = new HeartsPlayer();
                 player.Initialize('Louisa', false, difficulty, 'North');
                 this.players.push(player);
-                player = new Player();
+                player = new HeartsPlayer();
                 player.Initialize('Davina', false, difficulty, 'East');
                 this.players.push(player);
             }
             break;
             case 'Standard':
             {
-                player = new Player();
+                player = new HeartsPlayer();
                 player.Initialize('Catalina', false, difficulty, 'West');
                 this.players.push(player);
-                player = new Player();
+                player = new HeartsPlayer();
                 player.Initialize('Amelia', false, difficulty, 'North');
                 this.players.push(player);
-                player = new Player();
+                player = new HeartsPlayer();
                 player.Initialize('Seward', false, difficulty, 'East');
                 this.players.push(player);
             }
             break;
             default:
             {
-                player = new Player();
+                player = new HeartsPlayer();
                 player.Initialize('Charlotte', false, difficulty, 'West');
                 this.players.push(player);
-                player = new Player();
+                player = new HeartsPlayer();
                 player.Initialize('Dixon', false, difficulty, 'North');
                 this.players.push(player);
-                player = new Player();
+                player = new HeartsPlayer();
                 player.Initialize('Isabella', false, difficulty, 'East');
                 this.players.push(player);
             }
@@ -572,7 +872,7 @@ var Game = function () {
         HideAllMessages();
 
         scoreboard.Initialize();
-
+        
         this.CreatePlayerInfoViews();
         
         this.AnimateDealCardsForRound();
@@ -634,29 +934,29 @@ var Game = function () {
         switch (playerPosition) {
             case 'South':
                 if (game.players[0].currentRoundPoints > 0) {
-                    return [window.innerWidth*0.5-220,window.innerHeight-350];
+                    return [gameContainer.innerWidth*0.5-220,gameContainer.innerHeight-350];
                 } else {
-                    return [window.innerWidth*0.5-220,window.innerHeight-330];
+                    return [gameContainer.innerWidth*0.5-220,gameContainer.innerHeight-330];
                 }
             case 'West':
                 return [40,250];
             case 'North':
-                return [window.innerWidth*0.5 + 160,30];
+                return [gameContainer.innerWidth*0.5 + 160,30];
             default:
-                return [window.innerWidth-140,250];
+                return [gameContainer.innerWidth-140,250];
         }
     }
 
     function GetPlayerScorePosition(playerPosition) {
         switch (playerPosition) {
             case 'South':
-                return [window.innerWidth*0.5-220,window.innerHeight-330];
+                return [gameContainer.innerWidth*0.5-220,gameContainer.innerHeight-330];
             case 'West':
                 return [40,270];
             case 'North':
-                return [window.innerWidth*0.5 + 160,50];
+                return [gameContainer.innerWidth*0.5 + 160,50];
             default:
-                return [window.innerWidth-140,270];
+                return [gameContainer.innerWidth-140,270];
         }
     }
 
@@ -784,7 +1084,7 @@ var Game = function () {
         var player = this.players[3];
         for (var i=0; i<player.cards.length; i++) {
             var cardLocation = GetHandCardLocation('East', i, player.cards.length);
-            var startLeft = window.innerWidth + 300;
+            var startLeft = gameContainer.innerWidth + 300;
             var endLeft = cardLocation[0];
             var startTop = cardLocation[1];
             var endtop = cardLocation[1];
@@ -821,9 +1121,9 @@ var Game = function () {
         var player = this.players[0];
         for (var i=0; i<player.cards.length; i++) {
             var cardLocation = GetHandCardLocation('South', i, player.cards.length);
-            var startLeft = window.innerWidth*0.5;
+            var startLeft = gameContainer.innerWidth*0.5;
             var endLeft = cardLocation[0];
-            var startTop = window.innerHeight + 100;
+            var startTop = gameContainer.innerHeight + 100;
             var endtop = cardLocation[1];
             var cardView = player.cards[i].cardView;
             flipDownCard(cardView, false);
@@ -919,7 +1219,7 @@ var Game = function () {
         currentPassingCardView_1 = null;
         currentPassingCardView_2 = null;
 
-        var selectPassingCardsMessage = document.getElementById('select_passing_cards_message');
+        var selectPassingCardsMessage = document.getElementById('hearts_select_passing_cards_message');
         switch (passingIndex) {
             case 0:
                 selectPassingCardsMessage.innerText = "Select 3 cards to pass left:";
@@ -960,7 +1260,7 @@ var Game = function () {
 
         this.currentMoveStage = "ChoosingPassCards";
         
-        if (this.skillLevel === 'Easy' || GetSetting('setting_hints')) {
+        if (this.skillLevel === 'Easy' || this.settings.GetSetting('setting_hints')) {
           ShowHintButton(1000);
         }
     }
@@ -974,13 +1274,13 @@ var Game = function () {
         var left = 0;
         switch (index) {
             case 0:
-                left = window.innerWidth*0.5 - 150;
+                left = gameContainer.innerWidth*0.5 - 130;
                 break;
             case 1:
-                left = window.innerWidth*0.5;
+                left = gameContainer.innerWidth*0.5;
                 break;
             default:
-                left = window.innerWidth*0.5 + 150;
+                left = gameContainer.innerWidth*0.5 + 130;
                 break;
         }
 
@@ -1164,7 +1464,7 @@ var Game = function () {
     }
 
     function ShowPassCardsButton() {
-        var passCardsRegion = document.getElementById('confirm_passing_cards_region');
+        var passCardsRegion = document.getElementById('hearts_confirm_passing_cards_region');
         passCardsRegion.positionFunction = 'GetPassingCardsConfirmLocation()';
         var loc = eval(passCardsRegion.positionFunction);
         passCardsRegion.style.transition = 'none';
@@ -1180,11 +1480,11 @@ var Game = function () {
 
     function GetPassingCardsConfirmLocation() {
         var loc = GetPassingCardsLocation(0);
-        return [window.innerWidth*0.5, loc[1] + 185];
+        return [gameContainer.innerWidth*0.5, loc[1] + 185];
     }
 
     function HidePassCardsButton() {
-        var confirmCribRegion = document.getElementById('confirm_passing_cards_region');
+        var confirmCribRegion = document.getElementById('hearts_confirm_passing_cards_region');
         with (confirmCribRegion.style) {
             transition = "0.2s linear";
             opacity = 0;
@@ -1194,15 +1494,15 @@ var Game = function () {
 
     
     function GetHintButtonPosition() {
-        var left = window.innerWidth*0.5 + 250;
-        if (left > window.innerWidth - 130) {
-            left = window.innerWidth - 130;
+        var left = gameContainer.innerWidth*0.5 + 250;
+        if (left > gameContainer.innerWidth - 130) {
+            left = gameContainer.innerWidth - 130;
         }
-        return [left, window.innerHeight-340];
+        return [left, gameContainer.innerHeight-340];
     }
 
     function ShowHintButton(delay) {
-        var hintButton = document.getElementById('hint_button');
+        var hintButton = document.getElementById('hearts_hint_button');
         hintButton.positionFunction = "GetHintButtonPosition()";
         hintButton.style.transition = "none";
         var loc = eval(hintButton.positionFunction);
@@ -1220,7 +1520,7 @@ var Game = function () {
     }
 
     function HideHintButton() {
-        var hintButton = document.getElementById('hint_button');
+        var hintButton = document.getElementById('hearts_hint_button');
         hintButton.style.opacity = 0;
         hintButton.style.pointerEvents = "none";
     }
@@ -1231,7 +1531,7 @@ var Game = function () {
 
     this.OnTestButtonClick = function() {
         var player = this.players[0];
-        var bestResult = FindOptimalPlayForCurrentPlayer(game, true, true);
+        var bestResult = HeartsFindOptimalPlayForCurrentPlayer(game, true, true);
         BumpCard(bestResult.optimalCard.cardView);
     }
 
@@ -1298,7 +1598,7 @@ var Game = function () {
             }
         }
 
-        var passingCardsMessage = document.getElementById('select_passing_cards_message');
+        var passingCardsMessage = document.getElementById('hearts_select_passing_cards_message');
         with (passingCardsMessage.style) {
             transition = "0.3s linear";
             transitionDelay = "0s";
@@ -1436,7 +1736,7 @@ var Game = function () {
     }
 
     this.PromptPlayerToPlayCard = function() {
-        var playerPrompt = document.getElementById('player_play_prompt');
+        var playerPrompt = document.getElementById('hearts_player_play_prompt');
         playerPrompt.positionFunction = "GetTrickPlayPromptLocation()";
         playerPrompt.style.transition = 'none';
         var loc = eval(playerPrompt.positionFunction);
@@ -1471,7 +1771,7 @@ var Game = function () {
             }
         }
         
-        if (this.skillLevel === 'Easy' || GetSetting('setting_hints')) {
+        if (this.skillLevel === 'Easy' || this.settings.GetSetting('setting_hints')) {
             ShowHintButton(0);
         }
 
@@ -1479,19 +1779,19 @@ var Game = function () {
     }
 
     function GetTrickPlayPromptLocation() {
-        return [window.innerWidth*0.5, 350]; 
+        return [gameContainer.innerWidth*0.5, 350]; 
     }
 
     function GetTrickDiscardLocation(playerPostion) {
         switch (playerPostion) {
             case 'South':
-                return [window.innerWidth*0.5 - cardLoweredWidth*0.5, 330 - cardLoweredHeight*0.5];
+                return [gameContainer.innerWidth*0.5 - cardLoweredWidth*0.5, 330 - cardLoweredHeight*0.5];
             case 'West':
-                return [window.innerWidth*0.5 - cardLoweredWidth*1.5 - 20, 250 - cardLoweredHeight*0.5];
+                return [gameContainer.innerWidth*0.5 - cardLoweredWidth*1.5 - 20, 250 - cardLoweredHeight*0.5];
             case 'North':
-                return [window.innerWidth*0.5 - cardLoweredWidth*0.5, 150 - cardLoweredHeight*0.5];
+                return [gameContainer.innerWidth*0.5 - cardLoweredWidth*0.5, 150 - cardLoweredHeight*0.5];
             default:
-                return [window.innerWidth*0.5 + cardLoweredWidth*0.5 + 20, 250 - cardLoweredHeight*0.5];
+                return [gameContainer.innerWidth*0.5 + cardLoweredWidth*0.5 + 20, 250 - cardLoweredHeight*0.5];
         }
     }
 
@@ -1542,7 +1842,7 @@ var Game = function () {
 
     this.OnPlayerChosePlayCard = function(card) {
         this.currentMoveStage = 'None';
-        var playerPrompt = document.getElementById('player_play_prompt');
+        var playerPrompt = document.getElementById('hearts_player_play_prompt');
         with (playerPrompt.style) {
             transition = "0.1s linear";
             opacity = 0;
@@ -1699,13 +1999,13 @@ var Game = function () {
         var loc = GetHandCardLocation(playerPosition, 6, 12);
         switch (playerPosition) {
             case 'South':
-                return [loc[0], window.innerHeight + 150];
+                return [loc[0], gameContainer.innerHeight + 150];
             case 'West':
                 return [-150, loc[1]];
             case 'North':
                 return [loc[0], -150];
             default:
-                return [window.innerWidth + 150, loc[1]];
+                return [gameContainer.innerWidth + 150, loc[1]];
         }
     }
 
@@ -1722,47 +2022,47 @@ var Game = function () {
                 var heartTemplate = document.getElementById('BubbleScoreHeartTemplate');
                 var heartScoreBubble = heartTemplate.cloneNode(true);
                 heartScoreBubble.getElementsByClassName('BubbleScoreHeartsPoints')[0].innerText = "+" + heartsPoints;
-                posLeftHeart = window.innerWidth*0.5 - 50 - 25;
+                posLeftHeart = gameContainer.innerWidth*0.5 - 50 - 25;
                 var spadeTemplate = document.getElementById('BubbleScoreSpadeTemplate');
                 var spadeScoreBubble = spadeTemplate.cloneNode(true);
                 spadeScoreBubble.getElementsByClassName('BubbleScoreSpadesPoints')[0].innerText = "+" + spadesPoints;
-                posLeftSpade = window.innerWidth*0.5 + 25;
+                posLeftSpade = gameContainer.innerWidth*0.5 + 25;
             } else if (spadesPoints > 0) {
                 var spadeTemplate = document.getElementById('BubbleScoreSpadeTemplate');
                 var spadeScoreBubble = spadeTemplate.cloneNode(true);
                 spadeScoreBubble.getElementsByClassName('BubbleScoreSpadesPoints')[0].innerText = "+" + spadesPoints;
-                posLeftSpade = window.innerWidth*0.5 - 42
+                posLeftSpade = gameContainer.innerWidth*0.5 - 42
             } else if (heartsPoints > 0) {
                 var heartTemplate = document.getElementById('BubbleScoreHeartTemplate');
                 var heartScoreBubble = heartTemplate.cloneNode(true);
                 heartScoreBubble.getElementsByClassName('BubbleScoreHeartsPoints')[0].innerText = "+" + heartsPoints;
-                posLeftHeart = window.innerWidth*0.5 - 50
+                posLeftHeart = gameContainer.innerWidth*0.5 - 50
             }
             
             switch (playerPosition) {
                 case 'South':
-                    slideDistance = window.innerHeight*0.5;
+                    slideDistance = gameContainer.innerHeight*0.5;
                     var posLeftHeartEnd = posLeftHeart;
                     var posLeftSpadeEnd = posLeftSpade;
                     var posTopHeartEnd = posTop + slideDistance;
                     var posTopSpadeEnd = posTop + slideDistance;
                 break;
                 case 'West':
-                    slideDistance = window.innerWidth*0.5;
+                    slideDistance = gameContainer.innerWidth*0.5;
                     var posLeftHeartEnd = posLeftHeart - slideDistance;
                     var posLeftSpadeEnd = posLeftSpade - slideDistance;
                     var posTopHeartEnd = posTop;
                     var posTopSpadeEnd = posTop;
                 break;
                 case 'North':
-                    slideDistance = window.innerHeight*0.5;
+                    slideDistance = gameContainer.innerHeight*0.5;
                     var posLeftHeartEnd = posLeftHeart;
                     var posLeftSpadeEnd = posLeftSpade;
                     var posTopHeartEnd = posTop - slideDistance;
                     var posTopSpadeEnd = posTop - slideDistance;
                 break;
                 case 'East':
-                    slideDistance = window.innerWidth*0.5;
+                    slideDistance = gameContainer.innerWidth*0.5;
                     var posLeftHeartEnd = posLeftHeart + slideDistance;
                     var posLeftSpadeEnd = posLeftSpade + slideDistance;
                     var posTopHeartEnd = posTop;
@@ -1859,8 +2159,8 @@ var Game = function () {
             this.AnimateShootTheMoonForPlayer(moonShootPlayer);
             if (moonShootPlayer.isHuman) {
                 var setting = 'stat_moons_shot_' + this.skillLevel;
-                var settingVal = GetStatistic(setting);
-                SetStatistic(setting, settingVal + 1);
+                var settingVal = this.settings.GetStatistic(setting);
+                this.settings.SetStatistic(setting, settingVal + 1);
             }
         } else {
             this.ContinueAfterRoundResultAnimations();
@@ -1885,27 +2185,27 @@ var Game = function () {
         switch (player.playerPosition) {
             case 'South':
                 labelText = "You shot the moon!";
-                handReturnLeft = window.innerWidth*0.5;
-                handReturnTop = window.innerHeight + 180;
+                handReturnLeft = gameContainer.innerWidth*0.5;
+                handReturnTop = gameContainer.innerHeight + 180;
                 break;
             case 'West':
                 labelText = player.name + " shot the moon.";
                 handReturnLeft = -180;
-                handReturnTop = window.innerHeight*0.5;
+                handReturnTop = gameContainer.innerHeight*0.5;
                 break;
             case 'North':
                 labelText = player.name + " shot the moon.";
-                handReturnLeft = window.innerWidth*0.5;
+                handReturnLeft = gameContainer.innerWidth*0.5;
                 handReturnTop = -220;
                 break;
             default:
                 labelText = player.name + " shot the moon.";
-                handReturnLeft = window.innerWidth + 220;
-                handReturnTop = window.innerHeight*0.5;
+                handReturnLeft = gameContainer.innerWidth + 220;
+                handReturnTop = gameContainer.innerHeight*0.5;
                 break;
         }
 
-        var moonShootText = document.getElementById('moon_shoot_text');
+        var moonShootText = document.getElementById('hearts_moon_shoot_text');
         moonShootText.innerHTML = labelText;
         with (moonShootText.style) {
             transition = '1s linear';
@@ -1919,10 +2219,10 @@ var Game = function () {
         for (var i=0; i<heartsCardViews.length; i++) {
             var cardView = heartsCardViews[i];
             
-            var firstLeft = window.innerWidth*0.5 - 200;
-            var lastLeft = window.innerWidth*0.5  + 200;
-            var firstTop = window.innerHeight*0.4;
-            var lastTop = window.innerHeight*0.4;
+            var firstLeft = gameContainer.innerWidth*0.5 - 200;
+            var lastLeft = gameContainer.innerWidth*0.5  + 200;
+            var firstTop = gameContainer.innerHeight*0.4;
+            var lastTop = gameContainer.innerHeight*0.4;
             var handWidth = lastLeft-firstLeft;
             var cardSpacing = handWidth/(heartsCardViews.length-1);
             var curLeft = firstLeft + i*cardSpacing;
@@ -1958,7 +2258,7 @@ var Game = function () {
                     transform = 'rotate(180deg)';
                 }
             }
-            var moonShootText = document.getElementById('moon_shoot_text');
+            var moonShootText = document.getElementById('hearts_moon_shoot_text');
             with (moonShootText.style) {
                 transition = '1s linear';
                 opacity = 0;
@@ -2012,29 +2312,29 @@ var Game = function () {
                 gameOverLine1 = "You won!";
                 gameOverLine2 = "vs the " + this.skillLevel.toLowerCase() + " players";
                 var setting = 'stat_wins_' + this.skillLevel;
-                var settingVal = GetStatistic(setting);
-                SetStatistic(setting, settingVal + 1);
+                var settingVal = this.settings.GetStatistic(setting);
+                this.settings.SetStatistic(setting, settingVal + 1);
                 break;
             case 2:
                 gameOverLine1 = winner.name + " won.";
                 switch (humanPlayerPlace) { case 2: gameOverLine2 = "You finished in 2nd place."; break; case 3: gameOverLine2 = "You finished in 3rd place."; break; case 4: gameOverLine2 = "You finished in 4th place."; break;};
                 var setting = 'stat_2nd_' + this.skillLevel;
-                var settingVal = GetStatistic(setting);
-                SetStatistic(setting, settingVal + 1);
+                var settingVal = this.settings.GetStatistic(setting);
+                this.settings.SetStatistic(setting, settingVal + 1);
                 break;
             case 3:
                 gameOverLine1 = winner.name + " won.";
                 switch (humanPlayerPlace) { case 2: gameOverLine2 = "You finished in 2nd place."; break; case 3: gameOverLine2 = "You finished in 3rd place."; break; case 4: gameOverLine2 = "You finished in 4th place."; break;};
                 var setting = 'stat_3rd_' + this.skillLevel;
-                var settingVal = GetStatistic(setting);
-                SetStatistic(setting, settingVal + 1);
+                var settingVal = this.settings.GetStatistic(setting);
+                this.settings.SetStatistic(setting, settingVal + 1);
                 break;
             case 4:
                 gameOverLine1 = winner.name + " won.";
                 switch (humanPlayerPlace) { case 2: gameOverLine2 = "You finished in 2nd place."; break; case 3: gameOverLine2 = "You finished in 3rd place."; break; case 4: gameOverLine2 = "You finished in 4th place."; break;};
                 var setting = 'stat_4th_' + this.skillLevel;
-                var settingVal = GetStatistic(setting);
-                SetStatistic(setting, settingVal + 1);
+                var settingVal = this.settings.GetStatistic(setting);
+                this.settings.SetStatistic(setting, settingVal + 1);
                 break;
         }
 
@@ -2042,10 +2342,10 @@ var Game = function () {
         HideMenuButton();
         HideAllMessages();
 
-        var gameOverView = document.getElementById('GameOverView');
-        var gameOverLine1Elem = document.getElementById('GameOverResultText');
+        var gameOverView = document.getElementById('HeartsGameOverView');
+        var gameOverLine1Elem = document.getElementById('HeartsGameOverResultText');
         gameOverLine1Elem.innerText = gameOverLine1;
-        var gameOverLine2Elem = document.getElementById('GameOverResultText2');
+        var gameOverLine2Elem = document.getElementById('HeartsGameOverResultText2');
         gameOverLine2Elem.innerText = gameOverLine2;
         with (gameOverView.style) {
             transition = 'none';
@@ -2092,8 +2392,22 @@ var Game = function () {
         return 0;
     }
 
+    this.GetTotalGamesPlayed = function() {
+        var difficulties = ["Easy", "Standard", "Pro"];
+        var totalGamesPlayed = 0;
+        for (var i=0; i<difficulties.length; i++) {
+            var curDifficulty = difficulties[i];
+            var wins = this.settings.GetStatistic('stat_wins_' + curDifficulty);
+            var stat2nds = this.settings.GetStatistic('stat_2nd_' + curDifficulty);
+            var stat3rds = this.settings.GetStatistic('stat_3rd_' + curDifficulty);
+            var stat4ths = this.settings.GetStatistic('stat_4th_' + curDifficulty);
+            totalGamesPlayed += (wins + stat2nds + stat3rds + stat4ths);
+        }
+        return totalGamesPlayed;
+    }
+
     this.AnimateGameOverCardAnimations = function() {
-        var curAnimationId = GetTotalGamesPlayed();
+        var curAnimationId = this.GetTotalGamesPlayed();
         var totalAnimationsAvailable = 4;
         var cardAnimStartDelay = 1000;
         switch (curAnimationId%totalAnimationsAvailable) {
@@ -2130,7 +2444,7 @@ var Game = function () {
                     var curPositionX = startLeft;
                     var curPositionY = startTop;
                     var isFallingOutOfView = false;
-                    var bottomBounceY = window.innerHeight - cardLoweredHeight;
+                    var bottomBounceY = gameContainer.innerHeight - cardLoweredHeight;
                     while (curTime < totalTime) {
                         var percentComplete = 100 * curTime / totalTime;
                         keyframesText = keyframesText + percentComplete + '% {opacity: 1; left: ' + curPositionX + 'px; top: ' + curPositionY + 'px;}';
@@ -2152,7 +2466,7 @@ var Game = function () {
                                 curVelocity[1] = -curVelocity[1]*bounceDampen;
                             }
                         }
-                        if (curPositionX < 0 || curPositionX > window.innerWidth-cardLoweredWidth) {
+                        if (curPositionX < 0 || curPositionX > gameContainer.innerWidth-cardLoweredWidth) {
                             curPositionX = curPositionX - curVelocity[0];
                             curVelocity[0] = curVelocity[0] - gravity[0]*deltaTime;
                             curVelocity[0] = -curVelocity[0];
@@ -2182,7 +2496,7 @@ var Game = function () {
             {
                 // Gravity Bouncing off game over view
                                 
-                var startLeft = window.innerWidth*0.5 - 200;
+                var startLeft = gameContainer.innerWidth*0.5 - 200;
                 var startTop = -cardLoweredHeight - 30;
                 for (var i=0; i<cards.length; i++) {
                     var cardView = cards[i].cardView;
@@ -2211,12 +2525,12 @@ var Game = function () {
                     var curPositionX = startLeft;
                     var curPositionY = startTop;
                     var isFallingOutOfView = false;
-                    var bottomBounceY = window.innerHeight - cardLoweredHeight;
+                    var bottomBounceY = gameContainer.innerHeight - cardLoweredHeight;
                     var gameOverViewWidth = 340;
                     var gameOverViewHeight = 100;
-                    var gameOverViewLeft = (window.innerWidth - gameOverViewWidth)*0.5 - cardLoweredWidth*0.5;
+                    var gameOverViewLeft = (gameContainer.innerWidth - gameOverViewWidth)*0.5 - cardLoweredWidth*0.5;
                     var gameOverViewRight = gameOverViewLeft + gameOverViewWidth + cardLoweredWidth*0.5;
-                    var gameOverViewTop = (window.innerHeight - gameOverViewHeight)*0.5 - cardLoweredHeight*1.1;
+                    var gameOverViewTop = (gameContainer.innerHeight - gameOverViewHeight)*0.5 - cardLoweredHeight*1.1;
 
                     while (curTime < totalTime) {
                         var percentComplete = 100 * curTime / totalTime;
@@ -2251,7 +2565,7 @@ var Game = function () {
                                 }
                             }
                         }
-                        if (curPositionX < 0 || curPositionX > window.innerWidth-cardLoweredWidth) {
+                        if (curPositionX < 0 || curPositionX > gameContainer.innerWidth-cardLoweredWidth) {
                             curPositionX = curPositionX - curVelocity[0];
                             curVelocity[0] = curVelocity[0] - gravity[0]*deltaTime;
                             curVelocity[0] = -curVelocity[0];
@@ -2280,7 +2594,7 @@ var Game = function () {
             {
                 // Spiral into center
                 var totalTime = 7;       
-                var startLeft = window.innerWidth*0.5 - 200;
+                var startLeft = gameContainer.innerWidth*0.5 - 200;
                 var startTop = -cardLoweredHeight - 30;
                 for (var i=0; i<cards.length; i++) {
                     var cardView = cards[i].cardView;
@@ -2302,8 +2616,8 @@ var Game = function () {
                     var keyframesText = "@keyframes gameOverAnim" + i + " {";
 
                     var fullAngle = Math.PI * 2 * 4.25;
-                    var spinCenterX = window.innerWidth*0.5;
-                    var spinCenterY = window.innerHeight*0.5;
+                    var spinCenterX = gameContainer.innerWidth*0.5;
+                    var spinCenterY = gameContainer.innerHeight*0.5;
                     var radius = Math.sqrt((spinCenterY - startTop)*(spinCenterY - startTop) + (spinCenterX - startLeft)*(spinCenterX - startLeft));
                     for (var angle = fullAngle; angle >= 0; angle-=0.15) {
                         var percentComplete = 100 * (1 - (angle / fullAngle));
@@ -2335,7 +2649,7 @@ var Game = function () {
                 // Spiral out from center
                 var slideInTime = 0.5;
                 var totalTime = 7;       
-                var startLeft = window.innerWidth*0.5 - cardLoweredWidth*0.5;
+                var startLeft = gameContainer.innerWidth*0.5 - cardLoweredWidth*0.5;
                 var startTop = -cardLoweredHeight - 30;
                 for (var i=0; i<cards.length; i++) {
                     var cardView = cards[i].cardView;
@@ -2360,8 +2674,8 @@ var Game = function () {
                     keyframesText = keyframesText + (slideInPercent*100) + '% { opacity: 1; left: ' + (spinCenterX - cardLoweredWidth*0.5) + 'px; top: ' + (spinCenterY - cardLoweredHeight*0.5) + 'px;}';
                     
                     var fullAngle = Math.PI * 2 * 4.25;
-                    var spinCenterX = window.innerWidth*0.5;
-                    var spinCenterY = window.innerHeight*0.5;
+                    var spinCenterX = gameContainer.innerWidth*0.5;
+                    var spinCenterY = gameContainer.innerHeight*0.5;
                     var fullRadius = Math.sqrt((spinCenterY - startTop)*(spinCenterY - startTop) + (spinCenterX - startLeft)*(spinCenterX - startLeft));
                     for (var angle = 0.01; angle < fullAngle; angle+=0.15) {
                         var percentComplete = (angle / fullAngle) * (1-slideInPercent);
@@ -2404,13 +2718,13 @@ var Game = function () {
             'player_score_West',
             'player_score_North',
             'player_score_East',
-            'select_passing_cards_message',
+            'hearts_select_passing_cards_message',
             'select_passing_cards_region_0',
             'select_passing_cards_region_1',
             'select_passing_cards_region_2',
-            'hint_button',
-            'confirm_passing_cards_region',
-            'player_play_prompt'
+            'hearts_hint_button',
+            'hearts_confirm_passing_cards_region',
+            'hearts_player_play_prompt'
             ];
         for (var i = 0; i < viewsToHide.length; i++) {
             var view = document.getElementById(viewsToHide[i]);
@@ -2422,6 +2736,9 @@ var Game = function () {
 
     this.OnResizeWindow = function OnResizeWindow() {
 
+        gameContainer.innerWidth = window.innerWidth - codeContainerGutterRightPosition - 20;
+        gameContainer.style.width = gameContainer.innerWidth + 'px';
+        
         var ease = "0.4s ease-out";
 
         // Reposition all the cards
@@ -2446,13 +2763,13 @@ var Game = function () {
             'player_score_West',
             'player_score_North',
             'player_score_East',
-            'select_passing_cards_message',
+            'hearts_select_passing_cards_message',
             'select_passing_cards_region_0',
             'select_passing_cards_region_1',
             'select_passing_cards_region_2',
-            'hint_button',
-            'confirm_passing_cards_region',
-            'player_play_prompt'
+            'hearts_hint_button',
+            'hearts_confirm_passing_cards_region',
+            'hearts_player_play_prompt'
         ];
         for (var i = 0; i < viewsToPosition.length; i++) {
             var view = document.getElementById(viewsToPosition[i]);
@@ -2464,4 +2781,591 @@ var Game = function () {
             }
         }
     }
+
+    this.OnTerminateGame = function() {}
+    
+    //
+    // MENUS
+    //
+    this.ShowStartAGameMenu = function() {
+        var menuName = visibleMenuCards[visibleMenuCards.length-1];
+        MenuCardPressDown(menuName);
+        MenuCardAppear("menu_start_a_game");
+    }
+
+    this.menu_start_game_click = function(difficulty) {
+        game.StartAGame(difficulty);
+        while (visibleMenuCards.length > 0) {
+            var topMenu = visibleMenuCards.pop();
+            MenuCardPopUp(topMenu);
+            MenuCardDisappear(topMenu);
+        }
+        ShowMenuButton();
+    }
+
+    this.ShowDifficultiesExplainedMenu = function() {
+        var menuName = visibleMenuCards[visibleMenuCards.length-1];
+        MenuCardPressDown(menuName);
+        MenuCardAppear("menu_difficulties_explained");
+    }
+
+    this.ShowStatisticsMenu = function() {
+        var menuName = visibleMenuCards[visibleMenuCards.length-1];
+        MenuCardPressDown(menuName);
+        this.InitializeStatisticsView();
+        MenuCardAppear("menu_statistics");
+    }
+
+    this.ShowSettingsMenu = function() {
+        this.InitializeSettingsView();
+        var menuName = visibleMenuCards[visibleMenuCards.length-1];
+        MenuCardPressDown(menuName);
+        MenuCardAppear("menu_settings");
+    }
+
+    this.InitializeSettingsView = function() {
+		document.getElementById("setting_hints_checkbox").checked = this.settings.GetSetting('setting_hints');
+		document.getElementById("losing_score_dropdown").value = this.settings.GetSetting('setting_losing_score');
+	
+		var board_color = GetSetting('setting_board_color');
+		var allElems = document.getElementsByName('settings_boardbackground_selector');
+		for (i = 0; i < allElems.length; i++) {
+			if (allElems[i].type == 'radio' && allElems[i].value == board_color) {
+				allElems[i].checked = true;
+			}
+		}
+		
+		var card_color = GetSetting('setting_card_color');
+		var allElems = document.getElementsByName('settings_card_color_selector');
+		for (i = 0; i < allElems.length; i++) {
+			if (allElems[i].type == 'radio' && allElems[i].value == card_color) {
+				allElems[i].checked = true;
+			}
+		}
+    }
+
+    this.SettingHintsClicked = function(cb) {
+        this.settings.SetSetting('setting_hints', cb.checked);
+    }
+    
+    this.SettingLosingScoreChanged = function(losingScoreSelect) {
+        this.settings.SetSetting('setting_losing_score', losingScoreSelect.value);
+    }
+    
+    this.InitializeStatisticsView = function() {
+        
+        var difficulties = ["Easy", "Standard", "Pro"];
+        var totalGamesPlayed = 0;
+        var totalWins = 0;
+        var total2nds = 0;
+        var total3rds = 0;
+        var total4ths = 0;
+        var totalMoonsShot = 0;
+        for (var i=0; i<difficulties.length; i++) {
+            var curDifficulty = difficulties[i];
+            var wins = this.settings.GetStatistic('stat_wins_' + curDifficulty);
+            var stat2nds = this.settings.GetStatistic('stat_2nd_' + curDifficulty);
+            var stat3rds = this.settings.GetStatistic('stat_3rd_' + curDifficulty);
+            var stat4ths = this.settings.GetStatistic('stat_4th_' + curDifficulty);
+            var moonsShot = this.settings.GetStatistic('stat_moons_shot_' + curDifficulty);
+            var gamesPlayed = wins + stat2nds + stat3rds + stat4ths;
+            var gamesPlayedElement = document.getElementById('menu_stat_games_played_' + curDifficulty);
+            var winsElement = document.getElementById('menu_stat_wins_' + curDifficulty);
+            var stat2ndsElement = document.getElementById('menu_stat_2nd_' + curDifficulty);
+            var stat3rdsElement = document.getElementById('menu_stat_3rd_' + curDifficulty);
+            var stat4thsElement = document.getElementById('menu_stat_4th_' + curDifficulty);
+            var moonsShotElement = document.getElementById('menu_stat_moons_shot_' + curDifficulty);
+            var winPercentElement = document.getElementById('menu_stat_win_percent_' + curDifficulty);
+            if (gamesPlayed > 0) {
+                gamesPlayedElement.innerText = gamesPlayed;
+                winsElement.innerText = wins;
+                stat2ndsElement.innerText = stat2nds;
+                stat3rdsElement.innerText = stat3rds;
+                stat4thsElement.innerText = stat4ths;
+                moonsShotElement.innerText = moonsShot;
+                winPercentElement.innerText = parseFloat(100*wins / gamesPlayed).toFixed(0) + "%";
+            } else {
+                gamesPlayedElement.innerText = "";
+                winsElement.innerText = "";
+                stat2ndsElement.innerText = "";
+                stat3rdsElement.innerText = "";
+                stat4thsElement.innerText = "";
+                moonsShotElement.innerText = "";
+                winPercentElement.innerText = "";
+            }
+            totalGamesPlayed = totalGamesPlayed + gamesPlayed;
+            totalWins = totalWins + wins;
+            total2nds = total2nds + stat2nds;
+            total3rds = total2nds + stat3rds;
+            total4ths = total2nds + stat4ths;
+            totalMoonsShot = totalMoonsShot + moonsShot;
+        }
+        var gamesPlayedElement = document.getElementById('menu_stat_games_played_Total');
+        var winsElement = document.getElementById('menu_stat_wins_Total');
+        var stat2ndsElement = document.getElementById('menu_stat_2nd_Total');
+        var stat3rdsElement = document.getElementById('menu_stat_3rd_Total');
+        var stat4thsElement = document.getElementById('menu_stat_4th_Total');
+        var moonsShotElement = document.getElementById('menu_stat_moons_shot_Total');
+        var winPercentElement = document.getElementById('menu_stat_win_percent_Total');
+        if (totalGamesPlayed > 0) {
+            gamesPlayedElement.innerText = totalGamesPlayed;
+            winsElement.innerText = totalWins;
+            stat2ndsElement.innerText = total2nds;
+            stat3rdsElement.innerText = total3rds;
+            stat4thsElement.innerText = total4ths;
+            moonsShotElement.innerText = totalMoonsShot;
+            winPercentElement.innerText = parseFloat(100*totalWins / totalGamesPlayed).toFixed(0) + "%";
+        } else {
+            gamesPlayedElement.innerText = "0";
+            winsElement.innerText = "0";
+            stat2ndsElement.innerText = "0";
+            stat3rdsElement.innerText = "0";
+            stat4thsElement.innerText = "0";
+            moonsShotElement.innerText = "0";
+            winPercentElement.innerText = "";
+        }
+    }
+
+    this.ResetStatisticsButtonClick = function() {
+        var r = confirm("Are you sure you want to reset your statistics?");
+        if (r != true) {
+            return;
+        }
+    
+        this.settings.ResetStatistics();
+        this.InitializeStatisticsView();
+    }
+
+}
+
+/*
+*
+*  Game Simulator
+*
+*/
+var HeartsFindOptimalPlayForCurrentPlayer = function(aGame, isForHint) {
+    
+    var maxSimulations = 5000;
+    var simsPerPossiblePlay = 1000;
+    
+    if (isForHint) {
+        maxSimulations = 5000*3;
+        simsPerPossiblePlay = 1000*3;
+    }
+
+    // Create a game state copy that can be manipulated and restored to simulate outcomes
+    var simGame = {};
+    simGame.skillLevel = 'Standard';
+    simGame.isHeartsBroken = aGame.isHeartsBroken;
+    simGame.losingScore = aGame.losingScore;
+    simGame.cardsPlayedThisRound = [];
+    simGame.trickCards = [];
+    simGame.players = [];
+    var player = new HeartsPlayer();
+    player.Initialize('You', true, 'Standard', 'South');
+    simGame.players.push(player);
+    player = new HeartsPlayer();
+    player.Initialize('Catalina', false, 'Standard', 'West');
+    simGame.players.push(player);
+    player = new HeartsPlayer();
+    player.Initialize('Amelia', false, 'Standard', 'North');
+    simGame.players.push(player);
+    player = new HeartsPlayer();
+    player.Initialize('Seward', false, 'Standard', 'East');
+    simGame.players.push(player);
+    
+    var currentPlayer = aGame.players[aGame.turnIndex%4];
+    var currentSimPlayer = simGame.players[aGame.turnIndex%4];
+
+    // Set the game deck of cards to only have the cards remaining
+    var gameCards = aGame.GetCards();
+    var cardsRemaining = [];
+    for (var i=0; i<gameCards.length; i++) {
+        var isAlreadyPlayed = false;
+        for (var j=0; j<aGame.cardsPlayedThisRound.length; j++) {
+            if (aGame.cardsPlayedThisRound[j].id === gameCards[i].id) {
+                isAlreadyPlayed = true;
+                break;
+            }
+        }
+        if (isAlreadyPlayed) {
+            continue;
+        }
+        for (var j=0; j<currentPlayer.cards.length; j++) {
+            if (currentPlayer.cards[j].id === gameCards[i].id) {
+                isAlreadyPlayed = true;
+                break;
+            }
+        }
+        if (isAlreadyPlayed) {
+            continue;
+        }
+        
+        cardsRemaining.push(gameCards[i]);
+    }
+  
+    var possiblePlays = aGame.GetLegalCardsForCurrentPlayerTurn();
+    var possiblePlaysCumulativePoints = [];
+    for (var i=0; i<possiblePlays.length; i++) {
+        possiblePlaysCumulativePoints.push(0);
+    }
+
+    if (possiblePlays.length*simsPerPossiblePlay > maxSimulations) {
+        simsPerPossiblePlay = Math.floor(maxSimulations / possiblePlays.length);
+    }
+
+    for (var i=0; i<possiblePlays.length; i++) {
+        // For each possible play,
+        // make the play and then simulate out to the end of the round
+        // with each player using the Standard skill level decision making
+        // Then Restore the game state
+        for (var simCount = 0; simCount < simsPerPossiblePlay; simCount++) {
+            // Reset the sim game state
+            for (var k=0; k<4; k++) {
+                var player = aGame.players[k];
+                var simPlayer = simGame.players[k];
+                simPlayer.skillLevel = 'Standard';
+                simPlayer.currentRoundPoints = player.currentRoundPoints;
+                simPlayer.cards = [];
+                simPlayer.isShownVoidInSuit = [player.isShownVoidInSuit[0], player.isShownVoidInSuit[1], player.isShownVoidInSuit[2], player.isShownVoidInSuit[3]];
+            }
+            simGame.trickCards = [].concat(aGame.trickCards);
+            simGame.roundNumber = aGame.roundNumber;
+            simGame.leadIndex = aGame.leadIndex;
+            simGame.turnIndex = aGame.turnIndex;
+            simGame.isHeartsBroken = aGame.isHeartsBroken;
+
+            // Shuffle the deck
+            var deckIdx = 0;
+            for (var k = cardsRemaining.length - 1; k > 0; k--) {
+                var randIdx = Math.floor(Math.random() * (k + 1));
+                x = cardsRemaining[k];
+                cardsRemaining[k] = cardsRemaining[randIdx];
+                cardsRemaining[randIdx] = x;
+            }
+
+            for (var n=0; n<currentPlayer.cards.length; n++) {
+                currentSimPlayer.cards.push(currentPlayer.cards[n]);
+            }
+
+            // Play the next possible play card
+            var card = possiblePlays[i];
+            if (card.suit === 'H') {
+                simGame.isHeartsBroken = true;
+            }
+            if (simGame.trickCards.length !== 0) {
+                var leadCard = simGame.trickCards[0];
+                if (card.suit !== leadCard.suit) {
+                    currentSimPlayer.isShownVoidInSuit[leadCard.suitInt] = true;
+                }
+            }
+            currentSimPlayer.cards.splice(currentSimPlayer.cards.indexOf(card), 1);
+            simGame.trickCards.push(card);
+            simGame.turnIndex = simGame.turnIndex + 1;
+
+            // Deal the remaining cards to the rest of the players
+            var idx = aGame.turnIndex;
+            for (var deckIdx = 0; deckIdx<cardsRemaining.length; deckIdx++) {
+                idx++;
+                var simPlayer = simGame.players[idx%4];
+                if (simPlayer === currentSimPlayer) {
+                    deckIdx--;
+                    continue;
+                }
+                simPlayer.cards.push(cardsRemaining[deckIdx]);
+            }
+
+            // Assure that no player has a card they are supposed to be void
+            for (var j=0; j<4; j++) {
+                var simPlayer = simGame.players[j];
+                if (simPlayer.playerPosition === currentSimPlayer.playerPosition) {
+                    continue;
+                }
+                for (var k=0; k<simPlayer.cards.length; k++) {
+                    var aCard = simPlayer.cards[k];
+                    if (simPlayer.isShownVoidInSuit[aCard.suitInt]) {
+                        // Swap the card with the first possible neighbor
+                        var swapCardFound = false;
+                        for (var n=1; n<4; n++) {
+                            var neighborPlayer = simGame.players[(j+n)%4];
+                            if (neighborPlayer.playerPosition === currentSimPlayer.playerPosition) {
+                                continue;
+                            }
+                            if (!neighborPlayer.isShownVoidInSuit[aCard.suitInt]) {
+                                for (var m=0; m<neighborPlayer.cards.length; m++) {
+                                    var cardToSwap = neighborPlayer.cards[m];
+                                    if (!simPlayer.isShownVoidInSuit[cardToSwap.suitInt]) {
+                                        swapCardFound = true;
+                                        simPlayer.cards.splice(k,1);
+                                        simPlayer.cards.push(cardToSwap);
+                                        neighborPlayer.cards.splice(m, 1);
+                                        neighborPlayer.cards.push(aCard);
+                                        break;
+                                    }
+                                }
+                            }
+                            if (swapCardFound) {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Finish the round
+            var firstPass = true;
+            while (firstPass || currentSimPlayer.cards.length > 0) {
+                firstPass = false;
+                // Finish the trick
+                while (simGame.trickCards.length < 4) {
+                    var nextPlayer = simGame.players[simGame.turnIndex%4];
+                    var nextCard = HeartsFindStandardPlayForGameSimulator(simGame);
+                    // Play the Card
+                    if (nextCard.suit === 'H') {
+                        simGame.isHeartsBroken = true;
+                    }
+                    if (simGame.trickCards.length !== 0) {
+                        var leadCard = simGame.trickCards[0];
+                        if (nextCard.suit !== leadCard.suit) {
+                            nextPlayer.isShownVoidInSuit[leadCard.suitInt] = true;
+                        }
+                    }
+
+                    nextPlayer.cards.splice(nextPlayer.cards.indexOf(nextCard), 1);
+                    simGame.trickCards.push(nextCard);
+                    simGame.turnIndex = simGame.turnIndex + 1;
+                }
+
+                // GetTrickResult
+                var trickResult = {};
+                trickResult.highestCard = simGame.trickCards[0];
+                trickResult.trickTaker = simGame.players[simGame.leadIndex];
+                trickResult.points = 0;
+                if (trickResult.highestCard.id === 'QS') {
+                    trickResult.points = 13;
+                } else if (trickResult.highestCard.suit === 'H') {
+                    trickResult.points = 1;
+                }
+                for (var n=1; n<simGame.trickCards.length; n++) {
+                    var card = simGame.trickCards[n];
+                    if (card.id === 'QS') {
+                        trickResult.points =  trickResult.points + 13;
+                    } else if (card.suit === 'H') {
+                        trickResult.points = trickResult.points + 1;
+                    }
+                    if (card.suit === trickResult.highestCard.suit && card.value > trickResult.highestCard.value) {
+                        trickResult.highestCard = card;
+                        trickResult.trickTaker = simGame.players[(simGame.leadIndex + n)%4];
+                    }
+                }
+                trickResult.trickTaker.currentRoundPoints += trickResult.points;
+                simGame.leadIndex = trickResult.trickTaker.playerPositionInt;
+                simGame.turnIndex = simGame.leadIndex;
+                simGame.trickCards = [];
+            }
+
+            // Correct for moon shots
+            if (currentSimPlayer.currentRoundPoints == 26) {
+                currentSimPlayer.currentRoundPoints = 0;
+            } else {
+                for (var k=0; k<4; k++) {
+                    var aPlayer = simGame.players[k];
+                    if (aPlayer != currentSimPlayer) {
+                        if (aPlayer.currentRoundPoints == 26) {
+                            currentSimPlayer.currentRoundPoints = 26;
+                        }
+                    }
+                }
+            }
+            possiblePlaysCumulativePoints[i] += currentSimPlayer.currentRoundPoints;
+        }
+    }
+
+    var optimalPlayResult = [];
+    optimalPlayResult.possibleCards = possiblePlays;
+    optimalPlayResult.possibleCardsScores = [];
+    var curBestPoints = Number.MAX_SAFE_INTEGER;
+    var curBestScore = 0;
+    var curWorstScore = -1;
+    var curBestPlayIndex = 0;
+    for (var i=0; i<possiblePlays.length; i++) {
+        var mean = possiblePlaysCumulativePoints[i]/simsPerPossiblePlay;
+        if (possiblePlaysCumulativePoints[i] < curBestPoints) {
+            curBestPoints = possiblePlaysCumulativePoints[i];
+            curBestPlayIndex = i;
+            curBestScore = mean;
+        }
+        optimalPlayResult.possibleCardsScores.push(mean);
+        if (curWorstScore < mean) {
+            curWorstScore = mean;
+        }
+    }
+    optimalPlayResult.optimalCard = possiblePlays[curBestPlayIndex];
+    optimalPlayResult.optimalScore = curBestScore;
+    optimalPlayResult.worstScore = curWorstScore;
+
+    console.log(optimalPlayResult.possibleCardsScores);
+    return optimalPlayResult;
+}
+
+var HeartsFindStandardPlayForGameSimulator = function(aGame) {
+    var possiblePlays = HeartsGetLegalCardsForCurrentPlayerTurnInGameSimulator(aGame);
+    
+    if (aGame.trickCards.length === 0) {
+        // Lead with the lowest card value possible
+        var play = possiblePlays[0];
+        for (var i=1; i<possiblePlays.length; i++) {
+            var possiblePlay = possiblePlays[i];
+            if (possiblePlay.value < play.value) {
+                play = possiblePlay;
+            }
+        }
+        return play;
+    } else {
+        var leadCard = aGame.trickCards[0];
+        var play = possiblePlays[0];
+        if (play.suit === leadCard.suit) {
+            // Must play the same suit
+            possiblePlays.sort(function(a,b) { 
+                return a.value - b.value;
+            });
+
+            var highestCardInTrick = leadCard;
+            for (var i=1; i<aGame.trickCards.length; i++) {
+                var playedCard = aGame.trickCards[i];
+                if (playedCard.suit === leadCard.suit && playedCard.value > highestCardInTrick.value) {
+                    highestCardInTrick = playedCard;
+                }
+            }
+
+            if (aGame.trickCards.length<3) {
+                // Play the highest card that will not take the hand
+                var curPlay = possiblePlays[0];
+                if (curPlay.value > highestCardInTrick) {
+                    // We have to play our lowest card and hope the next person is higher
+                    return curPlay;
+                } else {
+                    // Play the highest value that is less than the current highest card in the trick
+                    for (var i=1; i<possiblePlays.length; i++) {
+                        var possibleCard = possiblePlays[i];
+                        if (possibleCard.value < highestCardInTrick.value) {
+                            curPlay = possibleCard;
+                        }
+                    }
+                    return curPlay;
+                }
+            } else {
+                var curTrickPoints = 0;
+                for (var i=0; i<aGame.trickCards.length; i++) {
+                    var card = aGame.trickCards[i];
+                    if (card.suit === 'H') {
+                        curTrickPoints = curTrickPoints + 1;
+                    } else if (card.id === 'QS') {
+                        curTrickPoints = curTrickPoints + 13;
+                    }
+                }
+
+                if (curTrickPoints === 0) {
+                    // No points so we can play the highest card of suit
+                    var highestCard = possiblePlays[possiblePlays.length-1];
+                    if (highestCard.id === 'QS' && possiblePlays.length > 1) {
+                        highestCard = possiblePlays[possiblePlays.length-2];
+                    }
+                    return highestCard;
+                } else {
+                    // Try to not take the trick but if we must, then play the highest card
+                    var curPlay = possiblePlays[0];
+                    if (curPlay.value > highestCardInTrick.value) {
+                        // play our highest card
+                        var highestCard = possiblePlays[possiblePlays.length-1];
+                        if (highestCard.id === 'QS' && possiblePlays.length > 1) {
+                            highestCard = possiblePlays[possiblePlays.length-2];
+                        }
+                        return highestCard;
+                    } else {
+                        // Play the highest value that is less than the current highest card in the trick
+                        for (var i=1; i<possiblePlays.length; i++) {
+                            var possibleCard = possiblePlays[i];
+                            if (possibleCard.value < highestCardInTrick.value) {
+                                curPlay = possibleCard;
+                            }
+                        }
+                        return curPlay;
+                    }
+                }
+            }
+        } else {
+            // Play the highest valued card we have
+            possiblePlays.sort(function(a,b) { 
+                // Queen of spades is highest
+                if (a.id === 'QS') {
+                    return -1;
+                } else if (b.id === 'QS') {
+                    return 1;
+                }
+                // Otherwise prefer AS and KS over hearts
+                if (a.value === b.value) {
+                    if (a.value >= 12) {
+                        if (a.suit === 'S') {
+                            return -1;
+                        } else if (b.suit === 'S') {
+                            return 1;
+                        } else {
+                            return b.suitInt - a.suitInt;
+                        }
+                    } else {
+                        return b.suitInt - a.suitInt;
+                    }
+                } else {
+                    return b.value - a.value;
+                }
+            });
+            return possiblePlays[0];
+        }
+    }
+}
+
+var HeartsGetLegalCardsForCurrentPlayerTurnInGameSimulator = function(aGame) {
+    var legalCards = [];
+    var player = aGame.players[aGame.turnIndex%4];
+    if (aGame.trickCards.length === 0 && player.cards.length === 13) {
+        for (var i=0; i<player.cards.length; i++) {
+            var card = player.cards[i];
+            if (card.id === '2C') {
+                legalCards.push(card);
+                return legalCards;
+            }
+        }
+    } else {
+        if (aGame.trickCards.length === 0) {
+            for (var i=0; i<player.cards.length; i++) {
+                var card = player.cards[i];
+                if (aGame.isHeartsBroken || card.suit != 'H') {
+                    legalCards.push(card);
+                }
+            }
+        } else {
+            var leadCard = aGame.trickCards[0];
+            for (var i=0; i<player.cards.length; i++) {
+                var card = player.cards[i];
+                if (card.suit === leadCard.suit) {
+                    legalCards.push(card);
+                }
+            }
+        }
+
+        if (legalCards.length === 0) {
+            for (var i=0; i<player.cards.length; i++) {
+                var card = player.cards[i];
+                if (player.cards.length === 13) {
+                    if (card.suit === 'H' || card.id === 'QS') {
+                        continue;
+                    }
+                }
+                legalCards.push(card);
+            }
+        }
+    }
+
+    return legalCards;
 }

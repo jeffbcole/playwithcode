@@ -1,4 +1,4 @@
-var Player = function() {
+var HeartsPlayer = function() {
 
     this.name = "";
     this.isHuman = false;
@@ -210,7 +210,7 @@ var Player = function() {
                     }
                 }
             case 'Pro':
-                var optimalPlayResult = FindOptimalPlayForCurrentPlayer(aGame, isForHint, false);
+                var optimalPlayResult = HeartsFindOptimalPlayForCurrentPlayer(aGame, isForHint, false);
                 return optimalPlayResult.optimalCard;
         }
     }

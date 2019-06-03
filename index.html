@@ -2,25 +2,47 @@
 <html lang="en">
 
 <head>
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-    <!-- TODO Make a site tag for this site
-	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-127156293-1"></script>
-	<script>
-  		window.dataLayer = window.dataLayer || [];
-  		function gtag(){dataLayer.push(arguments);}
-  		gtag('js', new Date());
-  		gtag('config', 'UA-127156293-1');
-	</script> -->
-
-
-	<title>Play With Code | Program the AI for your favorite card games!</title>
+	<title>Humans vs Computers | Program the AI for your favorite card games!</title>
 	<meta charset="utf-8">
 	<meta name="description" content="Play With Code:  Write the code to play card games.  Its humans vs computers."> <!-- TODO: write -->
 	<meta name="author" content="Play With Cards">
 
-    <link rel="stylesheet" href="index.css">
+	<link rel="stylesheet" href="index.css">
+	<link rel="stylesheet" href="shared/cards.css">
+	<link rel="stylesheet" href="shared/menus.css">
 	
-    <script type="text/javascript" src="index.js"></script>
+	<script type="text/javascript" src="index.js"></script>
+	<script type="text/javascript" src="shared/menus.js"></script>
+	<script type="text/javascript" src="shared/settings.js"></script>
+	
+	<!-- HEARTS -->
+	<link rel="stylesheet" href="hearts/game.css">
+	<script type="text/javascript" src="hearts/game.js"></script>
+	<script type="text/javascript" src="hearts/player.js"></script>
+	<script type="text/javascript" src="hearts/settings.js"></script>
+	<script type="text/javascript" src="hearts/scoreboard.js"></script>
+	
+	<!-- SPADES -->
+	<link rel="stylesheet" href="spades/game.css">
+	<script type="text/javascript" src="spades/game.js"></script>
+	<script type="text/javascript" src="spades/player.js"></script>
+	<script type="text/javascript" src="spades/settings.js"></script>
+	<script type="text/javascript" src="spades/scoreboard.js"></script>
+	
+	<!-- PINOCHLE -->
+	<link rel="stylesheet" href="pinochle/game.css">
+	<script type="text/javascript" src="pinochle/game.js"></script>
+	<script type="text/javascript" src="pinochle/player.js"></script>
+	<script type="text/javascript" src="pinochle/settings.js"></script>
+	<script type="text/javascript" src="pinochle/scoreboard.js"></script>
+
+	<!-- CRIBBAGE -->
+	<link rel="stylesheet" href="cribbage/game.css">
+	<script type="text/javascript" src="cribbage/game.js"></script>
+	<script type="text/javascript" src="cribbage/player.js"></script>
+	<script type="text/javascript" src="cribbage/settings.js"></script>
+	<script type="text/javascript" src="cribbage/scoreboard.js"></script>
+	
 
     <script>
         //
@@ -29,50 +51,79 @@
         window.onload = function () {
             Initialize();
         };
-
     </script>
-    
-    <!-- TODO: turn this on before going live 
-	<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.1.0/cookieconsent.min.css" />
-	<script src="//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.1.0/cookieconsent.min.js"></script>
-	<script>
-			window.addEventListener("load", function(){
-			window.cookieconsent.initialise({
-				"palette": {
-			"popup": {
-			"background": "#252e39"
-			},
-			"button": {
-			"background": "#14a7d0"
-			}
-		},
-			"theme": "edgeless",
-			"position": "bottom-left",
-			"content": {
-				"message": "This site uses cookies to analyze traffic and for ad personalization and ad measurement purposes.",
-				"dismiss": "OK",
-				"link": "Learn more",
-				"href": "https://policies.google.com/technologies/cookies"
-			}
-			})});
-	</script>
--->
 </head>
 
 <body>
-	<div id="playwithcode_title">
+	<div id="menu_bar">
+		<div id="menu_bar_play_as_human_container">
+			<button id="menu_bar_play_as_human_button">Play As A Human</button>
+			<i id="menu_bar_left_arrow"></i>
+		</div>
+		<div id="menu_bar_play_as_computer_container">
+			<button id="menu_bar_play_as_computer_button">Play As A Computer</button>
+			<i id="menu_bar_right_arrow"></i>
+		</div>
 		<center>
-			<div class="t1">PLAY</div>
-			<div class="t2">WITH CODE</div>
+			<div>
+				<select id="menu_bar_select_game" class="menu_bar_select_game" onchange="selectGameMenuChanged()">
+					<option value="1">Hearts</option>
+					<option value="2">Spades</option>
+					<option value="3">Pinochle</option>
+					<option value="4">Cribbage</option>
+				</select>
+				<div class="menu_down_arrow">
+					<svg fill="#FFFFFF" width="30" height="30" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+						<path d="M7.41 7.84L12 12.42l4.59-4.58L18 9.25l-6 6-6-6z" />
+						<path d="M0-.75h24v24H0z" fill="none"/>
+					</svg>
+				</div>
+			</div>
 		</center>
 	</div>
 
-	<div id="menu_main" class="menu_view">
-		<button class="menu_button" onclick="PlayWithCardsGameClick('hearts')">Hearts</button>
-		<button class="menu_button" onclick="PlayWithCardsGameClick('spades')">Spades</button>
-		<button class="menu_button" onclick="PlayWithCardsGameClick('pinochle')">Pinochle</button>
-		<button class="menu_button" onclick="PlayWithCardsGameClick('cribbage')">Cribbage</button>
+	<div id="game_main_container">
+		<div id="humansvscomputers_title">
+			<center>
+				<div id="humansvscomputerstitle">Humans vs Computers</div>
+				<div>
+					<select id="select_game_large" class="select_game" onchange="selectGameLargeChanged()">
+						<option value="0">Select A Game...</option>
+						<option value="1">Hearts</option>
+						<option value="2">Spades</option>
+						<option value="3">Pinochle</option>
+						<option value="4">Cribbage</option>
+					</select>
+					<div class="down_arrow">
+						<svg fill="#FFFFFF" height="60" viewBox="0 0 24 24" width="60" xmlns="http://www.w3.org/2000/svg">
+							<path d="M7.41 7.84L12 12.42l4.59-4.58L18 9.25l-6 6-6-6z" />
+							<path d="M0-.75h24v24H0z" fill="none"/>
+						</svg>
+					</div>
+				</div>
+			</center>
+		</div>
+
+		<div id="select_human_or_computer">
+			<div class="human_or_computer_option">
+				<button class="human_or_computer_button" onclick="playAsHumanButtonPressed()">
+					<div class="human_or_computer_button_play_as">Play As A</div>
+					<div>HUMAN</div>
+				</button>
+				<div class="human_or_computer_option_explained">Play games against computer players matched to your skill level.</div>
+			</div>
+			<div id="select_human_or">or</div>
+			<div class="human_or_computer_option" style="right: 0px;">
+				<button class="human_or_computer_button" onclick="playAsComputerButtonPressed()">
+					<div class="human_or_computer_button_play_as">Play As A</div>
+					<div>COMPUTER</div>
+				</button>
+				<div class="human_or_computer_option_explained">Create a computer player and submit your player to compete in a tournament.</div>
+			</div>
+		</div>
 	</div>
+	<div id="code_container_gutter"></div>
+	<div id="code_container"></div>
 </body>
 
 </html>

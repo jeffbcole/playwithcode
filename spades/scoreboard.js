@@ -1,4 +1,4 @@
-var Scoreboard = function () {
+var SpadesScoreboard = function () {
     
     this.isExpanded = false;
     this.isSlidDown = false;
@@ -10,7 +10,7 @@ var Scoreboard = function () {
             delay = 1000;
         }
         setTimeout(function() {
-            var difficultyView = document.getElementById('scoreboardDifficulty');
+            var difficultyView = document.getElementById('spades_scoreboardDifficulty');
             difficultyView.innerHTML = "Difficulty: " + game.skillLevel;
             for (var i=0; i<game.players.length; i++) {
                 var player = game.players[i];
@@ -43,8 +43,8 @@ var Scoreboard = function () {
 
         this.isExpanded = true;
 
-        var scoreboardBackground = document.getElementById('scoreboardBackground');
-        var container = document.getElementById('scoreboardRoundScoresRegion');
+        var scoreboardBackground = document.getElementById('spades_scoreboardBackground');
+        var container = document.getElementById('spadesScoreboardRoundScoresRegion');
         while (container.firstChild) {
             container.removeChild(container.firstChild);
         }
@@ -59,14 +59,14 @@ var Scoreboard = function () {
         
         for (var i=0; i<game.roundScores.length; i++) {
             var roundSeparator = document.createElement('div');
-            roundSeparator.className = 'scoreboardRoundEntrySeparator';
+            roundSeparator.className = 'spades_scoreboardRoundEntrySeparator';
             roundSeparator.style.left = i*50 + 'px'
             container.appendChild(roundSeparator);
 
             for (var j=0; j<4; j++) {
                 var curPlayerIndex = p[j].playerPositionInt;
                 var roundScore = document.createElement('div');
-                roundScore.className = 'scoreboardRoundEntry';
+                roundScore.className = 'spades_scoreboardRoundEntry';
                 var score = game.roundScores[i][curPlayerIndex];
                 if (score >= 0) {
                     roundScore.innerHTML = "+" + score;    
@@ -78,7 +78,7 @@ var Scoreboard = function () {
                 container.appendChild(roundScore);
 
                 var roundTricksBid = document.createElement('div');
-                roundTricksBid.className = 'scoreboardRoundBidsEntry';
+                roundTricksBid.className = 'spades_scoreboardRoundBidsEntry';
                 roundTricksBid.innerHTML = '(' + game.roundTricksTaken[i][curPlayerIndex] + "/" + game.roundBids[i][curPlayerIndex] + ')';
                 roundTricksBid.style.left = i*50 + 'px';
                 roundTricksBid.style.top = 20 + j*38 + 'px';
@@ -94,7 +94,7 @@ var Scoreboard = function () {
             width = 200 + containerWidth + "px";
         }
 
-        var scoreboard = document.getElementById('scoreboard');
+        var scoreboard = document.getElementById('spades_scoreboard');
         scoreboard.style.zIndex = 1000;
     }
 
@@ -104,12 +104,12 @@ var Scoreboard = function () {
         }
         this.isExpanded = false;
 
-        var scoreboard = document.getElementById('scoreboard');
+        var scoreboard = document.getElementById('spades_scoreboard');
         with (scoreboard.style) {
             transition = "0.3s linear";
             zIndex = 999;
         }
-        var scoreboardBackground = document.getElementById('scoreboardBackground');
+        var scoreboardBackground = document.getElementById('spades_scoreboardBackground');
         with (scoreboardBackground.style) {
             transition = "0.3s linear";
             background = "#00000077";
@@ -123,7 +123,7 @@ var Scoreboard = function () {
         }
 
         this.isSlidDown = true;
-        var element = document.getElementById('scoreboard');
+        var element = document.getElementById('spades_scoreboard');
         with (element.style) {
             transition = "1s ease-in-out";
             top = "0px";
@@ -136,7 +136,7 @@ var Scoreboard = function () {
         }
 
         this.isSlidDown = false;
-        var element = document.getElementById('scoreboard');
+        var element = document.getElementById('spades_scoreboard');
         with (element.style) {
             transition = "1s ease-in-out";
             top = "-152px";
@@ -144,7 +144,7 @@ var Scoreboard = function () {
 
         this.Contract();
 
-        var difficultyView = document.getElementById('scoreboardDifficulty');
+        var difficultyView = document.getElementById('spades_scoreboardDifficulty');
         difficultyView.innerHTML = "";
     }
 
@@ -180,7 +180,7 @@ var Scoreboard = function () {
                 });
                 for (var i=0; i<4; i++) {
                     var player = p[i];
-                    var elem = document.getElementById('scoreboardPlayerRegion' + player.playerPosition);
+                    var elem = document.getElementById('spades_scoreboardPlayerRegion' + player.playerPosition);
                     elem.style.transition = "0.5s ease-in-out";
                     elem.style.top = i*38 + 'px';
                 }
@@ -195,7 +195,7 @@ var Scoreboard = function () {
                 });
                 for (var i=0; i<4; i++) {
                     var player = p[i];
-                    var elem = document.getElementById('scoreboardPlayerRegion' + player.playerPosition);
+                    var elem = document.getElementById('spades_scoreboardPlayerRegion' + player.playerPosition);
                     elem.style.transition = "none";
                     elem.style.top = i*38 + 'px';
                 }

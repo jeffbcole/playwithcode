@@ -1,4 +1,4 @@
-.player_name {
+.pinochle_player_name {
     visibility: hidden;
     position: absolute;
     width: 100px;
@@ -9,7 +9,7 @@
     pointer-events: none;
 }
 
-.player_score {
+.pinochle_player_score {
     visibility: hidden;
     position: absolute;
     width: 200px;
@@ -20,7 +20,7 @@
     pointer-events: none;
 }
 
-.player_thinking {
+.pinochle_player_thinking {
     position: absolute;
     width: 75px;
     height: 60px;
@@ -29,7 +29,7 @@
     visibility: hidden;
 }
 
-.circular {
+.pinochle_circular {
     animation: rotate 2s linear infinite;
     height: 50px;
     width: 50px;
@@ -40,7 +40,7 @@
     filter: drop-shadow( 3px 3px 1px rgba(0, 0, 0, .7));
 }
   
-.player_thinking_path {
+.pinochle_player_thinking_path {
     stroke-dasharray: 1,200;
     stroke-dashoffset: 0;
     stroke:#0057e7;
@@ -67,7 +67,17 @@
     }
 }
 
-#trump_suit_indicator {
+#pinochle_choose_bid_view {
+	z-index: 999;
+	opacity:0;
+	pointer-events: none;
+	position: absolute;
+	top:40%;
+	left: 50%;
+	transform: translate(-50%, -50%);	
+}
+
+#pinochle_trump_suit_indicator {
     position: absolute;
     width: 70px;
     text-align: center;
@@ -79,7 +89,7 @@
     visibility: hidden;
 }
 
-#trump_suit_image {
+#pinochle_trump_suit_image {
     background-image:url('images/score_heart.png');
     background-size: contain;
     background-repeat: no-repeat;
@@ -90,7 +100,7 @@
     margin-top: 3px;
 }
 
-#trick_score_bubble {
+#pinochle_trick_score_bubble {
     position: absolute;
     visibility: hidden;
     opacity: 0;
@@ -104,7 +114,7 @@
     box-shadow: 10px 10px 0px rgba(0,0,0,0.5);
 }
 
-#trick_score_points {
+#pinochle_trick_score_points {
     display: block;
     color: white;
     text-align: center;
@@ -112,14 +122,14 @@
     margin-top: 10px;
 }
 
-#trick_score_label {
+#pinochle_trick_score_label {
     display: block;
     color: white;
     text-align: center;
     font-size: 12px;   
 }
 
-#accept_trick_result {
+#pinochle_accept_trick_result {
     position: absolute;
     visibility: hidden;
     opacity: 0;
@@ -134,11 +144,11 @@
 	box-shadow: 10px 10px 0px rgba(0,0,0,0.5);
 }
 
-#accept_trick_result:hover {
+#pinochle_accept_trick_result:hover {
     background:linear-gradient(0deg, #222222 50%, #555555 50%);
 }
 
-#accept_round_result_button {
+#pinochle_accept_round_result_button {
     width: 150px;
     height: 50px;
     cursor: pointer;
@@ -149,11 +159,11 @@
 	font-size:18pt;
 }
 
-#accept_round_result_button:hover {
+#pinochle_accept_round_result_button:hover {
     background:linear-gradient(0deg, #222222 50%, #555555 50%);
 }
 
-#player_play_prompt {
+#pinochle_player_play_prompt {
     position: absolute;
     width: 200px;
     transform: translate(-50%,-50%);
@@ -164,7 +174,7 @@
     pointer-events: none;
 }
 
-#hint_button {
+#pinochle_hint_button {
     position: absolute;
     cursor: pointer;
     width: 80px;
@@ -180,11 +190,11 @@
     opacity: 0;
 }
 
-#hint_button:hover {
+#pinochle_hint_button:hover {
     background: rgba(255, 255, 255, 0.3);
 }
 
-#undo_button {
+#pinochle_undo_button {
     position: absolute;
     cursor: pointer;
     width: 70px;
@@ -199,11 +209,11 @@
     opacity: 0;
 }
 
-#undo_button:hover {
+#pinochle_undo_button:hover {
     background: rgba(255, 255, 255, 0.3);
 }
 
-#redo_button {
+#pinochle_redo_button {
     position: absolute;
     cursor: pointer;
     width: 70px;
@@ -218,18 +228,18 @@
     opacity: 0;
 }
 
-#redo_button:hover {
+#pinochle_redo_button:hover {
     background: rgba(255, 255, 255, 0.3);
 }
 
-#choose_trump_suit_view {
+#pinochle_choose_trump_suit_view {
     position: absolute;
     transform: translate(-50%,-50%);
     opacity: 0;
     visibility: hidden;
 }
 
-#choose_trump_prompt {
+#pinochle_choose_trump_prompt {
     text-align: center;
     color: white;
     font-size: 22pt;
@@ -237,17 +247,17 @@
     margin-bottom: 10px;
 }
 
-.choose_trump_button {
+.pinochle_choose_trump_button {
     background: #00000000;
     border: none;
     cursor: pointer;
 }
 
-.choose_trump_image {
+.pinochle_choose_trump_image {
     height: 100px;
 }
 
-#select_passing_cards_message {
+#pinochle_select_passing_cards_message {
     visibility: hidden;
     position: absolute;
     width: 100%;
@@ -258,7 +268,7 @@
     pointer-events: none;
 }
 
-.select_passing_card_region {
+.pinochle_select_passing_card_region {
     position: absolute;
     opacity:  0;
     border-radius: 8px;
@@ -268,7 +278,7 @@
     height: 157px;
 }
 
-#confirm_passing_cards_button {
+#pinochle_confirm_passing_cards_button {
     position: absolute;
     cursor: pointer;
     border:#FFFFFF 2px solid;
@@ -284,11 +294,11 @@
     visibility: hidden;
 }
 
-#confirm_passing_cards_button:hover {
+#pinochle_confirm_passing_cards_button:hover {
     background:linear-gradient(0deg, #222222 50%, #555555 50%);
 }
 
-.meld_view_north_south {
+.pinochle_meld_view_north_south {
     position: absolute;
     transform: translate(-50%,0%);
     min-width: 75px;
@@ -302,7 +312,7 @@
 	box-shadow: 15px 15px 0px rgba(0,0,0,0.5);
 }
 
-.meld_view_east_west {
+.pinochle_meld_view_east_west {
     position: absolute;
     transform: translate(-50%,0%);
     min-width: 75px;
@@ -316,7 +326,7 @@
 	box-shadow: 15px 15px 0px rgba(0,0,0,0.5);
 }
 
-.meld_view_title {
+.pinochle_meld_view_title {
     display: block;
 	text-align:center;
 	font-size:12pt;
@@ -326,14 +336,14 @@
     margin-right: 5px;
 }
 
-.meld_view_value {
+.pinochle_meld_view_value {
     display: block;
 	text-align:center;
 	font-size:26pt;
 	color: #FFFFFF;
 }
 
-#round_result_view {
+#pinochle_round_result_view {
     position: absolute;
 	top:40%;
 	left: 50%;
@@ -352,18 +362,18 @@
     opacity: 0;
 }
 
-#round_result_title {
+#pinochle_round_result_title {
     color: white;
     font-size: 26px;
     margin-top: 10px;
     margin-bottom: 5px;
 }
 
-#round_result_names_row {
+#pinochle_round_result_names_row {
     height: 55px;
 }
 
-#round_result_names_north_south {
+#pinochle_round_result_names_north_south {
     position: absolute;
     width: 100px;
     left: 20px;
@@ -371,7 +381,7 @@
     padding: 5px 0px;
 }
 
-#round_result_names_east_west {
+#pinochle_round_result_names_east_west {
     position: absolute;
     width: 100px;
     left: 50%;
@@ -379,13 +389,13 @@
     padding: 5px 0px;
 }
 
-.round_result_row {
+.pinochle_round_result_row {
     display: block;
     width: 100%;
     height: 30px;
 }
 
-.round_result_row_label {
+.pinochle_round_result_row_label {
     position: absolute;
     width: 100%;
     height: 30px;
@@ -393,7 +403,7 @@
     font-size: 14px;
 }
 
-.round_result_row_value_north_south {
+.pinochle_round_result_row_value_north_south {
     position: absolute;
     width: 50%;
     font-size: 20px;
@@ -401,7 +411,7 @@
     line-height: 30px;
 }
 
-.round_result_row_value_east_west {
+.pinochle_round_result_row_value_east_west {
     position: absolute;
     width: 50%;
     left: 50%;
@@ -410,7 +420,7 @@
     line-height: 30px;
 }
 
-#round_result_line {
+#pinochle_round_result_line {
     display: block;
     width: 80%;
     left: 10%;
@@ -419,14 +429,14 @@
     margin-top: 5px;
 }
 
-#round_result_totals_row {
+#pinochle_round_result_totals_row {
     display: block;
     width: 100%;
     height: 50px;
     margin-top: 10px;
 }
 
-#round_result_totals_label {
+#pinochle_round_result_totals_label {
     position: absolute;
     width: 100%;
     height: 40px;
@@ -434,7 +444,7 @@
     font-size: 14px;
 }
 
-#round_result_totals_north_south {
+#pinochle_round_result_totals_north_south {
     position: absolute;
     width: 50%;
     font-size: 28px;
@@ -442,7 +452,7 @@
     line-height: 35px;
 }
 
-#round_result_totals_east_west {
+#pinochle_round_result_totals_east_west {
     position: absolute;
     width: 50%;
     left: 50%;
@@ -451,7 +461,7 @@
     line-height: 35px;
 }
 
-#GameOverView {
+#PinochleGameOverView {
     z-index: 999;
     width: 340px;
     height:100px;
@@ -470,17 +480,17 @@
     opacity: 0;
 }
 
-#GameOverResultText {
+#PinochleGameOverResultText {
     margin-top: 10px;
     font-size: 24pt;
 }
 
-#GameOverResultText2 {
+#PinochleGameOverResultText2 {
     margin-top: 10px;
     font-size: 20pt;
 }
 
-#round_simulations_view {
+#pinochle_round_simulations_view {
     position: absolute;
 	top:280px;
 	left: 50%;
@@ -499,7 +509,7 @@
     opacity: 0;
 }
 
-#round_simulations_title {
+#pinochle_round_simulations_title {
     position: absolute;
     width: 80%;
     left: 10%;
@@ -507,7 +517,7 @@
 	top: 5px;
 }
 
-#round_simulations_subtitle {
+#pinochle_round_simulations_subtitle {
     position: absolute;
     width: 70%;
     left: 15%;
@@ -515,7 +525,7 @@
     font-size: 16px;
 }
 
-#round_simulations_graphs_container {
+#pinochle_round_simulations_graphs_container {
     position: absolute;
     width: 450px;
     height: 325px;
@@ -525,7 +535,7 @@
     overflow-x: hidden;
 }
 
-.round_simulations_histogram {
+.pinochle_round_simulations_histogram {
     display: block;
     position: relative;
     width: 450px;
@@ -533,7 +543,7 @@
     margin-bottom: 10px;
 }
 
-.round_simulations_horizontal_axis {
+.pinochle_round_simulations_horizontal_axis {
     position: absolute;
     width: 450px;
     height: 1px;
@@ -541,14 +551,14 @@
     top: 55px;
 }
 
-.round_simulations_horizontal_axis_label {
+.pinochle_round_simulations_horizontal_axis_label {
     position: absolute;
     top: 55px;
     font-size: 12px;
     color: #555555;
 }
 
-.round_simulations_bar {
+.pinochle_round_simulations_bar {
     position: absolute;
     width: 6px;
     height: 50px;
@@ -558,7 +568,7 @@
     transform: scaleY(1);
 }
 
-.round_simulations_vertical_line {
+.pinochle_round_simulations_vertical_line {
     position: absolute;
     width: 2px;
     height: 50px;
@@ -566,7 +576,7 @@
     background: white;
 }
 
-.round_simulations_safe_bid_value {
+.pinochle_round_simulations_safe_bid_value {
     position: absolute;
     width: 100px;
     text-align: right;
@@ -576,7 +586,7 @@
     top: 10px;
 }
 
-.round_simulations_safe_bid_label {
+.pinochle_round_simulations_safe_bid_label {
     position: absolute;
     width: 100px;
     text-align: right;
@@ -586,7 +596,7 @@
     top: 35px;
 }
 
-.round_simulations_suggested_bid_value {
+.pinochle_round_simulations_suggested_bid_value {
     position: absolute;
     width: 100px;
     text-align: left;
@@ -596,7 +606,7 @@
     top: 10px;
 }
 
-.round_simulations_suggested_bid_label {
+.pinochle_round_simulations_suggested_bid_label {
     position: absolute;
     width: 100px;
     text-align: left;
@@ -606,17 +616,290 @@
     top: 35px;
 }
 
-.round_simulations_suit_image {
+.pinochle_round_simulations_suit_image {
     position: absolute;
     left: 50px;
     height: 55px;
     transform: translateX(-50%);
 }
 
-#round_simulations_explanation {
+#pinochle_round_simulations_explanation {
     position: absolute;
     width: 90%;
     left: 5%;
     top: 310px;
     font-size: 16px;
+}
+
+/*
+*
+*  Scoreboard
+*
+*/
+
+#pinochle_scoreboard {
+    position: absolute;
+    width: 200px;
+    height: 172px;
+    left: 25px;
+    top: -152px;
+}
+
+#pinochle_scoreboardBackground {
+    position: absolute;
+    width: 200px;
+    height: 80px;
+    left: 0px;
+    top: 0px;
+    background: #00000077;
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
+    overflow: hidden;
+}
+
+#PinochleScoreboardDifficulty {
+    position: absolute;
+    width: 100px;
+    height: 20px;
+    font-size: 12pt;
+    color: #000000;
+    text-align: center;
+    top: 80px;
+    left: -12px;
+    transform-origin: left;
+    text-align: center;
+    transform: rotate(-90deg);
+}
+
+#PinochleScoreboardNorthSouth {
+    position: absolute;
+    width: 100px;
+    height: 50px;
+    left: 0px;
+    background: #0000FFBB;
+}
+
+#PinochleScoreboardEastWest {
+    position: absolute;
+    width: 100px;
+    height: 50px;
+    left: 100px;
+    background: #FF0000BB;
+}
+
+.pinochle_scoreboard_name {
+    color: white;
+    text-align: center;
+    font-size: 14pt;
+    margin: 3px 5px;
+    text-shadow: 2pt 2pt rgba(0, 0, 0, 0.5);
+}
+
+#PinochleScoreboardScoreBackgroundNorthSouth {
+    position: absolute;
+    width: 100%;
+    height: 30px;
+    background: #0000FFBB;
+    border: 2px solid #0000FF;
+    top: 50px;
+    box-sizing: border-box;
+}
+
+#PinochleScoreboardScoreBackgroundEastWest {
+    position: absolute;
+    width: 100%;
+    height: 30px;
+    background: #FF0000BB;
+    border: 2px solid #FF0000;
+    top: 50px;
+    box-sizing: border-box;
+}
+
+#PinochleScoreboardScoreFillNorthSouth {
+    position: absolute;
+    width: 50%;
+    height: 30px;
+    background: #0000FF;
+    top: 50px;
+}
+
+#PinochleScoreboardScoreFillEastWest {
+    position: absolute;
+    width: 50%;
+    height: 30px;
+    background: #FF0000;
+    top: 50px;
+}
+
+.pinochle_scoreboard_score {
+    position: absolute;
+    color: white;
+    text-align: center;
+    font-size: 16pt;
+    text-shadow: 2pt 2pt rgba(0, 0, 0, 0.5);
+    top: 50px;
+    width: 100%;
+    height: 30px;
+    line-height: 30px;
+}
+
+#PinochleScoreboardRowBid {
+    position: absolute;
+    width: 200px;
+    height: 25px;
+    top: 82px;
+}
+
+#PinochleScoreboardRowMeld {
+    position: absolute;
+    width: 200px;
+    height: 25px;
+    top: 107px;
+}
+
+#PinochleScoreboardRowCounters {
+    position: absolute;
+    width: 200px;
+    height: 25px;
+    top: 132px;
+}
+
+.pinochle_scoreboard_row_title {
+    position: absolute;
+    width: 100%;
+    color: white;
+    text-align: center;
+    font-size: 12pt;
+    text-shadow: 2pt 2pt rgba(0, 0, 0, 0.5);
+    height: 25px;
+    line-height: 25px;
+}
+
+.pinochle_scoreboard_row_label_north_south {
+    position: absolute;
+    width: 40%;
+    color: white;
+    text-align: center;
+    font-size: 12pt;
+    text-shadow: 2pt 2pt rgba(0, 0, 0, 0.5);
+    height: 25px;
+    line-height: 25px;
+}
+
+.pinochle_scoreboard_row_label_east_west {
+    position: absolute;
+    width: 40%;
+    right: 0px;
+    color: white;
+    text-align: center;
+    font-size: 12pt;
+    text-shadow: 2pt 2pt rgba(0, 0, 0, 0.5);
+    height: 25px;
+    line-height: 25px;
+}
+
+#PinochleScoreboardRoundScoresRegion {
+    position: absolute;
+    left: 200px;
+    width: 150px;
+    height: 100%;
+    overflow: auto;
+}
+
+.pinochle_scoreboard_round_entry_separator {
+    position: absolute;
+    width: 1px;
+    background: #999999;
+    height: 139px;
+    top: 10px;
+}
+
+.pinochle_scoreboard_round_number {
+    position: absolute;
+    width: 150px;
+    top: 8px;
+    font-size: 14px;
+    text-align: center;
+    color: white;
+}
+
+.pinochle_scoreboard_round_name_north_south {
+    position: absolute;
+    width: 70px;
+    height: 25px;
+    line-height: 25px;
+    top: 30px;
+    font-size: 14px;
+    text-align: center;
+    color: white;
+    background: #0000BB;
+}
+
+.pinochle_scoreboard_round_name_east_west {
+    position: absolute;
+    width: 70px;
+    height: 25px;
+    line-height: 25px;
+    top: 30px;
+    font-size: 14px;
+    text-align: center;
+    color: white;
+    background: #FF0000;
+}
+
+.pinochle_scoreboard_round_label {
+    position: absolute;
+    width: 150px;
+    height: 20px;
+    line-height: 20px;
+    font-size: 12px;
+    text-align: center;
+    color: white;
+}
+
+.pinochle_scoreboard_round_value_north_south {
+    position: absolute;
+    width: 70px;
+    height: 20px;
+    line-height: 20px;
+    font-size: 14px;
+    text-align: center;
+    color: white;
+}
+
+.pinochle_scoreboard_round_value_east_west {
+    position: absolute;
+    width: 70px;
+    height: 20px;
+    line-height: 20px;
+    font-size: 14px;
+    text-align: center;
+    color: white;
+}
+
+.pinochle_scoreboard_round_horizontal_divider {
+    position: absolute;
+    width: 140px;
+    height: 1.5px;
+    background: white;
+}
+
+.pinochle_scoreboard_round_score_north_south {
+    position: absolute;
+    width: 70px;
+    height: 20px;
+    line-height: 20px;
+    font-size: 22px;
+    text-align: center;
+    color: white;
+}
+
+.pinochle_scoreboard_round_score_east_west {
+    position: absolute;
+    width: 70px;
+    height: 20px;
+    line-height: 20px;
+    font-size: 22px;
+    text-align: center;
+    color: white;
 }

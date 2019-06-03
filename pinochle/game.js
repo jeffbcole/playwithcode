@@ -1,11 +1,14 @@
-var Game = function () {
+var PinochleGame = function () {
 
+    // Global Game Settings
+    this.settings = new PinochleSettings();
+    
     // Constants
     var cardLoweredWidth = 115;
     var cardLoweredHeight = 162;
     
     // Local variables
-    var scoreboard = new Scoreboard();
+    var scoreboard = new PinochleScoreboard();
     var currentDraggedCardView;
     var currentPlayerHandCardSpacing = 0;
     var autoPlayBoundaryY = 0;
@@ -30,99 +33,906 @@ var Game = function () {
     this.roundCountersTaken = [];
     this.roundScores = [];
 
+    // Inject all the html elements
+    gameContainer.innerHTML = 
+        '<div id="below_cards_messages_region">\
+            <div class="pinochle_player_name" id="player_name_South"></div>\
+            <div class="pinochle_player_name" id="player_name_West" style="text-align: left; margin-left:10px"></div>\
+            <div class="pinochle_player_name" id="player_name_North"></div>\
+            <div class="pinochle_player_name" id="player_name_East" style="text-align: right;"></div>\
+            \
+            <div class="pinochle_player_score" id="player_score_South"></div>\
+            <div class="pinochle_player_score" id="player_score_West" style="text-align:left; margin-left:10px"></div>\
+            <div class="pinochle_player_score" id="player_score_North"></div>\
+            <div class="pinochle_player_score" id="player_score_East" style="text-align:right; margin-right:10px"></div>\
+            \
+            <div id="pinochle_player_play_prompt">Drop a card here</div>\
+            \
+            <div id="pinochle_select_passing_cards_message">Select 3 cards to pass left:</div>\
+            <div id="select_passing_cards_region_0" class="pinochle_select_passing_card_region"></div>\
+            <div id="select_passing_cards_region_1" class="pinochle_select_passing_card_region"></div>\
+            <div id="select_passing_cards_region_2" class="pinochle_select_passing_card_region"></div>\
+            <div id="select_passing_cards_region_3" class="pinochle_select_passing_card_region"></div>\
+            <button id="pinochle_confirm_passing_cards_button" onclick="game.passingCardsConfirmed()">Pass Cards</button>\
+            \
+            <button id="pinochle_hint_button" onclick="game.OnHintButtonClick()">Hint</button>\
+            <button id="pinochle_undo_button" onclick="game.OnUndoButtonClick()">Undo</button>\
+            <button id="pinochle_redo_button" onclick="game.OnRedoButtonClick()">Redo</button>\
+            \
+            <div id="pinochle_trump_suit_indicator">\
+                <center>\
+                    <div id="trump_suit_text">Trump</div>\
+                    <div id="pinochle_trump_suit_image"></div>\
+                </center>\
+            </div>\
+            \
+            <div id="pinochle_scoreboard">\
+                <div id="pinochle_scoreboardBackground" onclick="game.OnScoreboardClick()">\
+                    <div id="PinochleScoreboardNorthSouth">\
+                        <div class="pinochle_scoreboard_name" id="scoreboardNameNorthSouth">You & Dixon</div>\
+                        <div id="PinochleScoreboardScoreBackgroundNorthSouth"></div>\
+                        <div id="PinochleScoreboardScoreFillNorthSouth"></div>\
+                        <div class="pinochle_scoreboard_score" id="scoreboardScoreNorthSouth"></div>\
+                    </div>\
+                    <div id="PinochleScoreboardEastWest">\
+                        <div class="pinochle_scoreboard_name" id="scoreboardNameEastWest">Charlotte & Isabella</div>\
+                        <div id="PinochleScoreboardScoreBackgroundEastWest"></div>\
+                        <div id="PinochleScoreboardScoreFillEastWest"></div>\
+                        <div class="pinochle_scoreboard_score" id="scoreboardScoreEastWest"></div>\
+                    </div>\
+                    \
+                    <div id="PinochleScoreboardRowBid">\
+                        <div class="pinochle_scoreboard_row_title">Bid</div>\
+                        <div class="pinochle_scoreboard_row_label_north_south" id="scoreboardRowBidNorthSouth"></div>\
+                        <div class="pinochle_scoreboard_row_label_east_west" id="scoreboardRowBidEastWest"></div>\
+                    </div>\
+                    \
+                    <div id="PinochleScoreboardRowMeld">\
+                        <div class="pinochle_scoreboard_row_title">Meld</div>\
+                        <div class="pinochle_scoreboard_row_label_north_south" id="scoreboardRowMeldNorthSouth"></div>\
+                        <div class="pinochle_scoreboard_row_label_east_west" id="scoreboardRowMeldEastWest"></div>\
+                    </div>\
+                    \
+                    <div id="PinochleScoreboardRowCounters">\
+                        <div class="pinochle_scoreboard_row_title">Counters</div>\
+                        <div class="pinochle_scoreboard_row_label_north_south" id="scoreboardRowCountersNorthSouth"></div>\
+                        <div class="pinochle_scoreboard_row_label_east_west" id="scoreboardRowCountersEastWest"></div>\
+                    </div>\
+                    \
+                    <div id="PinochleScoreboardRoundScoresRegion"></div>\
+                </div>\
+                <div id="PinochleScoreboardDifficulty"></div>\
+            </div>\
+        </div>\
+        \
+        <div id="cards_region"></div>\
+        \
+        <div id="adView" align="center">\
+            \
+        </div>\
+        \
+        <div id="pinochle_choose_bid_view">\
+            <table>\
+                <tr>\
+                    <td><button class="choose_bid_button" onclick="game.OnDecrementBidButtonPressed();" style="width:50px;height:50px">-</button></td>\
+                    <td><button id="submit_bid_button" class="choose_bid_button" onclick="game.OnSubmitBidButtonPressed();" style="width:200px;height:60px">Bid: 23</button></td>\
+                    <td><button class="choose_bid_button" onclick="game.OnIncrementBidButtonPressed();" style="width:50px;height:50px">+</button></td>\
+                </tr>\
+                <tr>\
+                    <td colspan="3"><div style="text-shadow: 2pt 2pt rgba(0, 0, 0, 0.5);font-size: 16pt;text-align:center;height:25px;">or</div></td>\
+                </tr>\
+                <tr>\
+                    <td colspan="3"><center><button class="choose_bid_button" onclick="game.OnPassBidButtonPressed();" style="width:200px;height:60px">Pass</button></center></td>\
+                </tr>\
+            </table>\
+        </div>\
+        \
+        <div id="pinochle_choose_trump_suit_view">\
+            <table>\
+                <tr>\
+                    <td colspan="4"><div id="pinochle_choose_trump_prompt">Select the trump suit:</div></td>\
+                </tr>\
+                <tr>\
+                    <td><button class="pinochle_choose_trump_button" onclick="game.OnTrumpSuitButtonPressed(\'S\')"><img class="pinochle_choose_trump_image" src="shared/images/score_spade.png" ondragstart="return false;" /></button></td>\
+                    <td><button class="pinochle_choose_trump_button" onclick="game.OnTrumpSuitButtonPressed(\'H\')"><img class="pinochle_choose_trump_image" src="shared/images/score_heart.png" ondragstart="return false;" /></button></td>\
+                    <td><button class="pinochle_choose_trump_button" onclick="game.OnTrumpSuitButtonPressed(\'C\')"><img class="pinochle_choose_trump_image" src="shared/images/score_club.png" ondragstart="return false;" /></button></td>\
+                    <td><button class="pinochle_choose_trump_button" onclick="game.OnTrumpSuitButtonPressed(\'D\')"><img class="pinochle_choose_trump_image" src="shared/images/score_diamond.png" ondragstart="return false;" /></button></td>\
+                </tr>\
+            </table>\
+        </div>\
+        \
+        <div id="player_thinking_West" class="pinochle_player_thinking">\
+            <svg class="pinochle_circular">\
+                <circle class="pinochle_player_thinking_path" cx="25" cy="25" r="20" fill="none" stroke-width="5" stroke-miterlimit="10"></circle>\
+            </svg>\
+        </div>\
+        \
+        <div id="player_thinking_North" class="pinochle_player_thinking">\
+            <svg class="pinochle_circular">\
+                <circle class="pinochle_player_thinking_path" cx="25" cy="25" r="20" fill="none" stroke-width="5" stroke-miterlimit="10"></circle>\
+            </svg>\
+        </div>\
+        \
+        <div id="player_thinking_East" class="pinochle_player_thinking">\
+            <svg class="pinochle_circular">\
+                <circle class="pinochle_player_thinking_path" cx="25" cy="25" r="20" fill="none" stroke-width="5" stroke-miterlimit="10"></circle>\
+            </svg>\
+        </div>\
+        \
+        <div class="bid_view" id="bid_view_West">\
+            <div class="bid_view_title" id="bid_view_title_West">Bid:</div>\
+            <div class="bid_view_value" id="bid_view_value_West" >20</div>\
+        </div>\
+        \
+        <div class="bid_view" id="bid_view_North">\
+            <div class="bid_view_title" id="bid_view_title_North">Bid:</div>\
+            <div class="bid_view_value" id="bid_view_value_North">20</div>\
+        </div>\
+        \
+        <div class="bid_view" id="bid_view_East">\
+            <div class="bid_view_title" id="bid_view_title_East">Bid:</div>\
+            <div class="bid_view_value" id="bid_view_value_East">20</div>\
+        </div>\
+        \
+        <div class="bid_view" id="bid_view_South" >\
+            <div class="bid_view_title" id="bid_view_title_South">Bid:</div>\
+            <div class="bid_view_value" id="bid_view_value_South">20</div>\
+        </div>\
+        \
+        <div class="pinochle_meld_view_north_south" id="meld_view_South">\
+                <div class="pinochle_meld_view_title" id="meld_view_title_South">Meld</div>\
+                <div class="pinochle_meld_view_value" id="meld_view_value_South">0</div>\
+        </div>\
+        \
+        <div class="pinochle_meld_view_north_south" id="meld_view_North">\
+            <div class="pinochle_meld_view_title" id="meld_view_title_North">Meld</div>\
+            <div class="pinochle_meld_view_value" id="meld_view_value_North">0</div>\
+        </div>\
+        \
+        <div class="pinochle_meld_view_east_west" id="meld_view_West">\
+                <div class="pinochle_meld_view_title" id="meld_view_title_West">Meld</div>\
+                <div class="pinochle_meld_view_value" id="meld_view_value_West">0</div>\
+        </div>\
+        \
+        <div class="pinochle_meld_view_east_west" id="meld_view_East">\
+            <div class="pinochle_meld_view_title" id="meld_view_title_East">Meld</div>\
+            <div class="pinochle_meld_view_value" id="meld_view_value_East">0</div>\
+        </div>\
+        \
+        <div id="accept_meld_view">\
+            <div id="accept_meld_view_prompt">Contract is unreachable.<br>You must throw in.</div>\
+            <button id="accept_meld_view_button" onclick="game.OnAcceptMeldButtonPressed();" style="width:200px;height:60px">Continue</button>\
+            <button id="thow_in_button" onclick="game.OnThrowInButtonPressed();" style="width:200px;height:60px">Throw In</button>\
+        </div>\
+        \
+        <div id="pinochle_trick_score_bubble">\
+            <div id="pinochle_trick_score_points">+40</div>\
+            <div id="pinochle_trick_score_label">Counters</div>\
+        </div>\
+        \
+        <button id="pinochle_accept_trick_result" onclick="game.OnAcceptTrickButtonPressed();">Continue</button>\
+        \
+        <div id="pinochle_round_result_view">\
+            <div id="pinochle_round_result_title">Round 1</div>\
+            <div id="pinochle_round_result_names_row">\
+                <div id="pinochle_round_result_names_north_south">You &<br>Amelia</div>\
+                <div id="pinochle_round_result_names_east_west">Catalina<br>& Seward</div>\
+            </div>\
+            <div class="pinochle_round_result_row">\
+                <div id="round_result_bid_label" class="pinochle_round_result_row_label">Bid</div>\
+                <div id="round_result_bid_north_south" class="pinochle_round_result_row_value_north_south">(22)</div>\
+                <div id="round_result_bid_east_west" class="pinochle_round_result_row_value_east_west">(22)</div>\
+            </div>\
+            <div class="pinochle_round_result_row">\
+                <div id="round_result_melds_label" class="pinochle_round_result_row_label">Meld</div>\
+                <div id="round_result_melds_north_south" class="pinochle_round_result_row_value_north_south">(22)</div>\
+                <div id="round_result_melds_east_west" class="pinochle_round_result_row_value_east_west">(22)</div>\
+            </div>\
+            <div class="pinochle_round_result_row">\
+                <div id="round_result_counters_label" class="pinochle_round_result_row_label">Counters</div>\
+                <div id="round_result_counters_north_south" class="pinochle_round_result_row_value_north_south">(22)</div>\
+                <div id="round_result_counters_east_west" class="pinochle_round_result_row_value_east_west">(22)</div>\
+            </div>\
+            <center>\
+                <div id="pinochle_round_result_line"></div>\
+            </center>\
+            <div id="pinochle_round_result_totals_row">\
+                <div id="pinochle_round_result_totals_label">Round<br>Score</div>\
+                <div id="pinochle_round_result_totals_north_south">+30</div>\
+                <div id="pinochle_round_result_totals_east_west">+30</div>\
+            </div>\
+            <button id="pinochle_accept_round_result_button" onclick="game.OnAcceptRoundResultButtonPressed();">OK</button>\
+        </div>\
+        \
+        <div id="pinochle_round_simulations_view">\
+            <button id="round_simulations_close_button" class="close_button" onclick="game.HideRoundSimulationsView()">X</button>\
+            <div id="pinochle_round_simulations_title">Bid Analysis</div>\
+            <div id="pinochle_round_simulations_subtitle">This is the range of scores for your hand after 1000 round simulations*</div>\
+            <div id="pinochle_round_simulations_graphs_container">\
+                <div id="round_simulations_histogram_0" class="pinochle_round_simulations_histogram"></div>\
+                <div id="round_simulations_histogram_1" class="pinochle_round_simulations_histogram"></div>\
+                <div id="round_simulations_histogram_2" class="pinochle_round_simulations_histogram"></div>\
+                <div id="round_simulations_histogram_3" class="pinochle_round_simulations_histogram"></div>\
+                <div id="pinochle_round_simulations_explanation">* These graphs show the results of simulations of rounds where a player starts with your cards, wins the bid, and then declares the trump suit.  When running each round simulation, the remaining cards are randomly dealt to the rest of the players and all players (including you) are assumed to play the rest of the round using the \'Standard\' skill level.<br><br>The Safe Bid indicator is shown at the score that 90% of the simulations achieved.  The Recommended Bid indicator is shown at the score that 75% of the simulations achieved.</div>\
+            </div>\
+        </div>\
+        \
+        <div id="PinochleGameOverView">\
+            <div id="PinochleGameOverResultText">You won!</div>\
+            <div id="PinochleGameOverResultText2">vs the easy players</div>\
+        </div>\
+        \
+        <button id="menu_button" onclick="MenuButtonPressed()">\
+            <img src="shared/images/MenuButton.png" ondragstart="return false;" />\
+        </button>\
+        \
+        <div id="menu_main" class="menu_view">\
+            <button id="menu_main_close_button" class="close_button" onclick="menu_main_close_click()">X</button>\
+            <button id="start_game_button" class="menu_button" onclick="game.ShowStartAGameMenu()">Start A Game</button>\
+            <button id="settings_button" class="menu_button" onclick="game.ShowSettingsMenu()">Settings</button>\
+            <button id="statistics_button" class="menu_button" onclick="game.ShowStatisticsMenu()">Statistics</button>\
+            <button id="rules_button" class="menu_button" onclick="game.ShowRulesMenu()">Rules</button>\
+        </div>\
+        \
+        <div id="menu_start_a_game" class="menu_view">\
+            <div id="menu_start_a_game_title" class="menu_card_title">Choose opponent skill:</div>\
+            <button id="menu_start_a_game_close_button" class="close_button" onclick="menu_card_close_click()">X</button>\
+            <button id="easy_game_button" class="menu_button" onclick="menu_start_game_click(\'Easy\')">Easy</button>\
+            <button id="standard_game_button" class="menu_button" onclick="menu_start_game_click(\'Standard\')">Standard</button>\
+            <button id="pro_game_button" class="menu_button" onclick="menu_start_game_click(\'Pro\')">Pro</button>\
+            <div style="text-align:center;font-size:12pt; pointer-events: none;">Cards are dealt randomly for all difficulty levels.</div>\
+            <a id="menu_start_a_game_difficulties_link" onclick="game.ShowDifficultiesExplainedMenu()" href="#">Click here to learn how difficulties work</a>\
+        </div>\
+        \
+        <div id="menu_difficulties_explained" class="menu_view">\
+            <div id="menu_difficulties_explained_title" class="menu_card_title">Computer Difficulty Levels Explained</div>\
+            <button id="menu_difficulties_explained_close_button" class="close_button" onclick="menu_card_close_click()">X</button>\
+            <div id="menu_difficulties_explained_body">\
+                    For all three difficulty levels the cards are dealt completely at random to you and to the computer players.  Computer players are not given any special advantage and they do not know what cards are in your hand or in any of the other players\' hands.  The difference between the easy, standard, and pro players is their memory of what cards have been played and their strategies used to choose their plays.  If you are finding that the computer is beating you, you will likely benefit from understanding how the computer chooses its next move.\
+                <br>\
+                <br>\
+                <center>\
+                    <div style="font-size:16pt">\
+                        <u>Easy Computer Strategy</u>\
+                    </div>\
+                </center>\
+                <table class="menu_table_bordered" style="width:100%; text-align:left; font-size:12pt; margin-top:10pt">\
+                    <tr>\
+                        <td valign="top" width="80pt">Bidding:</td>\
+                        <td>Generate a maximum willing bid by picking a random number.  Increment the bid until it is above the maximum willing bid, then pass.</td>\
+                    </tr>\
+                    <tr>\
+                        <td valign="top" width="80pt">Declaring Trump:</td>\
+                        <td>Declare trump suit with whichever suit has the highest sum of card values.</td>\
+                    </tr>\
+                    <tr>\
+                        <td valign="top" width="80pt">Passing Cards To Declarer:</td>\
+                        <td>Pass a random set of cards.</td>\
+                    </tr>\
+                    <tr>\
+                        <td valign="top" width="80pt">Passing Cards As The Declarer:</td>\
+                        <td>Pass a random set of cards.</td>\
+                    </tr>\
+                    <tr>\
+                        <td valign="top" width="80pt">Trick-Taking:</td>\
+                        <td>Play a random legal card.</td>\
+                    </tr>\
+                </table>\
+                <br>\
+                <center>\
+                    <div style="font-size:16pt">\
+                        <u>Standard Computer Strategy</u>\
+                    </div>\
+                </center>\
+                <table class="menu_table_bordered" style="width:100%; text-align:left; font-size:12pt; margin-top:10pt">\
+                    <tr>\
+                        <td valign="top" width="80pt">Bidding:</td>\
+                        <td>Simulate many rounds with cards randomly dealt to standard strategy players.  Set the maximum willing bid at the round score achieved in more than 83% of the simulations.</td>\
+                    </tr>\
+                    <tr>\
+                        <td valign="top" width="80pt">Declaring Trump:</td>\
+                        <td>Simulate many rounds with cards randomly dealt to standard strategy players.  Pick the trump suit that resulted in the highest willing bid.</td>\
+                    </tr>\
+                    <tr>\
+                        <td valign="top" width="80pt">Passing Cards To Declarer:</td>\
+                        <td>First prefer not to pass any cards that result in a meld score for your hand.  Then, prefer to first pass highest trump cards.  Then prefer highest non-trump cards.</td>\
+                    </tr>\
+                    <tr>\
+                        <td valign="top" width="80pt">Passing Cards As The Declarer:</td>\
+                        <td>First prefer not to pass any cards that result in a meld score for our hand.  Then, prefer to first pass non-ace cards that would make us void in a suit, then prefer non-trump kings, then non-trump queens, then jack of diamonds (except if just received from partner), then lowest non-trump cards, then lowest trump cards.  Finally, if necessary, we would choose to pass the cards that contribute the least amount of points to our meld score.</td>\
+                    </tr>\
+                    <tr>\
+                        <td valign="top" width="80pt">Trick-Taking When Leading:</td>\
+                        <td>Remembering what has been played and what was shown during passing and melding, play the highest trump card that is guaranteed to take the trick.  Otherwise, play the highest non trump card.</td>\
+                    </tr>\
+                    <tr>\
+                        <td valign="top" width="80pt">Trick-Taking When Following Lead:</td>\
+                        <td>If we don\'t have a play that can beat what is currently in the trick pile, then if our partner played the current highest trick card then we play our lowest counter.  Otherwise we play our lowest card.  If we do have play options that could beat what is currently in the trick pile, then we play our highest winning card unless we are playing last.  If we are playing last and we can take the trick then we play our lowest card that can take the trick.</td>\
+                    </tr>\
+                </table>\
+                <br>\
+                <center>\
+                    <div style="font-size:16pt">\
+                        <u>Pro Computer Strategy</u>\
+                    </div>\
+                </center>\
+                <table class="menu_table_bordered" style="width:100%; text-align:left; font-size:12pt; margin-top:10pt">\
+                    <tr>\
+                        <td valign="top" width="80pt">Bidding:</td>\
+                        <td>Simulate many rounds with cards randomly dealt to standard strategy players.  Set the maximum willing bid at the round score achieved in more than 75% of the simulations.</td>\
+                    </tr>\
+                    <tr>\
+                        <td valign="top" width="80pt">Declaring Trump:</td>\
+                        <td>Simulate many rounds with cards randomly dealt to standard strategy players.  Pick the trump suit that resulted in the highest willing bid.</td>\
+                    </tr>\
+                    <tr>\
+                        <td valign="top" width="80pt">Passing Cards To Declarer:</td>\
+                        <td>First prefer not to pass any cards that result in a meld score for your hand.  Then, prefer to pass highest trump cards (except 9\'s of trump).  Then prefer aces.  Then prefer 9s of trump.  Then prefer queen of spades or jack of diamonds.  Then prefer jacks.  Then prefer nines.  Then pass the cards that contribute the least amount of points to our meld score.</td>\
+                    </tr>\
+                    <tr>\
+                        <td valign="top" width="80pt">Passing Cards As The Declarer:</td>\
+                        <td>First prefer not to pass any cards that result in a meld score for our hand.  Then prefer non-trump kings, then non-trump queens, then jack of diamonds (except if just received from partner), then lowest non-trump cards, then lowest trump cards.  Finally, if necessary, we would choose to pass the cards that contribute the least amount of points to our meld score.</td>\
+                    </tr>\
+                    <tr>\
+                        <td valign="top" width="80pt">Trick-Taking When Leading:</td>\
+                        <td>First remove bad options:  For each legal play, simulate the rest of the round 200 times with random deals of the unseen cards.  If any play results in an average round score that is more than half a point lower than the highest average play, then remove it from the options considered.<br><br>Remembering what has been played and what was shown during passing and melding, play the highest trump card that is guaranteed to take the trick.  Otherwise, play the highest non trump card that is guaranteed to take the trick.  Otherwise, play the lowest card.</td>\
+                    </tr>\
+                    <tr>\
+                        <td valign="top" width="80pt">Trick-Taking When Following Lead:</td>\
+                        <td>First remove bad options:  For each legal play, simulate the rest of the round 200 times with random deals of the unseen cards.  If any play results in an average round score that is more than half a point lower than the highest average play, then remove it from the options considered.<br><br>If we don\'t have a play that can beat what is currently in the trick pile, then if our partner played the current highest trick card then we play our lowest counter.  Otherwise we play our lowest card.  If we do have play options that could beat what is currently in the trick pile, then we play our highest winning card unless we are playing the last trick card.  If we are playing last and we can take the trick then we play our lowest card that can take the trick.</td>\
+                    </tr>\
+                </table>\
+            </div>\
+        </div>\
+        \
+        <div id="menu_settings" class="menu_view">\
+            <div id="menu_settings_title" class="menu_card_title">Settings</div>\
+            <button id="menu_settings_close_button" class="close_button" onclick="menu_card_close_click()">X</button>\
+            <div id="menu_settings_body">\
+                <table style="width:100%; text-align:left; font-size:14pt;">\
+                    <tr>\
+                        <td>Hint/Analyze button on all levels:</td>\
+                        <td style="text-align:right;padding-bottom:7pt">\
+                            <label class="switch">\
+                                <input id="setting_hints_checkbox" type="checkbox" onclick="game.SettingHintsClicked(this)">\
+                                <span class="slider round"></span>\
+                            </label>\
+                        </td>\
+                    </tr>\
+                    <tr>\
+                        <td>Undo button on all levels:</td>\
+                        <td style="text-align:right;padding-bottom:7pt">\
+                            <label class="switch">\
+                                <input id="setting_undo_checkbox" type="checkbox" onclick="game.SettingUndoClicked(this)">\
+                                <span class="slider round"></span>\
+                            </label>\
+                        </td>\
+                    </tr>\
+                    <tr>\
+                        <td>Sort cards left to right:</td>\
+                        <td style="text-align:right;padding-bottom:7pt">\
+                            <label class="switch">\
+                                <input id="setting_sort_left_to_right_checkbox" type="checkbox" onclick="game.SettingSortLeftToRightClicked(this)">\
+                                <span class="slider round"></span>\
+                            </label>\
+                        </td>\
+                    </tr>\
+                    <tr>\
+                        <td>Score in multiples of ten:</td>\
+                        <td style="text-align:right;padding-bottom:7pt">\
+                            <label class="switch">\
+                                <input id="setting_score_multiplier_checkbox" type="checkbox" onclick="game.SettingScoreMultiplierClicked(this)">\
+                                <span class="slider round"></span>\
+                            </label>\
+                        </td>\
+                    </tr>\
+                    <tr>\
+                        <td>Card deck count:</td>\
+                        <td style="text-align:right;padding-bottom:7pt">\
+                            <select id="deck_count_dropdown" class="setting_dropdown" onchange="game.SettingDeckCountChanged(this)">\
+                                <option value="0">Single</option>\
+                                <option value="1">Double</option>\
+                            </select>\
+                        </td>\
+                    </tr>\
+                    <tr>\
+                        <td>Winning score:</td>\
+                        <td style="text-align:right;padding-bottom:7pt">\
+                            <select id="winning_score_dropdown" class="setting_dropdown" onchange="game.SettingWinningScoreChanged(this)">\
+                                <option class="setting" value="100">100</option>\
+                                <option value="150">150</option>\
+                                <option value="200">200</option>\
+                                <option value="250">250</option>\
+                                <option value="300">300</option>\
+                                <option value="500">500</option>\
+                                <option value="1000">1000</option>\
+                            </select>\
+                        </td>\
+                    </tr>\
+                    <tr>\
+                        <td>Bidding speed:</td>\
+                        <td style="text-align:right;padding-bottom:7pt">\
+                            <select id="bidding_speed_dropdown" class="setting_dropdown" onchange="game.SettingBiddingSpeedChanged(this)">\
+                                <option value="0">Normal</option>\
+                                <option value="1">Fast</option>\
+                            </select>\
+                        </td>\
+                    </tr>\
+                    <tr>\
+                        <td>Minimum bid:</td>\
+                        <td style="text-align:right;padding-bottom:7pt">\
+                            <select id="minimum_bid_dropdown" class="setting_dropdown" onchange="game.SettingMinimumBidChanged(this)">\
+                                <option value="1">1</option>\
+                                <option value="2">2</option>\
+                                <option value="3">3</option>\
+                                <option value="4">4</option>\
+                                <option value="5">5</option>\
+                                <option value="6">6</option>\
+                                <option value="7">7</option>\
+                                <option value="8">8</option>\
+                                <option value="9">9</option>\
+                                <option value="10">10</option>\
+                                <option value="11">11</option>\
+                                <option value="12">12</option>\
+                                <option value="13">13</option>\
+                                <option value="14">14</option>\
+                                <option value="15">15</option>\
+                                <option value="16">16</option>\
+                                <option value="17">17</option>\
+                                <option value="18">18</option>\
+                                <option value="19">19</option>\
+                                <option value="20">20</option>\
+                                <option value="21">21</option>\
+                                <option value="22">22</option>\
+                                <option value="23">23</option>\
+                                <option value="24">24</option>\
+                                <option value="25">25</option>\
+                                <option value="26">26</option>\
+                                <option value="27">27</option>\
+                                <option value="28">28</option>\
+                                <option value="29">29</option>\
+                                <option value="30">30</option>\
+                                <option value="31">31</option>\
+                                <option value="32">32</option>\
+                                <option value="33">33</option>\
+                                <option value="34">34</option>\
+                                <option value="35">35</option>\
+                                <option value="36">36</option>\
+                                <option value="37">37</option>\
+                                <option value="38">38</option>\
+                                <option value="39">39</option>\
+                                <option value="40">40</option>\
+                                <option value="41">41</option>\
+                                <option value="42">42</option>\
+                                <option value="43">43</option>\
+                                <option value="44">44</option>\
+                                <option value="45">45</option>\
+                                <option value="46">46</option>\
+                                <option value="47">47</option>\
+                                <option value="48">48</option>\
+                                <option value="49">49</option>\
+                                <option value="50">50</option>\
+                                <option value="51">51</option>\
+                                <option value="52">52</option>\
+                                <option value="53">53</option>\
+                                <option value="54">54</option>\
+                                <option value="55">55</option>\
+                            </select>\
+                        </td>\
+                    </tr>\
+                    <tr>\
+                        <td>Passing cards count:</td>\
+                        <td style="text-align:right;padding-bottom:7pt">\
+                            <select id="passing_cards_count_dropdown" class="setting_dropdown" onchange="game.SettingPassingCardsCountChanged(this)">\
+                                <option value="0">0</option>\
+                                <option value="1">1</option>\
+                                <option value="2">2</option>\
+                                <option value="3">3</option>\
+                                <option value="4">4</option>\
+                            </select>\
+                        </td>\
+                    </tr>\
+                    <tr>\
+                        <td>Trick-taking speed:</td>\
+                        <td style="text-align:right;padding-bottom:7pt">\
+                            <select id="trick_taking_speed_dropdown" class="setting_dropdown" onchange="game.SettingTrickTakingSpeedChanged(this)">\
+                                <option value="0">Slow</option>\
+                                <option value="1">Normal</option>\
+                                <option value="2">Fast</option>\
+                            </select>\
+                        </td>\
+                    </tr>\
+                    <tr>\
+                        <td>Trick-taking display:</td>\
+                        <td style="text-align:right;padding-bottom:7pt">\
+                            <select id="trick_taking_display_dropdown" class="setting_dropdown" onchange="game.SettingTrickTakingDisplayChanged(this)">\
+                                <option value="0">None</option>\
+                                <option value="1">Round Totals</option>\
+                                <option value="2">Counters</option>\
+                            </select>\
+                        </td>\
+                    </tr>\
+                    <tr>\
+                        <td>Preferred difficulty:</td>\
+                        <td style="text-align:right;padding-bottom:7pt">\
+                            <select id="preferred_difficulty_dropdown" class="setting_dropdown" onchange="game.SettingPreferredDifficultyDisplayChanged(this)">\
+                                <option value="0">Prompt</option>\
+                                <option value="1">Easy</option>\
+                                <option value="2">Standard</option>\
+                                <option value="3">Pro</option>\
+                            </select>\
+                        </td>\
+                    </tr>\
+                </table>\
+                <div style="text-align:left; font-size:14pt; padding-top:5pt">Board Background:</div>\
+                <div class="image-selector">\
+                    <input id="wood_light" type="radio" name="settings_boardbackground_selector" value="wood_light" onclick="BoardSelectorClick(this)"/>\
+                    <label class="board-selector-item background_wood_light" for="wood_light"></label>\
+                    <input id="wood" type="radio" name="settings_boardbackground_selector" value="wood" onclick="BoardSelectorClick(this)" />\
+                    <label class="board-selector-item background_wood" for="wood"></label>\
+                    <input id="wood_dark" type="radio" name="settings_boardbackground_selector" value="wood_dark" onclick="BoardSelectorClick(this)"/>\
+                    <label class="board-selector-item background_wood_dark" for="wood_dark"></label>\
+                    <input id="wood_gray" type="radio" name="settings_boardbackground_selector" value="wood_gray" onclick="BoardSelectorClick(this)"/>\
+                    <label class="board-selector-item background_wood_gray" for="wood_gray"></label>\
+                    <input id="green" type="radio" name="settings_boardbackground_selector" value="green" onclick="BoardSelectorClick(this)"/>\
+                    <label class="board-selector-item background_green" for="green"></label>\
+                    <input id="red" type="radio" name="settings_boardbackground_selector" value="red" onclick="BoardSelectorClick(this)" />\
+                    <label class="board-selector-item background_red" for="red"></label>\
+                    <input id="blue" type="radio" name="settings_boardbackground_selector" value="blue" onclick="BoardSelectorClick(this)" />\
+                    <label class="board-selector-item background_blue" for="blue"></label>\
+                </div>\
+                \
+                <div style="text-align:left; font-size:14pt; padding-top:5pt">Card Color:</div>\
+                <div class="image-selector">\
+                    <input id="card_blue" type="radio" name="settings_card_color_selector" value="blue" onclick="CardSelectorClick(this)" />\
+                    <label class="card-selector-item card_back_blue" for="card_blue"></label>\
+                    <input id="card_red" type="radio" name="settings_card_color_selector" value="red" onclick="CardSelectorClick(this)" />\
+                    <label class="card-selector-item card_back_red" for="card_red"></label>\
+                    <input id="card_green" type="radio" name="settings_card_color_selector" value="green" onclick="CardSelectorClick(this)" />\
+                    <label class="card-selector-item card_back_green" for="card_green"></label>\
+                </div>\
+            </div>\
+        </div>\
+        \
+        <div id="menu_statistics" class="menu_view">\
+            <div id="menu_statistics_title" class="menu_card_title">Statistics</div>\
+            <button id="menu_statistics_close_button" class="close_button" onclick="menu_card_close_click()">X</button>\
+            <center>\
+                <table style="width: calc(100% - 20px); font-size: 12pt;">\
+                    <tr>\
+                        <td class="menu_statistics_table_category"></td>\
+                        <td class="menu_statistics_table_stat">Easy</td>\
+                        <td class="menu_statistics_table_stat">Standard</td>\
+                        <td class="menu_statistics_table_stat">Pro</td>\
+                        <td class="menu_statistics_table_stat_total">Total</td>\
+                    </tr>\
+                </table>\
+            </center>\
+            <div id="menu_statistics_body">\
+                <center>\
+                    <table class="menu_table_outline">\
+                        <tr>\
+                            <td class="menu_statistics_table_category">Games Played</td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_games_played_Easy"></td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_games_played_Standard"></td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_games_played_Pro"></td>\
+                            <td class="menu_statistics_table_stat_total" id="menu_stat_games_played_Total">0</td>\
+                        </tr>\
+                        <tr>\
+                            <td class="menu_statistics_table_category">Wins</td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_wins_Easy"></td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_wins_Standard"></td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_wins_Pro"></td>\
+                            <td class="menu_statistics_table_stat_total" id="menu_stat_wins_Total">0</td>\
+                        </tr>\
+                        <tr>\
+                            <td class="menu_statistics_table_category">Win Percentage</td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_win_percent_Easy"></td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_win_percent_Standard"></td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_win_percent_Pro"></td>\
+                            <td class="menu_statistics_table_stat_total" id="menu_stat_win_percent_Total"></td>\
+                        </tr>\
+                    </table>\
+                    \
+                    <div style="margin-top:10pt; font-size:12pt;">Averages when you declare trump:</div>\
+                    <table class="menu_table_outline">\
+                        <tr>\
+                            <td class="menu_statistics_table_category">Avg Bid Contract</td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_avg_bid_contract_with_bid_Easy"></td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_avg_bid_contract_with_bid_Standard"></td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_avg_bid_contract_with_bid_Pro"></td>\
+                            <td class="menu_statistics_table_stat_total" id="menu_stat_avg_bid_contract_with_bid_Total">0</td>\
+                        </tr>\
+                        <tr>\
+                            <td class="menu_statistics_table_category">Avg Meld</td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_avg_meld_with_bid_Easy"></td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_avg_meld_with_bid_Standard"></td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_avg_meld_with_bid_Pro"></td>\
+                            <td class="menu_statistics_table_stat_total" id="menu_stat_avg_meld_with_bid_Total">0</td>\
+                        </tr>\
+                        <tr>\
+                            <td class="menu_statistics_table_category">Avg Counters</td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_avg_counters_with_bid_Easy"></td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_avg_counters_with_bid_Standard"></td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_avg_counters_with_bid_Pro"></td>\
+                            <td class="menu_statistics_table_stat_total" id="menu_stat_avg_counters_with_bid_Total"></td>\
+                        </tr>\
+                        <tr>\
+                            <td class="menu_statistics_table_category" style="font-size:10pt">Avg Positive Round Score</td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_avg_round_score_with_bid_Easy"></td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_avg_round_score_with_bid_Standard"></td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_avg_round_score_with_bid_Pro"></td>\
+                            <td class="menu_statistics_table_stat_total" id="menu_stat_avg_round_score_with_bid_Total"></td>\
+                        </tr>\
+                        <tr>\
+                            <td class="menu_statistics_table_category">Make Contract %</td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_make_contract_percent_Easy"></td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_make_contract_percent_Standard"></td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_make_contract_percent_Pro"></td>\
+                            <td class="menu_statistics_table_stat_total" id="menu_stat_make_contract_percent_Total"></td>\
+                        </tr>\
+                    </table>\
+                    \
+                    <div style="margin-top:10pt; font-size:12pt;">Averages when opponent declares trump:</div>\
+                    <table class="menu_table_outline">\
+                        <tr>\
+                            <td class="menu_statistics_table_category">Avg Meld</td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_avg_meld_without_bid_Easy"></td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_avg_meld_without_bid_Standard"></td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_avg_meld_without_bid_Pro"></td>\
+                            <td class="menu_statistics_table_stat_total" id="menu_stat_avg_meld_without_bid_Total">0</td>\
+                        </tr>\
+                        <tr>\
+                            <td class="menu_statistics_table_category">Avg Counters</td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_avg_counters_without_bid_Easy"></td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_avg_counters_without_bid_Standard"></td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_avg_counters_without_bid_Pro"></td>\
+                            <td class="menu_statistics_table_stat_total" id="menu_stat_avg_counters_without_bid_Total"></td>\
+                        </tr>\
+                        <tr>\
+                            <td class="menu_statistics_table_category">Avg Round Score</td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_avg_round_score_without_bid_Easy"></td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_avg_round_score_without_bid_Standard"></td>\
+                            <td class="menu_statistics_table_stat" id="menu_stat_avg_round_score_without_bid_Pro"></td>\
+                            <td class="menu_statistics_table_stat_total" id="menu_stat_avg_round_score_without_bid_Total"></td>\
+                        </tr>\
+                    </table>\
+                    \
+                    <table id="menu_statistics_buttons_table">\
+                        <tr>\
+                            <td>\
+                                <center>\
+                                    <button id="menu_statistics_reset_button" onclick="game.ResetStatisticsButtonClick()">Reset<br>Statistics</button>\
+                                </center>\
+                            </td>\
+                        </tr>\
+                    </table>\
+                </center>\
+            </div>\
+        </div>\
+        \
+        <div id="menu_rules" class="menu_view">\
+            <div id="menu_rules_title" class="menu_card_title">Pinochle Rules</div>\
+            <button id="menu_rules_close_button" class="close_button" onclick="menu_card_close_click()">X</button>\
+            <div id="menu_rules_body">\
+                Pinochle is a team card game played in rounds.<br><br>\
+                <center><div style="font-size:15pt">Card Deck</div></center>\
+                <div id="menu_rules_card_deck"></div><br>\
+                <center><div style="font-size:15pt">Round Stages</div></center>\
+                A game of pinochle is played in rounds.  Each round has 3 stages:  Bidding, Melding, and Trick-Taking.  At the start of each round, all cards are dealt to all four players.<br><br>\
+                <center><div style="font-size:15pt">Bidding</div></center>\
+                The first stage of a round is the bidding stage.  Players bid on the minimum points their team will be able to score in the round.<br><br>The first person to bid is required to start the bidding at a minimum bid (editable in app settings).  In clockwise order, each player either increases the bid by at least one or passes.  The bidding is complete when all but one player has passed.<br><br>When a player wins the bidding stage the contract is set for their team.  Their team will need to score at least as many points as they bid or their overall score will be reduced by their contract.<br><br>The player that wins the bid then declares what the trump (highest) suit will be for the rest of the round.<br><br>\
+                <center><div style="font-size:15pt">Passing Cards</div></center>\
+                <div id="menu_rules_passing_cards"></div>\
+                <br>\
+                <center><div style="font-size:15pt">Melding</div></center>\
+                All players evaluate their hands and lay down specific combinations of cards worth different points.  The following table shows all of the meld combinations and their point values:<br><br>\
+                <center>\
+                    <table class="menu_rules_bordered" style="text-align:center; font-size:10pt;">\
+                        <tr>\
+                            <td rowspan="2">Type</td>\
+                            <td rowspan="2">Combination</td>\
+                            <td id="menu_rules_cell_points" rowspan="1" colspan="4">Points</td>\
+                        </tr>\
+                        <tr>\
+                            <td>Single</td>\
+                            <td>Double</td>\
+                            <td id="menu_rules_cell_points_3x">x3</td>\
+                            <td id="menu_rules_cell_points_4x">x4</td>\
+                        </tr>\
+                        <tr>\
+                            <td>Runs</td>\
+                            <td>A,10,K,Q,J Trump</td>\
+                            <td>15</td>\
+                            <td>150</td>\
+                            <td id="menu_rules_cell_run_3x">225</td>\
+                            <td id="menu_rules_cell_run_4x">300</td>\
+                        </tr>\
+                        <tr>\
+                            <td rowspan="2">Marriages</td>\
+                            <td>K,Q, Trump</td>\
+                            <td>4</td>\
+                            <td>8</td>\
+                            <td id="menu_rules_cell_royalmarriage_3x">12</td>\
+                            <td id="menu_rules_cell_royalmarriage_4x">16</td>\
+                        </tr>\
+                        <tr>\
+                            <td>K,Q</td>\
+                            <td>2</td>\
+                            <td>4</td>\
+                            <td id="menu_rules_cell_marriage_3x">6</td>\
+                            <td id="menu_rules_cell_marriage_4x">8</td>\
+                        </tr>\
+                        <tr>\
+                            <td rowspan="5">Arounds</td>\
+                        </tr>\
+                        <tr>\
+                            <td>A each suit</td>\
+                            <td>10</td>\
+                            <td>100</td>\
+                            <td id="menu_rules_cell_acesaround_3x">150</td>\
+                            <td id="menu_rules_cell_acesaround_4x">200</td>\
+                        </tr>\
+                        <tr>\
+                            <td>K each suit</td>\
+                            <td>8</td>\
+                            <td>80</td>\
+                            <td id="menu_rules_cell_kingsaround_3x">120</td>\
+                            <td id="menu_rules_cell_kingsaround_4x">160</td>\
+                        </tr>\
+                        <tr>\
+                            <td>Q each suit</td>\
+                            <td>6</td>\
+                            <td>60</td>\
+                            <td id="menu_rules_cell_queensaround_3x">90</td>\
+                            <td id="menu_rules_cell_queensaround_4x">120</td>\
+                        </tr>\
+                        <tr>\
+                            <td>J each suit</td>\
+                            <td>4</td>\
+                            <td>40</td>\
+                            <td id="menu_rules_cell_jacksaround_3x">60</td>\
+                            <td id="menu_rules_cell_jacksaround_4x">90</td>\
+                        </tr>\
+                        <tr>\
+                            <td>Pinochle</td>\
+                            <td>Q♤,J♢</td>\
+                            <td>4</td>\
+                            <td>30</td>\
+                            <td id="menu_rules_cell_pinochle_3x">60</td>\
+                            <td id="menu_rules_cell_pinochle_4x">90</td>\
+                        </tr>\
+                        <tr id="menu_rules_row_dix">\
+                            <td>Dix</td>\
+                            <td>9 Trump</td>\
+                            <td>1</td>\
+                            <td>2</td>\
+                        </tr>\
+                    </table>\
+                </center>\
+                <br>\
+                Melds may share cards between them except that the marriage contained in a run is not counted.<br><br>After meld points are counted, all cards are returned to players\' hands to begin the final stage of the round.\
+                <br>\
+                <br>\
+                <center>\
+                    <div style="font-size:15pt">\
+                        Trick-Taking\
+                    </div>\
+                </center>\
+                <div id="menu_rules_tricktaking"></div>\
+                <br>\
+                <center>\
+                    <div style="font-size:15pt">\
+                        Round Scosring\
+                    </div>\
+                </center>\
+                Following trick play, the meld and counters are added.<br><br>If the declaring team scores enough points to meet or exceed their bid, all the earned points are added to their previous score. Otherwise, their previous score is reduced by the amount bid.<br><br>If the non-declaring team fails to earn a single point while taking tricks they do not receive credit for the points that they melded.\
+                <br>\
+                <br>\
+                <center>\
+                    <div style="font-size:15pt">\
+                        Game Over\
+                    </div>\
+                </center>\
+                Rounds are played until one team reaches the winning score.  If both sides reach the winning score on the same hand, the bidding side wins.  The winning score can be set in the app settings.\
+                <br>\
+                <br>\
+            </div>\
+        </div>';
+
     var deckTopIndex = 0;
     var allCards = [
-        { id: 'AS0', hash: 'AS', deckID:0, rank: 1, value: 5, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('images/Card_Spade_Ace.jpg')" },
-        { id: 'TS0', hash: 'TS', deckID:0, rank: 10, value: 4, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('images/Card_Spade_10.jpg')" },
-        { id: 'KS0', hash: 'KS', deckID:0, rank: 13, value: 3, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('images/Card_Spade_King.jpg')" },
-        { id: 'QS0', hash: 'QS', deckID:0, rank: 12, value: 2, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('images/Card_Spade_Queen.jpg')" },
-        { id: 'JS0', hash: 'JS', deckID:0, rank: 11, value: 1, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('images/Card_Spade_Jack.jpg')" },
-        { id: '9S0', hash: '9S', deckID:0, rank: 9, value: 0, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('images/Card_Spade_9.jpg')" },
-        { id: 'AS1', hash: 'AS', deckID:1, rank: 1, value: 5, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('images/Card_Spade_Ace.jpg')" },
-        { id: 'TS1', hash: 'TS', deckID:1, rank: 10, value: 4, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('images/Card_Spade_10.jpg')" },
-        { id: 'KS1', hash: 'KS', deckID:1, rank: 13, value: 3, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('images/Card_Spade_King.jpg')" },
-        { id: 'QS1', hash: 'QS', deckID:1, rank: 12, value: 2, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('images/Card_Spade_Queen.jpg')" },
-        { id: 'JS1', hash: 'JS', deckID:1, rank: 11, value: 1, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('images/Card_Spade_Jack.jpg')" },
-        { id: '9S1', hash: '9S', deckID:1, rank: 9, value: 0, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('images/Card_Spade_9.jpg')" },
-        { id: 'AS2', hash: 'AS', deckID:2, rank: 1, value: 5, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('images/Card_Spade_Ace.jpg')" },
-        { id: 'TS2', hash: 'TS', deckID:2, rank: 10, value: 4, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('images/Card_Spade_10.jpg')" },
-        { id: 'KS2', hash: 'KS', deckID:2, rank: 13, value: 3, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('images/Card_Spade_King.jpg')" },
-        { id: 'QS2', hash: 'QS', deckID:2, rank: 12, value: 2, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('images/Card_Spade_Queen.jpg')" },
-        { id: 'JS2', hash: 'JS', deckID:2, rank: 11, value: 1, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('images/Card_Spade_Jack.jpg')" },
-        { id: 'AS3', hash: 'AS', deckID:3, rank: 1, value: 5, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('images/Card_Spade_Ace.jpg')" },
-        { id: 'TS3', hash: 'TS', deckID:3, rank: 10, value: 4, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('images/Card_Spade_10.jpg')" },
-        { id: 'KS3', hash: 'KS', deckID:3, rank: 13, value: 3, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('images/Card_Spade_King.jpg')" },
-        { id: 'QS3', hash: 'QS', deckID:3, rank: 12, value: 2, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('images/Card_Spade_Queen.jpg')" },
-        { id: 'JS3', hash: 'JS', deckID:3, rank: 11, value: 1, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('images/Card_Spade_Jack.jpg')" },
+        { id: 'AS0', hash: 'AS', deckID:0, rank: 1, value: 5, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Spade_Ace.jpg')" },
+        { id: 'TS0', hash: 'TS', deckID:0, rank: 10, value: 4, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Spade_10.jpg')" },
+        { id: 'KS0', hash: 'KS', deckID:0, rank: 13, value: 3, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Spade_King.jpg')" },
+        { id: 'QS0', hash: 'QS', deckID:0, rank: 12, value: 2, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Spade_Queen.jpg')" },
+        { id: 'JS0', hash: 'JS', deckID:0, rank: 11, value: 1, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Spade_Jack.jpg')" },
+        { id: '9S0', hash: '9S', deckID:0, rank: 9, value: 0, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Spade_9.jpg')" },
+        { id: 'AS1', hash: 'AS', deckID:1, rank: 1, value: 5, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Spade_Ace.jpg')" },
+        { id: 'TS1', hash: 'TS', deckID:1, rank: 10, value: 4, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Spade_10.jpg')" },
+        { id: 'KS1', hash: 'KS', deckID:1, rank: 13, value: 3, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Spade_King.jpg')" },
+        { id: 'QS1', hash: 'QS', deckID:1, rank: 12, value: 2, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Spade_Queen.jpg')" },
+        { id: 'JS1', hash: 'JS', deckID:1, rank: 11, value: 1, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Spade_Jack.jpg')" },
+        { id: '9S1', hash: '9S', deckID:1, rank: 9, value: 0, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Spade_9.jpg')" },
+        { id: 'AS2', hash: 'AS', deckID:2, rank: 1, value: 5, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Spade_Ace.jpg')" },
+        { id: 'TS2', hash: 'TS', deckID:2, rank: 10, value: 4, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Spade_10.jpg')" },
+        { id: 'KS2', hash: 'KS', deckID:2, rank: 13, value: 3, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Spade_King.jpg')" },
+        { id: 'QS2', hash: 'QS', deckID:2, rank: 12, value: 2, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Spade_Queen.jpg')" },
+        { id: 'JS2', hash: 'JS', deckID:2, rank: 11, value: 1, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Spade_Jack.jpg')" },
+        { id: 'AS3', hash: 'AS', deckID:3, rank: 1, value: 5, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Spade_Ace.jpg')" },
+        { id: 'TS3', hash: 'TS', deckID:3, rank: 10, value: 4, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Spade_10.jpg')" },
+        { id: 'KS3', hash: 'KS', deckID:3, rank: 13, value: 3, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Spade_King.jpg')" },
+        { id: 'QS3', hash: 'QS', deckID:3, rank: 12, value: 2, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Spade_Queen.jpg')" },
+        { id: 'JS3', hash: 'JS', deckID:3, rank: 11, value: 1, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Spade_Jack.jpg')" },
         
-        { id: 'AH0', hash: 'AH', deckID:0, rank: 1, value: 5, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('images/Card_Heart_Ace.jpg')" },
-        { id: 'TH0', hash: 'TH', deckID:0, rank: 10, value: 4, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('images/Card_Heart_10.jpg')" },
-        { id: 'KH0', hash: 'KH', deckID:0, rank: 13, value: 3, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('images/Card_Heart_King.jpg')" },
-        { id: 'QH0', hash: 'QH', deckID:0, rank: 12, value: 2, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('images/Card_Heart_Queen.jpg')" },
-        { id: 'JH0', hash: 'JH', deckID:0, rank: 11, value: 1, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('images/Card_Heart_Jack.jpg')" },
-        { id: '9H0', hash: '9H', deckID:0, rank: 9, value: 0, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('images/Card_Heart_9.jpg')" },
-        { id: 'AH1', hash: 'AH', deckID:1, rank: 1, value: 5, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('images/Card_Heart_Ace.jpg')" },
-        { id: 'TH1', hash: 'TH', deckID:1, rank: 10, value: 4, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('images/Card_Heart_10.jpg')" },
-        { id: 'KH1', hash: 'KH', deckID:1, rank: 13, value: 3, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('images/Card_Heart_King.jpg')" },
-        { id: 'QH1', hash: 'QH', deckID:1, rank: 12, value: 2, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('images/Card_Heart_Queen.jpg')" },
-        { id: 'JH1', hash: 'JH', deckID:1, rank: 11, value: 1, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('images/Card_Heart_Jack.jpg')" },
-        { id: '9H1', hash: '9H', deckID:1, rank: 9, value: 0, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('images/Card_Heart_9.jpg')" },
-        { id: 'AH2', hash: 'AH', deckID:2, rank: 1, value: 5, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('images/Card_Heart_Ace.jpg')" },
-        { id: 'TH2', hash: 'TH', deckID:2, rank: 10, value: 4, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('images/Card_Heart_10.jpg')" },
-        { id: 'KH2', hash: 'KH', deckID:2, rank: 13, value: 3, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('images/Card_Heart_King.jpg')" },
-        { id: 'QH2', hash: 'QH', deckID:2, rank: 12, value: 2, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('images/Card_Heart_Queen.jpg')" },
-        { id: 'JH2', hash: 'JH', deckID:2, rank: 11, value: 1, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('images/Card_Heart_Jack.jpg')" },
-        { id: 'AH3', hash: 'AH', deckID:3, rank: 1, value: 5, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('images/Card_Heart_Ace.jpg')" },
-        { id: 'TH3', hash: 'TH', deckID:3, rank: 10, value: 4, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('images/Card_Heart_10.jpg')" },
-        { id: 'KH3', hash: 'KH', deckID:3, rank: 13, value: 3, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('images/Card_Heart_King.jpg')" },
-        { id: 'QH3', hash: 'QH', deckID:3, rank: 12, value: 2, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('images/Card_Heart_Queen.jpg')" },
-        { id: 'JH3', hash: 'JH', deckID:3, rank: 11, value: 1, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('images/Card_Heart_Jack.jpg')" },
+        { id: 'AH0', hash: 'AH', deckID:0, rank: 1, value: 5, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Heart_Ace.jpg')" },
+        { id: 'TH0', hash: 'TH', deckID:0, rank: 10, value: 4, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Heart_10.jpg')" },
+        { id: 'KH0', hash: 'KH', deckID:0, rank: 13, value: 3, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Heart_King.jpg')" },
+        { id: 'QH0', hash: 'QH', deckID:0, rank: 12, value: 2, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Heart_Queen.jpg')" },
+        { id: 'JH0', hash: 'JH', deckID:0, rank: 11, value: 1, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Heart_Jack.jpg')" },
+        { id: '9H0', hash: '9H', deckID:0, rank: 9, value: 0, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Heart_9.jpg')" },
+        { id: 'AH1', hash: 'AH', deckID:1, rank: 1, value: 5, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Heart_Ace.jpg')" },
+        { id: 'TH1', hash: 'TH', deckID:1, rank: 10, value: 4, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Heart_10.jpg')" },
+        { id: 'KH1', hash: 'KH', deckID:1, rank: 13, value: 3, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Heart_King.jpg')" },
+        { id: 'QH1', hash: 'QH', deckID:1, rank: 12, value: 2, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Heart_Queen.jpg')" },
+        { id: 'JH1', hash: 'JH', deckID:1, rank: 11, value: 1, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Heart_Jack.jpg')" },
+        { id: '9H1', hash: '9H', deckID:1, rank: 9, value: 0, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Heart_9.jpg')" },
+        { id: 'AH2', hash: 'AH', deckID:2, rank: 1, value: 5, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Heart_Ace.jpg')" },
+        { id: 'TH2', hash: 'TH', deckID:2, rank: 10, value: 4, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Heart_10.jpg')" },
+        { id: 'KH2', hash: 'KH', deckID:2, rank: 13, value: 3, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Heart_King.jpg')" },
+        { id: 'QH2', hash: 'QH', deckID:2, rank: 12, value: 2, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Heart_Queen.jpg')" },
+        { id: 'JH2', hash: 'JH', deckID:2, rank: 11, value: 1, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Heart_Jack.jpg')" },
+        { id: 'AH3', hash: 'AH', deckID:3, rank: 1, value: 5, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Heart_Ace.jpg')" },
+        { id: 'TH3', hash: 'TH', deckID:3, rank: 10, value: 4, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Heart_10.jpg')" },
+        { id: 'KH3', hash: 'KH', deckID:3, rank: 13, value: 3, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Heart_King.jpg')" },
+        { id: 'QH3', hash: 'QH', deckID:3, rank: 12, value: 2, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Heart_Queen.jpg')" },
+        { id: 'JH3', hash: 'JH', deckID:3, rank: 11, value: 1, suit: 'H', suitInt: 1, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Heart_Jack.jpg')" },
         
-        { id: 'AC0', hash: 'AC', deckID:0, rank: 1, value: 5, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('images/Card_Club_Ace.jpg')" },
-        { id: 'TC0', hash: 'TC', deckID:0, rank: 10, value: 4, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('images/Card_Club_10.jpg')" },
-        { id: 'KC0', hash: 'KC', deckID:0, rank: 13, value: 3, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('images/Card_Club_King.jpg')" },
-        { id: 'QC0', hash: 'QC', deckID:0, rank: 12, value: 2, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('images/Card_Club_Queen.jpg')" },
-        { id: 'JC0', hash: 'JC', deckID:0, rank: 11, value: 1, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('images/Card_Club_Jack.jpg')" },
-        { id: '9C0', hash: '9C', deckID:0, rank: 9, value: 0, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('images/Card_Club_9.jpg')" },
-        { id: 'AC1', hash: 'AC', deckID:1, rank: 1, value: 5, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('images/Card_Club_Ace.jpg')" },
-        { id: 'TC1', hash: 'TC', deckID:1, rank: 10, value: 4, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('images/Card_Club_10.jpg')" },
-        { id: 'KC1', hash: 'KC', deckID:1, rank: 13, value: 3, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('images/Card_Club_King.jpg')" },
-        { id: 'QC1', hash: 'QC', deckID:1, rank: 12, value: 2, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('images/Card_Club_Queen.jpg')" },
-        { id: 'JC1', hash: 'JC', deckID:1, rank: 11, value: 1, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('images/Card_Club_Jack.jpg')" },
-        { id: '9C1', hash: '9C', deckID:1, rank: 9, value: 0, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('images/Card_Club_9.jpg')" },
-        { id: 'AC2', hash: 'AC', deckID:2, rank: 1, value: 5, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('images/Card_Club_Ace.jpg')" },
-        { id: 'TC2', hash: 'TC', deckID:2, rank: 10, value: 4, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('images/Card_Club_10.jpg')" },
-        { id: 'KC2', hash: 'KC', deckID:2, rank: 13, value: 3, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('images/Card_Club_King.jpg')" },
-        { id: 'QC2', hash: 'QC', deckID:2, rank: 12, value: 2, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('images/Card_Club_Queen.jpg')" },
-        { id: 'JC2', hash: 'JC', deckID:2, rank: 11, value: 1, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('images/Card_Club_Jack.jpg')" },
-        { id: 'AC3', hash: 'AC', deckID:3, rank: 1, value: 5, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('images/Card_Club_Ace.jpg')" },
-        { id: 'TC3', hash: 'TC', deckID:3, rank: 10, value: 4, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('images/Card_Club_10.jpg')" },
-        { id: 'KC3', hash: 'KC', deckID:3, rank: 13, value: 3, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('images/Card_Club_King.jpg')" },
-        { id: 'QC3', hash: 'QC', deckID:3, rank: 12, value: 2, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('images/Card_Club_Queen.jpg')" },
-        { id: 'JC3', hash: 'JC', deckID:3, rank: 11, value: 1, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('images/Card_Club_Jack.jpg')" },
+        { id: 'AC0', hash: 'AC', deckID:0, rank: 1, value: 5, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Club_Ace.jpg')" },
+        { id: 'TC0', hash: 'TC', deckID:0, rank: 10, value: 4, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Club_10.jpg')" },
+        { id: 'KC0', hash: 'KC', deckID:0, rank: 13, value: 3, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Club_King.jpg')" },
+        { id: 'QC0', hash: 'QC', deckID:0, rank: 12, value: 2, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Club_Queen.jpg')" },
+        { id: 'JC0', hash: 'JC', deckID:0, rank: 11, value: 1, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Club_Jack.jpg')" },
+        { id: '9C0', hash: '9C', deckID:0, rank: 9, value: 0, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Club_9.jpg')" },
+        { id: 'AC1', hash: 'AC', deckID:1, rank: 1, value: 5, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Club_Ace.jpg')" },
+        { id: 'TC1', hash: 'TC', deckID:1, rank: 10, value: 4, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Club_10.jpg')" },
+        { id: 'KC1', hash: 'KC', deckID:1, rank: 13, value: 3, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Club_King.jpg')" },
+        { id: 'QC1', hash: 'QC', deckID:1, rank: 12, value: 2, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Club_Queen.jpg')" },
+        { id: 'JC1', hash: 'JC', deckID:1, rank: 11, value: 1, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Club_Jack.jpg')" },
+        { id: '9C1', hash: '9C', deckID:1, rank: 9, value: 0, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Club_9.jpg')" },
+        { id: 'AC2', hash: 'AC', deckID:2, rank: 1, value: 5, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Club_Ace.jpg')" },
+        { id: 'TC2', hash: 'TC', deckID:2, rank: 10, value: 4, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Club_10.jpg')" },
+        { id: 'KC2', hash: 'KC', deckID:2, rank: 13, value: 3, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Club_King.jpg')" },
+        { id: 'QC2', hash: 'QC', deckID:2, rank: 12, value: 2, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Club_Queen.jpg')" },
+        { id: 'JC2', hash: 'JC', deckID:2, rank: 11, value: 1, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Club_Jack.jpg')" },
+        { id: 'AC3', hash: 'AC', deckID:3, rank: 1, value: 5, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Club_Ace.jpg')" },
+        { id: 'TC3', hash: 'TC', deckID:3, rank: 10, value: 4, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Club_10.jpg')" },
+        { id: 'KC3', hash: 'KC', deckID:3, rank: 13, value: 3, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Club_King.jpg')" },
+        { id: 'QC3', hash: 'QC', deckID:3, rank: 12, value: 2, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Club_Queen.jpg')" },
+        { id: 'JC3', hash: 'JC', deckID:3, rank: 11, value: 1, suit: 'C', suitInt: 2, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Club_Jack.jpg')" },
         
-        { id: 'AD0', hash: 'AD', deckID:0, rank: 1, value: 5, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('images/Card_Diamond_Ace.jpg')" },
-        { id: 'TD0', hash: 'TD', deckID:0, rank: 10, value: 4, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('images/Card_Diamond_10.jpg')" },
-        { id: 'KD0', hash: 'KD', deckID:0, rank: 13, value: 3, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('images/Card_Diamond_King.jpg')" },
-        { id: 'QD0', hash: 'QD', deckID:0, rank: 12, value: 2, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('images/Card_Diamond_Queen.jpg')" },
-        { id: 'JD0', hash: 'JD', deckID:0, rank: 11, value: 1, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('images/Card_Diamond_Jack.jpg')" },
-        { id: '9D0', hash: '9D', deckID:0, rank: 9, value: 0, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('images/Card_Diamond_9.jpg')" },
-        { id: 'AD1', hash: 'AD', deckID:1, rank: 1, value: 5, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('images/Card_Diamond_Ace.jpg')" },
-        { id: 'TD1', hash: 'TD', deckID:1, rank: 10, value: 4, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('images/Card_Diamond_10.jpg')" },
-        { id: 'KD1', hash: 'KD', deckID:1, rank: 13, value: 3, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('images/Card_Diamond_King.jpg')" },
-        { id: 'QD1', hash: 'QD', deckID:1, rank: 12, value: 2, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('images/Card_Diamond_Queen.jpg')" },
-        { id: 'JD1', hash: 'JD', deckID:1, rank: 11, value: 1, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('images/Card_Diamond_Jack.jpg')" },
-        { id: '9D1', hash: '9D', deckID:1, rank: 9, value: 0, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('images/Card_Diamond_9.jpg')" },
-        { id: 'AD2', hash: 'AD', deckID:2, rank: 1, value: 5, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('images/Card_Diamond_Ace.jpg')" },
-        { id: 'TD2', hash: 'TD', deckID:2, rank: 10, value: 4, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('images/Card_Diamond_10.jpg')" },
-        { id: 'KD2', hash: 'KD', deckID:2, rank: 13, value: 3, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('images/Card_Diamond_King.jpg')" },
-        { id: 'QD2', hash: 'QD', deckID:2, rank: 12, value: 2, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('images/Card_Diamond_Queen.jpg')" },
-        { id: 'JD2', hash: 'JD', deckID:2, rank: 11, value: 1, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('images/Card_Diamond_Jack.jpg')" },
-        { id: 'AD3', hash: 'AD', deckID:3, rank: 1, value: 5, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('images/Card_Diamond_Ace.jpg')" },
-        { id: 'TD3', hash: 'TD', deckID:3, rank: 10, value: 4, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('images/Card_Diamond_10.jpg')" },
-        { id: 'KD3', hash: 'KD', deckID:3, rank: 13, value: 3, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('images/Card_Diamond_King.jpg')" },
-        { id: 'QD3', hash: 'QD', deckID:3, rank: 12, value: 2, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('images/Card_Diamond_Queen.jpg')" },
-        { id: 'JD3', hash: 'JD', deckID:3, rank: 11, value: 1, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('images/Card_Diamond_Jack.jpg')" },
+        { id: 'AD0', hash: 'AD', deckID:0, rank: 1, value: 5, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Diamond_Ace.jpg')" },
+        { id: 'TD0', hash: 'TD', deckID:0, rank: 10, value: 4, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Diamond_10.jpg')" },
+        { id: 'KD0', hash: 'KD', deckID:0, rank: 13, value: 3, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Diamond_King.jpg')" },
+        { id: 'QD0', hash: 'QD', deckID:0, rank: 12, value: 2, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Diamond_Queen.jpg')" },
+        { id: 'JD0', hash: 'JD', deckID:0, rank: 11, value: 1, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Diamond_Jack.jpg')" },
+        { id: '9D0', hash: '9D', deckID:0, rank: 9, value: 0, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Diamond_9.jpg')" },
+        { id: 'AD1', hash: 'AD', deckID:1, rank: 1, value: 5, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Diamond_Ace.jpg')" },
+        { id: 'TD1', hash: 'TD', deckID:1, rank: 10, value: 4, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Diamond_10.jpg')" },
+        { id: 'KD1', hash: 'KD', deckID:1, rank: 13, value: 3, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Diamond_King.jpg')" },
+        { id: 'QD1', hash: 'QD', deckID:1, rank: 12, value: 2, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Diamond_Queen.jpg')" },
+        { id: 'JD1', hash: 'JD', deckID:1, rank: 11, value: 1, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Diamond_Jack.jpg')" },
+        { id: '9D1', hash: '9D', deckID:1, rank: 9, value: 0, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Diamond_9.jpg')" },
+        { id: 'AD2', hash: 'AD', deckID:2, rank: 1, value: 5, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Diamond_Ace.jpg')" },
+        { id: 'TD2', hash: 'TD', deckID:2, rank: 10, value: 4, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Diamond_10.jpg')" },
+        { id: 'KD2', hash: 'KD', deckID:2, rank: 13, value: 3, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Diamond_King.jpg')" },
+        { id: 'QD2', hash: 'QD', deckID:2, rank: 12, value: 2, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Diamond_Queen.jpg')" },
+        { id: 'JD2', hash: 'JD', deckID:2, rank: 11, value: 1, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Diamond_Jack.jpg')" },
+        { id: 'AD3', hash: 'AD', deckID:3, rank: 1, value: 5, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Diamond_Ace.jpg')" },
+        { id: 'TD3', hash: 'TD', deckID:3, rank: 10, value: 4, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Diamond_10.jpg')" },
+        { id: 'KD3', hash: 'KD', deckID:3, rank: 13, value: 3, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Diamond_King.jpg')" },
+        { id: 'QD3', hash: 'QD', deckID:3, rank: 12, value: 2, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Diamond_Queen.jpg')" },
+        { id: 'JD3', hash: 'JD', deckID:3, rank: 11, value: 1, suit: 'D', suitInt: 3, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Diamond_Jack.jpg')" },
     ];
 
     this.ConvertSuitIntToSuit = function(suitInt) {
@@ -171,7 +981,7 @@ var Game = function () {
     cardHighlight.className = "cardFrontHighlight";
     front.appendChild(cardHighlight);
 
-    var cardBackURI = "url('images/card_back_" + GetSetting('setting_card_color') + ".jpg')";
+    var cardBackURI = "url('shared/images/card_back_" + GetSetting('setting_card_color') + ".jpg')";
 
     for (var i = 0; i < allCards.length; i++) {
         var newCard = cardElement.cloneNode(true);
@@ -276,7 +1086,7 @@ var Game = function () {
                 HidePassCardsButton();
                 game.players[0].passingCards.splice(game.players[0].passingCards.indexOf(currentDraggedCardView.card),1);
                 game.players[0].cards.push(currentDraggedCardView.card);
-                if (GetSetting('setting_sort_left_to_right')) {
+                if (this.settings.GetSetting('setting_sort_left_to_right')) {
                     game.players[0].cards.sort(function(a,b) {
                         if (a.suit != b.suit) {
                             return a.suitInt - b.suitInt;
@@ -396,7 +1206,7 @@ var Game = function () {
     }
 
     function ShowPassCardsButton() {
-        var passCardsButton = document.getElementById('confirm_passing_cards_button');
+        var passCardsButton = document.getElementById('pinochle_confirm_passing_cards_button');
         passCardsButton.positionFunction = 'GetPassingCardsConfirmLocation()';
         var loc = eval(passCardsButton.positionFunction);
         passCardsButton.style.transition = 'none';
@@ -412,11 +1222,11 @@ var Game = function () {
 
     function GetPassingCardsConfirmLocation() {
         var loc = GetPassingCardsLocation(0);
-        return [window.innerWidth*0.5, loc[1] + 185];
+        return [gameContainer.innerWidth*0.5, loc[1] + 185];
     }
 
     function HidePassCardsButton() {
-        var confirmCribRegion = document.getElementById('confirm_passing_cards_button');
+        var confirmCribRegion = document.getElementById('pinochle_confirm_passing_cards_button');
         with (confirmCribRegion.style) {
             transition = "0.2s linear";
             opacity = 0;
@@ -668,7 +1478,7 @@ var Game = function () {
                 var firstLeft = -40;
                 var lastLeft = -40;
                 var firstTop = 250;
-                var lastTop = window.innerHeight-300;
+                var lastTop = gameContainer.innerHeight-300;
                 var handWidth = lastTop - firstTop;
                 var cardSpacing = handWidth/cardCount;
                 var curTop = firstTop;
@@ -681,8 +1491,8 @@ var Game = function () {
                 curLeft = (firstLeft + lastLeft)*0.5;
                 return [curLeft-cardWidthHalf, curTop-cardHeightHalf, 90];
             case 'North':
-                var firstLeft = window.innerWidth*0.5 - 120;
-                var lastLeft = window.innerWidth*0.5 + 120;
+                var firstLeft = gameContainer.innerWidth*0.5 - 120;
+                var lastLeft = gameContainer.innerWidth*0.5 + 120;
                 var firstTop = -40;
                 var lastTop = -40;
                 var handWidth = lastLeft - firstLeft;
@@ -697,10 +1507,10 @@ var Game = function () {
                 curLeft = curLeft + index*cardSpacing;
                 return [curLeft-cardWidthHalf, curTop-cardHeightHalf, 0];
             case 'East':
-                var firstLeft = window.innerWidth+40;
-                var lastLeft = window.innerWidth+40;
+                var firstLeft = gameContainer.innerWidth+40;
+                var lastLeft = gameContainer.innerWidth+40;
                 var firstTop = 250;
-                var lastTop = window.innerHeight - 300;
+                var lastTop = gameContainer.innerHeight - 300;
                 var handWidth = lastTop - firstTop;
                 var cardSpacing = handWidth/cardCount;
                 var curTop = firstTop;
@@ -714,17 +1524,17 @@ var Game = function () {
                 return [curLeft-cardWidthHalf, curTop-cardHeightHalf, -90];
             default:
                 var firstLeft = 150;
-                var lastLeft = window.innerWidth-150;
-                var firstTop = window.innerHeight-180;
-                var lastTop = window.innerHeight-180;
+                var lastLeft = gameContainer.innerWidth-150;
+                var firstTop = gameContainer.innerHeight-180;
+                var lastTop = gameContainer.innerHeight-180;
                 var handWidth = lastLeft-firstLeft;
                 var cardSpacing = handWidth/(cardCount-1);
                 var maxSpacing = cardWidthHalf;
                 if (cardSpacing > maxSpacing) {
                     cardSpacing = maxSpacing;
                     handWidth = cardSpacing*(cardCount-1);
-                    firstLeft = (window.innerWidth - handWidth)*0.5;
-                    lastLeft = (window.innerWidth + handWidth)*0.5;
+                    firstLeft = (gameContainer.innerWidth - handWidth)*0.5;
+                    lastLeft = (gameContainer.innerWidth + handWidth)*0.5;
                 }
                 var curLeft = firstLeft + index*cardSpacing;
                 var percent = handWidth > 0 ? (curLeft - firstLeft)/handWidth : 0.5;
@@ -740,8 +1550,8 @@ var Game = function () {
     this.InitializeGame = function(difficulty) {
         // Game properties
         this.skillLevel = difficulty;
-        this.winningScore = Number(GetSetting('setting_winning_score'));
-        this.isDoubleDeck = GetSetting('setting_deck_count')==1;
+        this.winningScore = Number(this.settings.GetSetting('setting_winning_score'));
+        this.isDoubleDeck = this.settings.GetSetting('setting_deck_count')==1;
         this.cardsPlayedThisRound = [];
         this.trickCards = [];
         this.roundNumber = 0;
@@ -756,46 +1566,46 @@ var Game = function () {
         this.roundScores = [];
 
         this.players = [];
-        var player = new Player();
+        var player = new PinochlePlayer();
         player.Initialize('You', true, 'Pro', 'South');
         this.players.push(player);
         switch(difficulty)
         {
             case 'Easy':
             {
-                player = new Player();
+                player = new PinochlePlayer();
                 player.Initialize('Conrad', false, difficulty, 'West');
                 this.players.push(player);
-                player = new Player();
+                player = new PinochlePlayer();
                 player.Initialize('Louisa', false, 'Pro', 'North');
                 this.players.push(player);
-                player = new Player();
+                player = new PinochlePlayer();
                 player.Initialize('Davina', false, difficulty, 'East');
                 this.players.push(player);
             }
             break;
             case 'Standard':
             {
-                player = new Player();
+                player = new PinochlePlayer();
                 player.Initialize('Catalina', false, difficulty, 'West');
                 this.players.push(player);
-                player = new Player();
+                player = new PinochlePlayer();
                 player.Initialize('Amelia', false, 'Pro', 'North');
                 this.players.push(player);
-                player = new Player();
+                player = new PinochlePlayer();
                 player.Initialize('Seward', false, difficulty, 'East');
                 this.players.push(player);
             }
             break;
             default:
             {
-                player = new Player();
+                player = new PinochlePlayer();
                 player.Initialize('Charlotte', false, difficulty, 'West');
                 this.players.push(player);
-                player = new Player();
+                player = new PinochlePlayer();
                 player.Initialize('Dixon', false, 'Pro', 'North');
                 this.players.push(player);
-                player = new Player();
+                player = new PinochlePlayer();
                 player.Initialize('Isabella', false, difficulty, 'East');
                 this.players.push(player);
             }
@@ -917,7 +1727,7 @@ var Game = function () {
         for (var i=0; i<4; i++) {
             var playerInfo = lines[3+i].split(",");
             var playerName = playerInfo[0];
-            var player = new Player();
+            var player = new PinochlePlayer();
             var playerIsHuman = playerInfo[1]=='true';
             var playerSkill = playerInfo[2];
             var playerPosition = playerInfo[3];
@@ -1106,7 +1916,7 @@ var Game = function () {
             HideAcceptMeldView();
             IndicateTrumpSuit(null);
             HideAcceptTrickButton();
-            document.getElementById('trick_score_bubble').style.visibility = 'hidden';
+            document.getElementById('pinochle_trick_score_bubble').style.visibility = 'hidden';
 
             for (var i=0; i<4; i++) {
                 AnimatePlayerHandCardsIntoPosition(game.players[i].playerPosition, '0.5s');
@@ -1144,10 +1954,10 @@ var Game = function () {
             HideHintButton();
             RepositionUndoButtons();
             HideAcceptTrickButton();
-            document.getElementById('trick_score_bubble').style.visibility = 'hidden';
+            document.getElementById('pinochle_trick_score_bubble').style.visibility = 'hidden';
             HideSelectTrumpView();
             IndicateTrumpSuit(null);
-            var playerPrompt = document.getElementById('player_play_prompt');
+            var playerPrompt = document.getElementById('pinochle_player_play_prompt');
             with (playerPrompt.style) {
                 transition = "0.1s linear";
                 opacity = 0;
@@ -1159,7 +1969,7 @@ var Game = function () {
             RepositionUndoButtons();
             HideAcceptMeldView();
             HideAcceptTrickButton();
-            document.getElementById('trick_score_bubble').style.visibility = 'hidden';
+            document.getElementById('pinochle_trick_score_bubble').style.visibility = 'hidden';
             UpdatePlayerRoundScore(true);
             UpdatePlayerRoundScore(false);
 
@@ -1218,7 +2028,7 @@ var Game = function () {
             HideBidView('North');
             HideBidView('East');
             HideBidView('South');
-            var playerPrompt = document.getElementById('player_play_prompt');
+            var playerPrompt = document.getElementById('pinochle_player_play_prompt');
             with (playerPrompt.style) {
                 transition = "0.1s linear";
                 opacity = 0;
@@ -1338,10 +2148,10 @@ var Game = function () {
             case 'South':
             {
                 if (game.currentMoveStage == 'AcceptingMelds') {
-                    return [window.innerWidth*0.5-115*0.5 + 7, playerSouthNameTopForAcceptingMelds];
+                    return [gameContainer.innerWidth*0.5-115*0.5 + 7, playerSouthNameTopForAcceptingMelds];
                 } else {
                     var leftPos = GetHandCardLocation(playerPosition, 0, 14);
-                    return [(window.innerWidth*0.5 + leftPos[0])*0.5 - 115*0.5, leftPos[1]-50];
+                    return [(gameContainer.innerWidth*0.5 + leftPos[0])*0.5 - 115*0.5, leftPos[1]-50];
                 }
             }
             case 'West':
@@ -1353,13 +2163,13 @@ var Game = function () {
                 }
             }
             case 'North':
-                return [window.innerWidth*0.5 + 180,30];
+                return [gameContainer.innerWidth*0.5 + 180,30];
             default:
             {
                 if (game.currentMoveStage == 'AcceptingMelds') {
-                    return [window.innerWidth-170, playerEastNameTopForAcceptingMelds];
+                    return [gameContainer.innerWidth-170, playerEastNameTopForAcceptingMelds];
                 } else {
-                    return [window.innerWidth-170,250];
+                    return [gameContainer.innerWidth-170,250];
                 }
             }
         }
@@ -1375,9 +2185,9 @@ var Game = function () {
             case 'West':
                 return [40+12,280];
             case 'North':
-                return [window.innerWidth*0.5 + 180+12,60];
+                return [gameContainer.innerWidth*0.5 + 180+12,60];
             default:
-                return [window.innerWidth-140+12,280];
+                return [gameContainer.innerWidth-140+12,280];
         }
     }
 
@@ -1396,11 +2206,11 @@ var Game = function () {
     }
 
     function GetTrumpSuitIndicatorPosition() {
-        return [window.innerWidth-100, 40];
+        return [gameContainer.innerWidth-100, 40];
     }
 
     function GetTrumpSuitSelectorPosition() {
-        return [window.innerWidth*0.5, window.innerHeight*0.3];
+        return [gameContainer.innerWidth*0.5, gameContainer.innerHeight*0.3];
     }
 
     function InitializeCardDeck(isDoubleDeck) {
@@ -1448,7 +2258,7 @@ var Game = function () {
     }
 
     this.UpdateScoreMultiplier = function() {
-        var isUsingScoreMultiplier = GetSetting('setting_score_multiplier');
+        var isUsingScoreMultiplier = this.settings.GetSetting('setting_score_multiplier');
 
         scoreboard.UpdateForScoreMultiplier();
 
@@ -1459,7 +2269,7 @@ var Game = function () {
             }
 
             var bidButton = document.getElementById('submit_bid_button');
-            var isUsingScoreMultiplier = GetSetting('setting_score_multiplier');
+            var isUsingScoreMultiplier = this.settings.GetSetting('setting_score_multiplier');
             if (isUsingScoreMultiplier) {
                 bidButton.innerText = "Bid: " + currentBidButtonValue*10;
             } else {
@@ -1504,7 +2314,7 @@ var Game = function () {
             case 'South':
                 player = game.players[0];
                 flipUp = true;
-                if (GetSetting('setting_sort_left_to_right')) {
+                if (game.settings.GetSetting('setting_sort_left_to_right')) {
                     game.players[0].cards.sort(function(a,b) {
                         if (a.suit != b.suit) {
                             return a.suitInt - b.suitInt;
@@ -1596,7 +2406,7 @@ var Game = function () {
 
         // Deal cards for round
         this.cardsPlayedThisRound = [];
-        var isDoubleDeck = GetSetting('setting_deck_count')==1;
+        var isDoubleDeck = this.settings.GetSetting('setting_deck_count')==1;
         InitializeCardDeck(isDoubleDeck);
         var cardsPerHand = isDoubleDeck ? 20 : 12;
         for (var i=0; i<cardsPerHand; i++) {
@@ -1607,7 +2417,7 @@ var Game = function () {
         }
 
         // Sort the players hand
-        if (GetSetting('setting_sort_left_to_right')) {
+        if (this.settings.GetSetting('setting_sort_left_to_right')) {
             this.players[0].cards.sort(function(a,b) {
                 if (a.suit != b.suit) {
                     return a.suitInt - b.suitInt;
@@ -1706,7 +2516,7 @@ var Game = function () {
         var player = this.players[3];
         for (var i=0; i<player.cards.length; i++) {
             var cardLocation = GetHandCardLocation('East', i, player.cards.length);
-            var startLeft = window.innerWidth + 300;
+            var startLeft = gameContainer.innerWidth + 300;
             var endLeft = cardLocation[0];
             var startTop = cardLocation[1];
             var endtop = cardLocation[1];
@@ -1744,9 +2554,9 @@ var Game = function () {
         var player = this.players[0];
         for (var i=0; i<player.cards.length; i++) {
             var cardLocation = GetHandCardLocation('South', i, player.cards.length);
-            var startLeft = window.innerWidth*0.5;
+            var startLeft = gameContainer.innerWidth*0.5;
             var endLeft = cardLocation[0];
-            var startTop = window.innerHeight + 100;
+            var startTop = gameContainer.innerHeight + 100;
             var endtop = cardLocation[1];
             var cardView = player.cards[i].cardView;
             flipDownCard(cardView, false);
@@ -1784,9 +2594,9 @@ var Game = function () {
             currentBiddingPlayerIndex = (game.dealerIndex + 1)%4;
             game.leadIndex = currentBiddingPlayerIndex;
             var player = game.players[currentBiddingPlayerIndex];
-            player.ChooseBid(GetSetting('setting_bidding_speed'));
+            player.ChooseBid(game.settings.GetSetting('setting_bidding_speed'));
             if (player.isHuman) {
-                var minimumBid = GetSetting('setting_minimum_bid');
+                var minimumBid = game.settings.GetSetting('setting_minimum_bid');
                 if (player.currentRoundBid != minimumBid) {
                     RememberLatestGameState();
                 }
@@ -1815,19 +2625,19 @@ var Game = function () {
             return;
         }
 
-        if (this.skillLevel === 'Easy' || GetSetting('setting_hints')) {
+        if (this.skillLevel === 'Easy' || this.settings.GetSetting('setting_hints')) {
             ShowHintButton(0);
         }
 
         var bidButton = document.getElementById('submit_bid_button');
-        var isUsingScoreMultiplier = GetSetting('setting_score_multiplier');
+        var isUsingScoreMultiplier = this.settings.GetSetting('setting_score_multiplier');
         currentBidButtonValue = game.currentHighestBidder.currentRoundBid + 1;
         if (isUsingScoreMultiplier) {
             bidButton.innerText = "Bid: " + currentBidButtonValue*10;
         } else {
             bidButton.innerText = "Bid: " + currentBidButtonValue;
         }
-        var el = document.getElementById('choose_bid_view');
+        var el = document.getElementById('pinochle_choose_bid_view');
         with(el.style) {
             WebkitTransition = MozTransition = OTransition = msTransition = "0.3s linear";
             opacity = 1;
@@ -1841,7 +2651,7 @@ var Game = function () {
         if (currentBidButtonValue > game.currentHighestBidder.currentRoundBid + 1) {
             IndicateDecrementBidView();
             currentBidButtonValue--;
-            var isUsingScoreMultiplier = GetSetting('setting_score_multiplier');
+            var isUsingScoreMultiplier = this.settings.GetSetting('setting_score_multiplier');
             var bidButton = document.getElementById('submit_bid_button');
             if (isUsingScoreMultiplier) {
                 bidButton.innerText = "Bid: " + currentBidButtonValue*10;
@@ -1872,7 +2682,7 @@ var Game = function () {
     this.OnIncrementBidButtonPressed = function() {
         IndicateIncrementBidView();
         currentBidButtonValue++;
-        var isUsingScoreMultiplier = GetSetting('setting_score_multiplier');
+        var isUsingScoreMultiplier = this.settings.GetSetting('setting_score_multiplier');
         var bidButton = document.getElementById('submit_bid_button');
         if (isUsingScoreMultiplier) {
             bidButton.innerText = "Bid: " + currentBidButtonValue*10;
@@ -1903,7 +2713,7 @@ var Game = function () {
     }
 
     function HideChoooseBidView() {
-        var el = document.getElementById('choose_bid_view');
+        var el = document.getElementById('pinochle_choose_bid_view');
         with(el.style) {
             WebkitTransition = MozTransition = OTransition = msTransition = "0.1s linear";
             opacity = 0;
@@ -1950,9 +2760,9 @@ var Game = function () {
         } else {
             currentBiddingPlayerIndex++;
             var player = game.players[currentBiddingPlayerIndex%4];
-            player.ChooseBid(GetSetting('setting_bidding_speed'));
+            player.ChooseBid(this.settings.GetSetting('setting_bidding_speed'));
             if (player.isHuman) {
-                var minimumBid = GetSetting('setting_minimum_bid');
+                var minimumBid = this.settings.GetSetting('setting_minimum_bid');
                 if (player.currentRoundBid != minimumBid) {
                     RememberLatestGameState();
                 }
@@ -1973,7 +2783,7 @@ var Game = function () {
     }
 
     function UpdateBidViewBid(playerPosition, bid, isPassed) {
-        var isUsingScoreMultiplier = GetSetting('setting_score_multiplier');
+        var isUsingScoreMultiplier = game.settings.GetSetting('setting_score_multiplier');
         if (playerPosition != 'South') {
             var thinkingView = document.getElementById('player_thinking_' + playerPosition);
             thinkingView.style.visibility = 'hidden';
@@ -2072,7 +2882,7 @@ var Game = function () {
             ShowContractOnBidView(game.currentHighestBidder.playerPosition);
             IndicateTrumpSuit(game.currentHighestBidder.playerPosition);
             
-            var passingCardsCount = Number(GetSetting('setting_passing_cards_count'));
+            var passingCardsCount = Number(game.settings.GetSetting('setting_passing_cards_count'));
             if (passingCardsCount > 0) {
                 if (game.currentHighestBidder.playerPosition == 'North') {
                     setTimeout(function(){
@@ -2102,20 +2912,20 @@ var Game = function () {
     function IndicateTrumpSuit(playerPosition) {
         switch (game.trumpSuit) {
             case 'S':
-                document.getElementById('trump_suit_image').style.backgroundImage = "url(images/score_spade.png)";
+                document.getElementById('pinochle_trump_suit_image').style.backgroundImage = "url(shared/images/score_spade.png)";
                 break;
             case 'H':
-                document.getElementById('trump_suit_image').style.backgroundImage = "url(images/score_heart.png)";
+                document.getElementById('pinochle_trump_suit_image').style.backgroundImage = "url(shared/images/score_heart.png)";
                 break;
             case 'C':
-                document.getElementById('trump_suit_image').style.backgroundImage = "url(images/score_club.png)";
+                document.getElementById('pinochle_trump_suit_image').style.backgroundImage = "url(shared/images/score_club.png)";
                 break;
             case 'D':
-                document.getElementById('trump_suit_image').style.backgroundImage = "url(images/score_diamond.png)";
+                document.getElementById('pinochle_trump_suit_image').style.backgroundImage = "url(shared/images/score_diamond.png)";
                 break;
         }
 
-        var trumpIndicator = document.getElementById('trump_suit_indicator');
+        var trumpIndicator = document.getElementById('pinochle_trump_suit_indicator');
         trumpIndicator.positionFunction = "GetTrumpSuitIndicatorPosition()";
         var endPosition = eval(trumpIndicator.positionFunction);
 
@@ -2138,20 +2948,20 @@ var Game = function () {
             }
         } else {
             var startPosition = [0,0];
-            var pauseTop = window.innerHeight*0.25;
+            var pauseTop = gameContainer.innerHeight*0.25;
             switch (playerPosition) {
                 case 'West':
                     startPosition[0] = -45;
-                    startPosition[1] = window.innerHeight*0.5;
+                    startPosition[1] = gameContainer.innerHeight*0.5;
                     break;
                 case 'North':
-                    startPosition[0] = window.innerWidth*0.5;
+                    startPosition[0] = gameContainer.innerWidth*0.5;
                     startPosition[1] = -80;
                     pauseTop = 100;
                     break;
                 default:
-                    startPosition[0] = window.innerWidth + 45;
-                    startPosition[1] = window.innerHeight*0.5;
+                    startPosition[0] = gameContainer.innerWidth + 45;
+                    startPosition[1] = gameContainer.innerHeight*0.5;
                     break;
             }
             with (trumpIndicator.style) {
@@ -2163,7 +2973,7 @@ var Game = function () {
             }
 
             setTimeout(function() {
-                var middlePosition = [window.innerWidth*0.5, pauseTop];
+                var middlePosition = [gameContainer.innerWidth*0.5, pauseTop];
                 with (trumpIndicator.style) {
                     WebkitTransition = MozTransition = OTransition = msTransition = transition = "1.0s ease-out";
                     left = middlePosition[0] + 'px';
@@ -2185,7 +2995,7 @@ var Game = function () {
     }
 
     function HideTrumpIndicator() {
-        var trumpIndicator = document.getElementById('trump_suit_indicator');
+        var trumpIndicator = document.getElementById('pinochle_trump_suit_indicator');
         with (trumpIndicator.style) {
             WebkitTransition = MozTransition = OTransition = msTransition = transition = "0.3s ease-in-out";
             transform = 'translate(-50%,-200%)';
@@ -2200,12 +3010,12 @@ var Game = function () {
             return;
         }
 
-        var selectTrumpView = document.getElementById('choose_trump_suit_view');
+        var selectTrumpView = document.getElementById('pinochle_choose_trump_suit_view');
         selectTrumpView.positionFunction = "GetTrumpSuitSelectorPosition()";
         var position = eval(selectTrumpView.positionFunction);
         selectTrumpView.style.transition = 'none';
         selectTrumpView.style.left = position[0] + 'px';
-        selectTrumpView.style.top = window.innerHeight - 130 + 'px';
+        selectTrumpView.style.top = gameContainer.innerHeight - 130 + 'px';
         selectTrumpView.style.transform = "translate(-50%,-50%) scale(0.01) ";
         selectTrumpView.style.opacity = 1;
         selectTrumpView.style.visibility = 'visible';
@@ -2213,13 +3023,13 @@ var Game = function () {
             with (selectTrumpView.style) {
                 transition = '0.4s ease-out';
                 transform = 'translate(-50%,-50%) scale(1) ';
-                top = window.innerHeight*0.3 + 'px';
+                top = gameContainer.innerHeight*0.3 + 'px';
             }
         } ,500);
 
         selectTrumpViewIsVisible = true;
 
-        if (this.skillLevel === 'Easy' || GetSetting('setting_hints')) {
+        if (this.skillLevel === 'Easy' || game.settings.GetSetting('setting_hints')) {
             ShowHintButton(0);
         }
 
@@ -2231,11 +3041,11 @@ var Game = function () {
             return;
         }
 
-        var selectTrumpView = document.getElementById('choose_trump_suit_view');
+        var selectTrumpView = document.getElementById('pinochle_choose_trump_suit_view');
         with (selectTrumpView.style) {
             transition = '0.3s ease-in';
             transform = 'translate(-50%,-50%) scale(0.1) ';
-            top = window.innerHeight + 100 + 'px';
+            top = gameContainer.innerHeight + 100 + 'px';
             opacity = 0;
         }
 
@@ -2251,7 +3061,7 @@ var Game = function () {
         HideSelectTrumpView();
         IndicateTrumpSuit(null);
 
-        var passingCardsCount = Number(GetSetting('setting_passing_cards_count'));
+        var passingCardsCount = Number(this.settings.GetSetting('setting_passing_cards_count'));
         if (passingCardsCount > 0) {
             game.players[2].ChoosePassingCards(passingCardsCount);
         } else {
@@ -2265,8 +3075,8 @@ var Game = function () {
 
     this.PromptPlayerToChoosePassingCards = function() {
       
-        var selectPassingCardsMessage = document.getElementById('select_passing_cards_message');
-        var passingCardsCount = Number(GetSetting('setting_passing_cards_count'));
+        var selectPassingCardsMessage = document.getElementById('pinochle_select_passing_cards_message');
+        var passingCardsCount = Number(this.settings.GetSetting('setting_passing_cards_count'));
         selectPassingCardsMessage.innerText = passingCardsCount>1 ? "Select " + passingCardsCount + " cards to pass:" : "Select 1 card to pass:";
         
         currentPassingCardViews = [];
@@ -2309,7 +3119,7 @@ var Game = function () {
         }
         this.currentMoveStage = "ChoosingPassCards";
         
-        if (this.skillLevel === 'Easy' || GetSetting('setting_hints')) {
+        if (this.skillLevel === 'Easy' || this.settings.GetSetting('setting_hints')) {
           ShowHintButton(0);
         }
 
@@ -2317,7 +3127,7 @@ var Game = function () {
     }
 
     function GetPassingCardsMessageLocation() {
-        return [0, window.innerHeight*0.5 - 220];
+        return [0, gameContainer.innerHeight*0.5 - 220];
     }
 
     function GetPassingCardsLocation(index)
@@ -2325,9 +3135,9 @@ var Game = function () {
         var spotWidth = 110;
         var spotPadding = 15;
         var totalWidth = spotWidth*currentPassingCardViews.length + spotPadding*(currentPassingCardViews.length-1);
-        var left = (window.innerWidth - totalWidth)*0.5 + (spotWidth+spotPadding)*index;
+        var left = (gameContainer.innerWidth - totalWidth)*0.5 + (spotWidth+spotPadding)*index;
         
-        return [left, window.innerHeight*0.5 - 180];
+        return [left, gameContainer.innerHeight*0.5 - 180];
     }
 
     this.passingCardsConfirmed= function() {
@@ -2341,8 +3151,8 @@ var Game = function () {
 
     function HidePassCardsViews() {
         var viewsToHide = [
-            'confirm_passing_cards_button',
-            'select_passing_cards_message',
+            'pinochle_confirm_passing_cards_button',
+            'pinochle_select_passing_cards_message',
             'select_passing_cards_region_0',
             'select_passing_cards_region_1',
             'select_passing_cards_region_2',
@@ -2379,7 +3189,7 @@ var Game = function () {
                 
                 if (receivingPlayer.playerPosition == 'South') {
                     setTimeout(function() {
-                        var passingCardsCount = Number(GetSetting('setting_passing_cards_count'));
+                        var passingCardsCount = Number(game.settings.GetSetting('setting_passing_cards_count'));
                         if (passingCardsCount > 0) {
                             if (receivingPlayer.isHuman) {
                                 game.currentMoveStage = 'ChoosingPassCards';
@@ -2395,7 +3205,7 @@ var Game = function () {
                         }
                     },1400);
                 } else {
-                    var passingCardsCount = Number(GetSetting('setting_passing_cards_count'));
+                    var passingCardsCount = Number(game.settings.GetSetting('setting_passing_cards_count'));
                     if (passingCardsCount > 0) {
                         if (receivingPlayer.isHuman) {
                             game.currentMoveStage = 'ChoosingPassCards';
@@ -2421,7 +3231,7 @@ var Game = function () {
 
             if (receivingPlayer.playerPosition == 'South') {
                 // Sort the players cards
-                if (GetSetting('setting_sort_left_to_right')) {
+                if (this.settings.GetSetting('setting_sort_left_to_right')) {
                     receivingPlayer.cards.sort(function(a,b) {
                         if (a.suit != b.suit) {
                             return a.suitInt - b.suitInt;
@@ -2459,8 +3269,8 @@ var Game = function () {
                     var spotPadding = 15;
                     var totalWidth = spotWidth*currentPassingCardViews.length + spotPadding*(currentPassingCardViews.length-1);
 
-                    var leftOffset = (window.innerWidth - totalWidth)*0.5;
-                    var curTop = window.innerHeight*0.3;
+                    var leftOffset = (gameContainer.innerWidth - totalWidth)*0.5;
+                    var curTop = gameContainer.innerHeight*0.3;
                     for (var i=0; i<player.passingCards.length; i++) {
                         var cardView = player.passingCards[i].cardView;
                         flipUpCard(cardView, true);
@@ -2520,10 +3330,10 @@ var Game = function () {
         }
 
         // Position for each player
-        var isUsingScoreMultiplier = GetSetting('setting_score_multiplier');
+        var isUsingScoreMultiplier = game.settings.GetSetting('setting_score_multiplier');
         playerWestNameTopForAcceptingMelds = 250;
         playerEastNameTopForAcceptingMelds = 250;
-        playerSouthNameTopForAcceptingMelds = window.innerHeight-315;
+        playerSouthNameTopForAcceptingMelds = gameContainer.innerHeight-315;
         for (var playerIndex=0; playerIndex<4; playerIndex++) {
             var player = game.players[playerIndex];
             var meldCards = [];
@@ -2537,7 +3347,7 @@ var Game = function () {
             }
             
             if (playerIndex==0 && meldCards.length==0) {
-                playerSouthNameTopForAcceptingMelds = window.innerHeight-240;
+                playerSouthNameTopForAcceptingMelds = gameContainer.innerHeight-240;
             }
 
             var curDelay = 0;
@@ -2636,14 +3446,14 @@ var Game = function () {
             }
 
             var totalKey = 'stat_meld_' + bidString + "_total_" + game.skillLevel + doubleDeckString;
-            var curTotal = GetStatistic(totalKey);
+            var curTotal = game.settings.GetStatistic(totalKey);
             curTotal += game.players[0].currentRoundMeldScore + game.players[2].currentRoundMeldScore;
-            SetStatistic(totalKey, curTotal);
+            game.settings.SetStatistic(totalKey, curTotal);
 
             var countKey = 'stat_meld_' + bidString + "_count_" + game.skillLevel + doubleDeckString;
-            var curCount = Number(GetStatistic(countKey));
+            var curCount = Number(game.settings.GetStatistic(countKey));
             curCount += 1;
-            SetStatistic(countKey, curCount);
+            game.settings.SetStatistic(countKey, curCount);
         }
 
         var acceptMeldPrompt = document.getElementById('accept_meld_view_prompt');
@@ -2776,10 +3586,10 @@ var Game = function () {
                     return [(handLocationFirst[0] + handLocationLast[0])*0.5, (handLocationFirst[1] + handLocationLast[1])*0.5];
                 } else {
                     var flatMeldCardSpacing = meldCardSpacing;
-                    curLeft = (window.innerWidth - (cardCount-1)*flatMeldCardSpacing)*0.5;
+                    curLeft = (gameContainer.innerWidth - (cardCount-1)*flatMeldCardSpacing)*0.5;
                     if (curLeft < 50) {
                         curLeft = 50;
-                        flatMeldCardSpacing = cardCount>1?((window.innerWidth-100)/(cardCount-1)):meldCardSpacing;
+                        flatMeldCardSpacing = cardCount>1?((gameContainer.innerWidth-100)/(cardCount-1)):meldCardSpacing;
                     }
                     curTop = meldTopOffset;
                     for (var i=0; i<cardCount; i++) {
@@ -2800,12 +3610,12 @@ var Game = function () {
                     return [(handLocationFirst[0] + handLocationLast[0])*0.5, (handLocationFirst[1] + handLocationLast[1])*0.5];
                 } else {
                     var sideMeldCardStackSpacing = meldCardStackSpacing;
-                    var curLeft = (window.innerWidth - (cardCount-1)*meldCardSpacing) - meldRightOffset;
+                    var curLeft = (gameContainer.innerWidth - (cardCount-1)*meldCardSpacing) - meldRightOffset;
                     var curTop = (handLocationFirst[1] + handLocationLast[1])*0.5 - 10;
                     if (cardCount > meldCardMaxPerLine) {
                         var lines = Math.ceil(cardCount / meldCardMaxPerLine);
                         curTop -= (lines-1)*sideMeldCardStackSpacing*0.5;
-                        curLeft = (window.innerWidth - (meldCardMaxPerLine-1)*meldCardSpacing) - meldRightOffset;
+                        curLeft = (gameContainer.innerWidth - (meldCardMaxPerLine-1)*meldCardSpacing) - meldRightOffset;
                     }
 
                     var cardsOnLineCount = 0;
@@ -2815,9 +3625,9 @@ var Game = function () {
                             cardsOnLineCount = 0;
                             curTop += sideMeldCardStackSpacing;
                             if (remainingMeldCardsCount < meldCardMaxPerLine) {
-                                curLeft = (window.innerWidth - (meldCardMaxPerLine-1)*meldCardSpacing) - meldRightOffset + (meldCardMaxPerLine-remainingMeldCardsCount)*meldCardSpacing*0.5;
+                                curLeft = (gameContainer.innerWidth - (meldCardMaxPerLine-1)*meldCardSpacing) - meldRightOffset + (meldCardMaxPerLine-remainingMeldCardsCount)*meldCardSpacing*0.5;
                             } else {
-                                curLeft = window.innerWidth - meldRightOffset - (meldCardMaxPerLine-1)*meldCardSpacing;
+                                curLeft = gameContainer.innerWidth - meldRightOffset - (meldCardMaxPerLine-1)*meldCardSpacing;
                             }
                         }
                         if (i==index) {
@@ -2834,18 +3644,18 @@ var Game = function () {
             case 'South':
             {
                 if (isNonMeld) {
-                    return [window.innerWidth*0.5 - cardWidthHalf, window.innerHeight-50];
+                    return [gameContainer.innerWidth*0.5 - cardWidthHalf, gameContainer.innerHeight-50];
 
                     //var handCardLocation = GetHandCardLocation(position, index, cardCount);
-                    //return [handCardLocation[0], window.innerHeight - 130];
+                    //return [handCardLocation[0], gameContainer.innerHeight - 130];
                 } else {
                     var flatMeldCardSpacing = meldCardSpacing;
-                    curLeft = (window.innerWidth - (cardCount-1)*flatMeldCardSpacing)*0.5;
+                    curLeft = (gameContainer.innerWidth - (cardCount-1)*flatMeldCardSpacing)*0.5;
                     if (curLeft < 50) {
                         curLeft = 50;
-                        flatMeldCardSpacing = cardCount>1?((window.innerWidth-100)/(cardCount-1)):meldCardSpacing;
+                        flatMeldCardSpacing = cardCount>1?((gameContainer.innerWidth-100)/(cardCount-1)):meldCardSpacing;
                     }
-                    curTop = window.innerHeight - 270;
+                    curTop = gameContainer.innerHeight - 270;
                     for (var i=0; i<cardCount; i++) {
                         if (i==index) {
                             return [curLeft - cardWidthHalf, curTop];
@@ -2884,12 +3694,12 @@ var Game = function () {
             break;
             case 'North':
             {
-                return [window.innerWidth*0.5, 130];
+                return [gameContainer.innerWidth*0.5, 130];
             }
             break;
             case 'South':
             {
-                return [window.innerWidth*0.5, window.innerHeight-200];
+                return [gameContainer.innerWidth*0.5, gameContainer.innerHeight-200];
             }
             break;
         }
@@ -2999,8 +3809,8 @@ var Game = function () {
 
     function UpdatePlayerRoundScore(isNorthSouth) {
         
-        var countersDisplay = Number(GetSetting('setting_counters_display'));
-        var isUsingScoreMultiplier = GetSetting('setting_score_multiplier');
+        var countersDisplay = Number(game.settings.GetSetting('setting_counters_display'));
+        var isUsingScoreMultiplier = game.settings.GetSetting('setting_score_multiplier');
         var isShowingContract = false;
         var contractValue = game.players[game.bidWinner].currentRoundBid;
         var countersScore = 0;
@@ -3052,7 +3862,7 @@ var Game = function () {
             return;
         }
 
-        var hintsOn = GetSetting('setting_hints');
+        var hintsOn = this.settings.GetSetting('setting_hints');
         if (game.skillLevel == 'Easy' || hintsOn) {
             switch (game.currentMoveStage) {
                 case 'ChoosingBids':
@@ -3070,7 +3880,7 @@ var Game = function () {
     }
 
     function ShowHintButton(delay) {
-        var hintButton = document.getElementById('hint_button');
+        var hintButton = document.getElementById('pinochle_hint_button');
         switch (game.currentMoveStage) {
             case 'ChoosingBids':
             case 'ChoosingTrumpSuit':
@@ -3096,7 +3906,7 @@ var Game = function () {
     }
 
     function HideHintButton() {
-        var hintButton = document.getElementById('hint_button');
+        var hintButton = document.getElementById('pinochle_hint_button');
         hintButton.style.opacity = 0;
         hintButton.style.pointerEvents = "none";
     }
@@ -3105,12 +3915,12 @@ var Game = function () {
         switch (game.currentMoveStage) {
             case 'ChoosingBids':
             case 'ChoosingTrumpSuit':
-                ShowRoundSimulationsView();
+                this.ShowRoundSimulationsView();
                 break;
             case 'ChoosingPassCards':
             {
                 var player = this.players[0];
-                var passingCardsCount = GetSetting('setting_passing_cards_count');
+                var passingCardsCount = this.settings.GetSetting('setting_passing_cards_count');
                 var optimalCards = player.FindBestPassingCards(passingCardsCount, game);
                 BumpCards(optimalCards, 0);
             }
@@ -3129,7 +3939,7 @@ var Game = function () {
         var optimalCards = [];
         if (this.currentMoveStage == 'ChoosingPassCards') {
             var player = this.players[0];
-            var passingCardsCount = GetSetting('setting_passing_cards_count');
+            var passingCardsCount = this.settings.GetSetting('setting_passing_cards_count');
             optimalCards = player.FindBestPassingCards(passingCardsCount, game);
 
         } else if (this.currentMoveStage === 'ChoosingTrickCard') {
@@ -3155,7 +3965,7 @@ var Game = function () {
     }
 
     this.PromptPlayerToPlayCard = function() {
-        var playerPrompt = document.getElementById('player_play_prompt');
+        var playerPrompt = document.getElementById('pinochle_player_play_prompt');
         playerPrompt.positionFunction = "GetTrickPlayPromptLocation()";
         playerPrompt.style.transition = 'none';
         var loc = eval(playerPrompt.positionFunction);
@@ -3190,7 +4000,7 @@ var Game = function () {
             }
         }
         
-        if (this.skillLevel === 'Easy' || GetSetting('setting_hints')) {
+        if (this.skillLevel === 'Easy' || this.settings.GetSetting('setting_hints')) {
             ShowHintButton(0);
         }
 
@@ -3205,19 +4015,19 @@ var Game = function () {
     function GetTrickDiscardLocation(playerPostion) {
         switch (playerPostion) {
             case 'South':
-                return [window.innerWidth*0.5 - cardLoweredWidth*0.5, 330 - cardLoweredHeight*0.5];
+                return [gameContainer.innerWidth*0.5 - cardLoweredWidth*0.5, 330 - cardLoweredHeight*0.5];
             case 'West':
-                return [window.innerWidth*0.5 - cardLoweredWidth*1.5 - 20, 250 - cardLoweredHeight*0.5];
+                return [gameContainer.innerWidth*0.5 - cardLoweredWidth*1.5 - 20, 250 - cardLoweredHeight*0.5];
             case 'North':
-                return [window.innerWidth*0.5 - cardLoweredWidth*0.5, 150 - cardLoweredHeight*0.5];
+                return [gameContainer.innerWidth*0.5 - cardLoweredWidth*0.5, 150 - cardLoweredHeight*0.5];
             default:
-                return [window.innerWidth*0.5 + cardLoweredWidth*0.5 + 20, 250 - cardLoweredHeight*0.5];
+                return [gameContainer.innerWidth*0.5 + cardLoweredWidth*0.5 + 20, 250 - cardLoweredHeight*0.5];
         }
     }
 
     this.OnPlayerChosePlayCard = function(card) {
         this.currentMoveStage = 'None';
-        var playerPrompt = document.getElementById('player_play_prompt');
+        var playerPrompt = document.getElementById('pinochle_player_play_prompt');
         with (playerPrompt.style) {
             transition = "0.1s linear";
             opacity = 0;
@@ -3226,7 +4036,7 @@ var Game = function () {
         var player = this.players[this.turnIndex%4];
         PlayCard(this,card);
         
-        var trickSpeed = GetSetting('setting_trick_speed');
+        var trickSpeed = this.settings.GetSetting('setting_trick_speed');
         var cardTransition = "0.3s ease-out";
         if (trickSpeed == 2) {
             cardTransition = "0.1s ease-out";
@@ -3285,13 +4095,13 @@ var Game = function () {
         var cardView = trickResult.highestCard.cardView;
         FlashHighlightCardView(cardView);
 
-        var trickSpeed = GetSetting('setting_trick_speed');
-        var isUsingScoreMultiplier = GetSetting('setting_score_multiplier');
+        var trickSpeed = this.settings.GetSetting('setting_trick_speed');
+        var isUsingScoreMultiplier = this.settings.GetSetting('setting_score_multiplier');
 
         if (trickResult.countersTaken > 0) {
             var displayPoints = isUsingScoreMultiplier ? trickResult.countersTaken*10 : trickResult.countersTaken;
-            document.getElementById('trick_score_points').innerText = '+' + displayPoints;
-            var scoreBubble = document.getElementById('trick_score_bubble');
+            document.getElementById('pinochle_trick_score_points').innerText = '+' + displayPoints;
+            var scoreBubble = document.getElementById('pinochle_trick_score_bubble');
             scoreBubble.style.background = trickResult.trickTaker.playerPositionInt==0||trickResult.trickTaker.playerPositionInt==2 ? '#0000BB' : '#FF0000';
             scoreBubble.positionFunction = 'GetScoreBubblePosition()';
             var scoreBubblePosition = eval(scoreBubble.positionFunction);
@@ -3313,7 +4123,7 @@ var Game = function () {
         }
 
         if (trickSpeed == 0) {
-            var acceptButton = document.getElementById('accept_trick_result');
+            var acceptButton = document.getElementById('pinochle_accept_trick_result');
             acceptButton.positionFunction = 'GetAcceptTrickButtonPosition()';
             var acceptButtonPosition = eval(acceptButton.positionFunction);
             with (acceptButton.style) {
@@ -3340,7 +4150,7 @@ var Game = function () {
     }
 
     function HideAcceptTrickButton() {
-        var acceptButton = document.getElementById('accept_trick_result');
+        var acceptButton = document.getElementById('pinochle_accept_trick_result');
         with (acceptButton.style) {
             transition = '0.3s linear';
             opacity = 0;
@@ -3350,7 +4160,7 @@ var Game = function () {
 
     this.ContinueAnimatingTrickResult = function(trickResult) {
 
-        var trickSpeed = GetSetting('setting_trick_speed');
+        var trickSpeed = this.settings.GetSetting('setting_trick_speed');
         
         var delay = 1700;
         var cardAnimationDuration = 1000;
@@ -3376,7 +4186,7 @@ var Game = function () {
                 }
             }   
             var pos = GetWonTrickCardsPilePostion(trickResult.trickTaker.playerPosition);
-            var scoreBubble = document.getElementById('trick_score_bubble');
+            var scoreBubble = document.getElementById('pinochle_trick_score_bubble');
             with (scoreBubble.style) {
                 transition = animationTransition;
                 left = pos[0] + 115*0.5 + 'px';
@@ -3406,24 +4216,24 @@ var Game = function () {
     }
 
     function GetScoreBubblePosition() {
-        return [window.innerWidth*0.5, 180];
+        return [gameContainer.innerWidth*0.5, 180];
     }
 
     function GetAcceptTrickButtonPosition() {
-        return [window.innerWidth*0.5 + 100, 400];
+        return [gameContainer.innerWidth*0.5 + 100, 400];
     }
 
     function GetWonTrickCardsPilePostion(playerPosition) {
         var loc = GetHandCardLocation(playerPosition, 6, 12);
         switch (playerPosition) {
             case 'South':
-                return [loc[0], window.innerHeight + 150];
+                return [loc[0], gameContainer.innerHeight + 150];
             case 'West':
                 return [-150, loc[1]];
             case 'North':
                 return [loc[0], -150];
             default:
-                return [window.innerWidth + 150, loc[1]];
+                return [gameContainer.innerWidth + 150, loc[1]];
         }
     }
 
@@ -3517,40 +4327,40 @@ var Game = function () {
         if (game.bidWinner == 0 || game.bidWinner == 2) {
             bidString = "withbid";
             var statKey = 'stat_winningbid_total_' + curDifficulty + doubleDeckString;
-            var winningBidTotal = GetStatistic(statKey);
+            var winningBidTotal = this.settings.GetStatistic(statKey);
             winningBidTotal += aRoundContracts[0];
-            SetStatistic(statKey, winningBidTotal);
+            this.settings.SetStatistic(statKey, winningBidTotal);
             if (aRoundScores[0] > 0) {
                 statKey = 'stat_winningbid_count_' + curDifficulty + doubleDeckString;
             } else {
                 statKey = 'stat_notwinningbid_count_' + curDifficulty + doubleDeckString;
             }
-            var curTotal = GetStatistic(statKey);
+            var curTotal = this.settings.GetStatistic(statKey);
             curTotal += 1;
-            SetStatistic(statKey, curTotal);
+            this.settings.SetStatistic(statKey, curTotal);
         }
         if (aRoundCountersTaken[0] > -1) {
             var statKey = 'stat_counters_' + bidString + '_total_' + curDifficulty + doubleDeckString;
-            var curTotal = GetStatistic(statKey);
+            var curTotal = this.settings.GetStatistic(statKey);
             curTotal += aRoundCountersTaken[0];
-            SetStatistic(statKey, curTotal);
+            this.settings.SetStatistic(statKey, curTotal);
             statKey = 'stat_counters_' + bidString + '_count_' + curDifficulty + doubleDeckString;
-            curTotal = GetStatistic(statKey);
+            curTotal = this.settings.GetStatistic(statKey);
             curTotal += 1;
-            SetStatistic(statKey, curTotal);
+            this.settings.SetStatistic(statKey, curTotal);
         }
         if (aRoundScores[0] >= 0) {
             var statKey = 'stat_roundscores_' + bidString + '_total_' + curDifficulty + doubleDeckString;
-            var curTotal = GetStatistic(statKey);
+            var curTotal = this.settings.GetStatistic(statKey);
             curTotal += aRoundScores[0];
-            SetStatistic(statKey, curTotal);
+            this.settings.SetStatistic(statKey, curTotal);
             statKey = 'stat_roundscores_' + bidString + '_count_' + curDifficulty + doubleDeckString;
-            curTotal = GetStatistic(statKey);
+            curTotal = this.settings.GetStatistic(statKey);
             curTotal += 1;
-            SetStatistic(statKey, curTotal);
+            this.settings.SetStatistic(statKey, curTotal);
         }
 
-        game.currentMoveStage = 'AcceptingRoundScores';
+        this.currentMoveStage = 'AcceptingRoundScores';
         RememberLatestGameState();
         this.ShowRoundResultWithDelay(500);
     }
@@ -3564,7 +4374,7 @@ var Game = function () {
             
             UpdateRoundScoresViewText();
             
-            var roundResultView = document.getElementById('round_result_view');
+            var roundResultView = document.getElementById('pinochle_round_result_view');
             with (roundResultView.style) {
                 transition = "none";
                 transitionDelay = "none";
@@ -3582,7 +4392,7 @@ var Game = function () {
     }
 
     function HideRoundResultView() {
-        var roundResultView = document.getElementById('round_result_view');
+        var roundResultView = document.getElementById('pinochle_round_result_view');
         with (roundResultView.style) {
             transition = "0.3s linear";
             transitionDelay = "none";
@@ -3592,11 +4402,11 @@ var Game = function () {
     }
 
     function UpdateRoundScoresViewText() {
-        var isUsingScoreMultiplier = GetSetting('setting_score_multiplier');
+        var isUsingScoreMultiplier = game.settings.GetSetting('setting_score_multiplier');
         
-        document.getElementById('round_result_title').innerText = "Round " + game.roundScores.length;  
-        document.getElementById('round_result_names_north_south').innerHTML = "You &<br>" + game.players[2].name;
-        document.getElementById('round_result_names_east_west').innerHTML = game.players[1].name + " & " + game.players[3].name;
+        document.getElementById('pinochle_round_result_title').innerText = "Round " + game.roundScores.length;  
+        document.getElementById('pinochle_round_result_names_north_south').innerHTML = "You &<br>" + game.players[2].name;
+        document.getElementById('pinochle_round_result_names_east_west').innerHTML = game.players[1].name + " & " + game.players[3].name;
 
         var roundContract = game.roundContracts[game.roundContracts.length-1];
         var bid = isUsingScoreMultiplier ? roundContract[0]*10 : roundContract[0];
@@ -3628,19 +4438,19 @@ var Game = function () {
 
         var roundScores = game.roundScores[game.roundScores.length-1];
         if (roundScores[0] >= 0) {
-            document.getElementById('round_result_totals_north_south').innerText = isUsingScoreMultiplier ? "+" + roundScores[0]*10 : "+" + roundScores[0];
+            document.getElementById('pinochle_round_result_totals_north_south').innerText = isUsingScoreMultiplier ? "+" + roundScores[0]*10 : "+" + roundScores[0];
         } else {
-            document.getElementById('round_result_totals_north_south').innerText = isUsingScoreMultiplier ? roundScores[0]*10 : roundScores[0];
+            document.getElementById('pinochle_round_result_totals_north_south').innerText = isUsingScoreMultiplier ? roundScores[0]*10 : roundScores[0];
         }
         if (roundScores[1] >= 0) {
-            document.getElementById('round_result_totals_east_west').innerText = isUsingScoreMultiplier ? "+" + roundScores[1]*10 : "+" + roundScores[1];
+            document.getElementById('pinochle_round_result_totals_east_west').innerText = isUsingScoreMultiplier ? "+" + roundScores[1]*10 : "+" + roundScores[1];
         } else {
-            document.getElementById('round_result_totals_east_west').innerText = isUsingScoreMultiplier ? roundScores[1]*10 : roundScores[1];
+            document.getElementById('pinochle_round_result_totals_east_west').innerText = isUsingScoreMultiplier ? roundScores[1]*10 : roundScores[1];
         }
     }
 
     this.OnAcceptRoundResultButtonPressed = function() {
-        var roundResultView = document.getElementById('round_result_view');
+        var roundResultView = document.getElementById('pinochle_round_result_view');
         with (roundResultView.style) {
             transition = "0.3s linear";
             transitionDelay = "none";
@@ -3688,7 +4498,7 @@ var Game = function () {
         }
         if (winner.playerPosition == 'South') {
             var statKey = 'stat_wins_' + game.skillLevel + doubleDeckString;
-            var curTotal = GetStatistic(statKey);
+            var curTotal = this.settings.GetStatistic(statKey);
             curTotal +=1 ;
             SetStatistic(statKey, curTotal);
             gameOverLine1 = "You won!";
@@ -3696,7 +4506,7 @@ var Game = function () {
             
         } else {
             var statKey = 'stat_losses_' + game.skillLevel + doubleDeckString;
-            var curTotal = GetStatistic(statKey);
+            var curTotal = this.settings.GetStatistic(statKey);
             curTotal +=1 ;
             SetStatistic(statKey, curTotal);
             gameOverLine1 = "You lost";
@@ -3709,10 +4519,10 @@ var Game = function () {
         HideRedoButton();
         HideAllMessages();
 
-        var gameOverView = document.getElementById('GameOverView');
-        var gameOverLine1Elem = document.getElementById('GameOverResultText');
+        var gameOverView = document.getElementById('PinochleGameOverView');
+        var gameOverLine1Elem = document.getElementById('PinochleGameOverResultText');
         gameOverLine1Elem.innerText = gameOverLine1;
-        var gameOverLine2Elem = document.getElementById('GameOverResultText2');
+        var gameOverLine2Elem = document.getElementById('PinochleGameOverResultText2');
         gameOverLine2Elem.innerText = gameOverLine2;
         with (gameOverView.style) {
             transition = 'none';
@@ -3744,7 +4554,7 @@ var Game = function () {
     }
 
     this.AnimateGameOverCardAnimations = function() {
-        var curAnimationId = GetTotalGamesPlayed();
+        var curAnimationId = this.GetTotalGamesPlayed();
         var totalAnimationsAvailable = 4;
         var cardAnimStartDelay = 1000;
         switch (curAnimationId%totalAnimationsAvailable) {
@@ -3781,7 +4591,7 @@ var Game = function () {
                     var curPositionX = startLeft;
                     var curPositionY = startTop;
                     var isFallingOutOfView = false;
-                    var bottomBounceY = window.innerHeight - cardLoweredHeight;
+                    var bottomBounceY = gameContainer.innerHeight - cardLoweredHeight;
                     while (curTime < totalTime) {
                         var percentComplete = 100 * curTime / totalTime;
                         keyframesText = keyframesText + percentComplete + '% {opacity: 1; left: ' + curPositionX + 'px; top: ' + curPositionY + 'px;}';
@@ -3803,7 +4613,7 @@ var Game = function () {
                                 curVelocity[1] = -curVelocity[1]*bounceDampen;
                             }
                         }
-                        if (curPositionX < 0 || curPositionX > window.innerWidth-cardLoweredWidth) {
+                        if (curPositionX < 0 || curPositionX > gameContainer.innerWidth-cardLoweredWidth) {
                             curPositionX = curPositionX - curVelocity[0];
                             curVelocity[0] = curVelocity[0] - gravity[0]*deltaTime;
                             curVelocity[0] = -curVelocity[0];
@@ -3833,7 +4643,7 @@ var Game = function () {
             {
                 // Gravity Bouncing off game over view
                                 
-                var startLeft = window.innerWidth*0.5 - 200;
+                var startLeft = gameContainer.innerWidth*0.5 - 200;
                 var startTop = -cardLoweredHeight - 30;
                 for (var i=0; i<cards.length; i++) {
                     var cardView = cards[i].cardView;
@@ -3862,12 +4672,12 @@ var Game = function () {
                     var curPositionX = startLeft;
                     var curPositionY = startTop;
                     var isFallingOutOfView = false;
-                    var bottomBounceY = window.innerHeight - cardLoweredHeight;
+                    var bottomBounceY = gameContainer.innerHeight - cardLoweredHeight;
                     var gameOverViewWidth = 340;
                     var gameOverViewHeight = 100;
-                    var gameOverViewLeft = (window.innerWidth - gameOverViewWidth)*0.5 - cardLoweredWidth*0.5;
+                    var gameOverViewLeft = (gameContainer.innerWidth - gameOverViewWidth)*0.5 - cardLoweredWidth*0.5;
                     var gameOverViewRight = gameOverViewLeft + gameOverViewWidth + cardLoweredWidth*0.5;
-                    var gameOverViewTop = (window.innerHeight - gameOverViewHeight)*0.5 - cardLoweredHeight*1.1;
+                    var gameOverViewTop = (gameContainer.innerHeight - gameOverViewHeight)*0.5 - cardLoweredHeight*1.1;
 
                     while (curTime < totalTime) {
                         var percentComplete = 100 * curTime / totalTime;
@@ -3902,7 +4712,7 @@ var Game = function () {
                                 }
                             }
                         }
-                        if (curPositionX < 0 || curPositionX > window.innerWidth-cardLoweredWidth) {
+                        if (curPositionX < 0 || curPositionX > gameContainer.innerWidth-cardLoweredWidth) {
                             curPositionX = curPositionX - curVelocity[0];
                             curVelocity[0] = curVelocity[0] - gravity[0]*deltaTime;
                             curVelocity[0] = -curVelocity[0];
@@ -3931,7 +4741,7 @@ var Game = function () {
             {
                 // Spiral into center
                 var totalTime = 7;       
-                var startLeft = window.innerWidth*0.5 - 200;
+                var startLeft = gameContainer.innerWidth*0.5 - 200;
                 var startTop = -cardLoweredHeight - 30;
                 for (var i=0; i<cards.length; i++) {
                     var cardView = cards[i].cardView;
@@ -3953,8 +4763,8 @@ var Game = function () {
                     var keyframesText = "@keyframes gameOverAnim" + i + " {";
 
                     var fullAngle = Math.PI * 2 * 4.25;
-                    var spinCenterX = window.innerWidth*0.5;
-                    var spinCenterY = window.innerHeight*0.5;
+                    var spinCenterX = gameContainer.innerWidth*0.5;
+                    var spinCenterY = gameContainer.innerHeight*0.5;
                     var radius = Math.sqrt((spinCenterY - startTop)*(spinCenterY - startTop) + (spinCenterX - startLeft)*(spinCenterX - startLeft));
                     for (var angle = fullAngle; angle >= 0; angle-=0.15) {
                         var percentComplete = 100 * (1 - (angle / fullAngle));
@@ -3986,7 +4796,7 @@ var Game = function () {
                 // Spiral out from center
                 var slideInTime = 0.5;
                 var totalTime = 7;       
-                var startLeft = window.innerWidth*0.5 - cardLoweredWidth*0.5;
+                var startLeft = gameContainer.innerWidth*0.5 - cardLoweredWidth*0.5;
                 var startTop = -cardLoweredHeight - 30;
                 for (var i=0; i<cards.length; i++) {
                     var cardView = cards[i].cardView;
@@ -4011,8 +4821,8 @@ var Game = function () {
                     keyframesText = keyframesText + (slideInPercent*100) + '% { opacity: 1; left: ' + (spinCenterX - cardLoweredWidth*0.5) + 'px; top: ' + (spinCenterY - cardLoweredHeight*0.5) + 'px;}';
                     
                     var fullAngle = Math.PI * 2 * 4.25;
-                    var spinCenterX = window.innerWidth*0.5;
-                    var spinCenterY = window.innerHeight*0.5;
+                    var spinCenterX = gameContainer.innerWidth*0.5;
+                    var spinCenterY = gameContainer.innerHeight*0.5;
                     var fullRadius = Math.sqrt((spinCenterY - startTop)*(spinCenterY - startTop) + (spinCenterX - startLeft)*(spinCenterX - startLeft));
                     for (var angle = 0.01; angle < fullAngle; angle+=0.15) {
                         var percentComplete = (angle / fullAngle) * (1-slideInPercent);
@@ -4056,7 +4866,7 @@ var Game = function () {
             delay = 700;
         }
         if (undoGameStates.length > 1) {
-            var undoOn = GetSetting('setting_undo');
+            var undoOn = game.settings.GetSetting('setting_undo');
             if (game.skillLevel == 'Easy' || undoOn) {
                 ShowUndoButton(delay);
             }
@@ -4084,14 +4894,14 @@ var Game = function () {
     }
 
     function RepositionUndoButtons() {
-        var button = document.getElementById('undo_button');
+        var button = document.getElementById('pinochle_undo_button');
         button.positionFunction = "GetUndoButtonPosition()";
         button.style.transition = '0.3s ease-out';
         var loc = eval(button.positionFunction);
         button.style.left = loc[0] + 'px';
         button.style.top = loc[1] + 'px';
 
-        button = document.getElementById('redo_button');
+        button = document.getElementById('pinochle_redo_button');
         button.positionFunction = "GetRedoButtonPosition()";
         button.style.transition = '0.3s ease-out';
         var loc = eval(button.positionFunction);
@@ -4100,7 +4910,7 @@ var Game = function () {
     }
 
     function ShowUndoButton(delay) {
-        var button = document.getElementById('undo_button');
+        var button = document.getElementById('pinochle_undo_button');
         button.positionFunction = "GetUndoButtonPosition()";
         button.style.transition = "none";
         var loc = eval(button.positionFunction);
@@ -4122,7 +4932,7 @@ var Game = function () {
             return;
         }
 
-        var undoOn = GetSetting('setting_undo');
+        var undoOn = this.settings.GetSetting('setting_undo');
         if (game.skillLevel == 'Easy' || undoOn) {
             if (undoGameStates.length > 1) {
                 ShowUndoButton(0);
@@ -4141,7 +4951,7 @@ var Game = function () {
     }
 
     function HideUndoButton() {
-        var button = document.getElementById('undo_button');
+        var button = document.getElementById('pinochle_undo_button');
         button.style.opacity = 0;
         button.style.pointerEvents = "none";
     }
@@ -4160,7 +4970,7 @@ var Game = function () {
     }
 
     function ShowRedoButton(delay) {
-        var button = document.getElementById('redo_button');
+        var button = document.getElementById('pinochle_redo_button');
         button.positionFunction = "GetRedoButtonPosition()";
         button.style.transition = "none";
         var loc = eval(button.positionFunction);
@@ -4178,7 +4988,7 @@ var Game = function () {
     }
 
     function HideRedoButton() {
-        var button = document.getElementById('redo_button');
+        var button = document.getElementById('pinochle_redo_button');
         button.style.opacity = 0;
         button.style.pointerEvents = "none";
     }
@@ -4212,14 +5022,14 @@ var Game = function () {
             'player_score_West',
             'player_score_North',
             'player_score_East',
-            'hint_button',
-            'undo_button',
-            'redo_button',
-            'player_play_prompt',
-            'round_simulations_view',
-            'choose_bid_view',
-            'confirm_passing_cards_button',
-            'select_passing_cards_message',
+            'pinochle_hint_button',
+            'pinochle_undo_button',
+            'pinochle_redo_button',
+            'pinochle_player_play_prompt',
+            'pinochle_round_simulations_view',
+            'pinochle_choose_bid_view',
+            'pinochle_confirm_passing_cards_button',
+            'pinochle_select_passing_cards_message',
             'select_passing_cards_region_0',
             'select_passing_cards_region_1',
             'select_passing_cards_region_2',
@@ -4229,8 +5039,8 @@ var Game = function () {
             'meld_view_East',
             'meld_view_South',
             'accept_meld_view',
-            'trick_score_bubble',
-            'accept_trick_result'
+            'pinochle_trick_score_bubble',
+            'pinochle_accept_trick_result'
             ];
         for (var i = 0; i < viewsToHide.length; i++) {
             var view = document.getElementById(viewsToHide[i]);
@@ -4242,6 +5052,9 @@ var Game = function () {
 
     this.OnResizeWindow = function() {
 
+        gameContainer.innerWidth = window.innerWidth - codeContainerGutterRightPosition - 20;
+        gameContainer.style.width = gameContainer.innerWidth + 'px';
+        
         var ease = "0.4s ease-out";
 
         // Reposition all the cards
@@ -4273,15 +5086,15 @@ var Game = function () {
             'player_score_West',
             'player_score_North',
             'player_score_East',
-            'hint_button',
-            'undo_button',
-            'redo_button',
-            'player_play_prompt',
-            'choose_bid_view',
-            'trump_suit_indicator',
-            'choose_trump_suit_view',
-            'confirm_passing_cards_button',
-            'select_passing_cards_message',
+            'pinochle_hint_button',
+            'pinochle_undo_button',
+            'pinochle_redo_button',
+            'pinochle_player_play_prompt',
+            'pinochle_choose_bid_view',
+            'pinochle_trump_suit_indicator',
+            'pinochle_choose_trump_suit_view',
+            'pinochle_confirm_passing_cards_button',
+            'pinochle_select_passing_cards_message',
             'select_passing_cards_region_0',
             'select_passing_cards_region_1',
             'select_passing_cards_region_2',
@@ -4290,8 +5103,8 @@ var Game = function () {
             'meld_view_North',
             'meld_view_East',
             'meld_view_South',
-            'trick_score_bubble',
-            'accept_trick_result'
+            'pinochle_trick_score_bubble',
+            'pinochle_accept_trick_result'
         ];
         for (var i = 0; i < viewsToPosition.length; i++) {
             var view = document.getElementById(viewsToPosition[i]);
@@ -4303,277 +5116,827 @@ var Game = function () {
             }
         }
     }
-}
 
-//
-// Async Workers
-//
-var worker = new Worker('GameSimulator.js');
-worker.addEventListener('message', function(e){
-    var data = e.data;
-    switch (data.cmd) {
-        case 'UpdateRoundSimulationsView':
-            UpdateRoundSimulationsView(data.roundBidAnalysis);
-        break;
-        case 'PlayerFoundBestBid':
-            var player = game.players[data.playerIndex];
-            player.OnFinishedAnalyzingBestBid(data.bid, data.minimumEndTime);
-        break;
-    }
-}, false);
-
-function CreateClonableGameState(aGame) {
-    return {
-        'isDoubleDeck': aGame.isDoubleDeck,
-        'leadIndex': aGame.leadIndex,
-        'dealerIndex': aGame.dealerIndex,
-        'turnIndex': aGame.turnIndex
-    };
-}
-
-function CreateClonableCards(cards) {
-    var cloneableCards = [];
-    for (var i=0; i<cards.length; i++) {
-        var card = cards[i];
-        cloneableCards.push({ 
-            id: card.id, 
-            hash: card.hash, 
-            deckID: card.deckID, 
-            rank: card.rank, 
-            value: card.value, 
-            suit: card.suit, 
-            suitInt: card.suitInt, 
-            wasShown: card.wasShown, 
-            wasPassed: card.wasPassed
-         });
-    }
-    return cloneableCards;
-}
-
-//
-// Simulations viewer
-//
-var histogramVisuals = [];
-var histogramMinScore;
-var histogramMaxVisibleScore;
-var histogramBarWidth = 0;
-var histogramBarsLeftOffset = 80;
-var histogramRegionWidth = 450;
-
-function CreateSimulationHistogramVisuals() {
-
-    histogramVisuals = [];
-    if (game.isDoubleDeck) {
-        histogramMinScore = 40;
-        histogramMaxVisibleScore = 105;
-    } else {
-        histogramMinScore = 10;
-        histogramMaxVisibleScore = 55;
-    }
-    document.getElementById('round_simulations_subtitle').innerText = "This is the range of scores for your hand after many round simulations*";
-    for (var i=0; i<4; i++) {
-        var visuals = {};
-        histogramVisuals.push(visuals);
-        var histogramContainer = document.getElementById('round_simulations_histogram_' + i);
-        while (histogramContainer.firstChild) {
-            histogramContainer.removeChild(histogramContainer.firstChild);
+    //
+    // Async Workers
+    //
+    this.worker = new Worker('pinochle/GameSimulator.js');
+    this.worker.addEventListener('message', function(e){
+        var data = e.data;
+        switch (data.cmd) {
+            case 'UpdateRoundSimulationsView':
+                game.UpdateRoundSimulationsView(data.roundBidAnalysis);
+            break;
+            case 'PlayerFoundBestBid':
+                var player = game.players[data.playerIndex];
+                player.OnFinishedAnalyzingBestBid(data.bid, data.minimumEndTime);
+            break;
         }
+    }, false);
 
-        var elem = document.createElement('div');
-        elem.className = 'round_simulations_horizontal_axis';
-        histogramContainer.appendChild(elem);
-
-        for (var j=histogramMinScore+10; j<histogramMaxVisibleScore; j+=10) {
-            elem = document.createElement('div');
-            elem.className = 'round_simulations_horizontal_axis_label';
-            elem.innerText = j;
-            var leftOffset = histogramBarsLeftOffset + (histogramRegionWidth-histogramBarsLeftOffset)*(j-histogramMinScore)/(histogramMaxVisibleScore-histogramMinScore);
-            elem.style = "left: " + leftOffset + "px";
-            histogramContainer.appendChild(elem);
-        }
-
-        histogramBarWidth = Math.floor((histogramRegionWidth-histogramBarsLeftOffset)/(histogramMaxVisibleScore-histogramMinScore)-1);
-        visuals.bars = [];
-        for (var j=histogramMinScore; j<histogramMaxVisibleScore; j++) {
-            elem = document.createElement('div');
-            elem.className = 'round_simulations_bar';
-            var leftOffset = histogramBarsLeftOffset + (histogramRegionWidth-histogramBarsLeftOffset)*(j-histogramMinScore)/(histogramMaxVisibleScore-histogramMinScore);
-            elem.style = "left: " + leftOffset + "px; width: " + histogramBarWidth + "px; transform: scaleY(0);";
-            histogramContainer.appendChild(elem);
-            visuals.bars[j] = elem;
-        }
-
-        visuals.safeBidLine = document.createElement('div');
-        visuals.safeBidLine.className = 'round_simulations_vertical_line';
-        visuals.safeBidLine.style.left = '0px';
-        visuals.safeBidLine.style.opacity = 0;
-        histogramContainer.appendChild(visuals.safeBidLine);
-        visuals.safeBidValue = document.createElement('div');
-        visuals.safeBidValue.className = 'round_simulations_safe_bid_value';
-        visuals.safeBidValue.style.left = '0px';
-        visuals.safeBidValue.style.opacity = 0;
-        visuals.safeBidValue.innerText = '21';
-        histogramContainer.appendChild(visuals.safeBidValue);
-        visuals.safeBidLabel = document.createElement('div');
-        visuals.safeBidLabel.className = 'round_simulations_safe_bid_label';
-        visuals.safeBidLabel.style.left = '0px';
-        visuals.safeBidLabel.style.opacity = 0;
-        visuals.safeBidLabel.innerText = 'Safe bid';
-        histogramContainer.appendChild(visuals.safeBidLabel);
-
-        visuals.suggestedBidLine = document.createElement('div');
-        visuals.suggestedBidLine.className = 'round_simulations_vertical_line';
-        visuals.suggestedBidLine.style.left = '450px;';
-        visuals.suggestedBidLine.style.opacity = 0;
-        histogramContainer.appendChild(visuals.suggestedBidLine);
-        visuals.suggestedBidValue = document.createElement('div');
-        visuals.suggestedBidValue.className = 'round_simulations_suggested_bid_value';
-        visuals.suggestedBidValue.style.left = '450px';
-        visuals.suggestedBidValue.style.opacity = 0;
-        visuals.suggestedBidValue.innerText = '21';
-        histogramContainer.appendChild(visuals.suggestedBidValue);
-        visuals.suggestedBidLabel = document.createElement('div');
-        visuals.suggestedBidLabel.className = 'round_simulations_suggested_bid_label';
-        visuals.suggestedBidLabel.style.left = '450px';
-        visuals.suggestedBidLabel.style.opacity = 0;
-        visuals.suggestedBidLabel.innerText = 'Suggested bid';
-        histogramContainer.appendChild(visuals.suggestedBidLabel);
-
-        visuals.suitImage = document.createElement('img');
-        visuals.suitImage.className = 'round_simulations_suit_image';
-        histogramContainer.appendChild(visuals.suitImage);
+    this.CreateClonableGameState = function(aGame) {
+        return {
+            'isDoubleDeck': aGame.isDoubleDeck,
+            'leadIndex': aGame.leadIndex,
+            'dealerIndex': aGame.dealerIndex,
+            'turnIndex': aGame.turnIndex
+        };
     }
-}
 
-function UpdateRoundSimulationsView(roundBidAnalysis) {
-    var isUsingScoreMultiplier = GetSetting('setting_score_multiplier');
-    document.getElementById('round_simulations_subtitle').innerText = "This is the range of scores for your hand after " + roundBidAnalysis.simulationsCount + " round simulations*";
+    this.CreateClonableCards = function(cards) {
+        var cloneableCards = [];
+        for (var i=0; i<cards.length; i++) {
+            var card = cards[i];
+            cloneableCards.push({ 
+                id: card.id, 
+                hash: card.hash, 
+                deckID: card.deckID, 
+                rank: card.rank, 
+                value: card.value, 
+                suit: card.suit, 
+                suitInt: card.suitInt, 
+                wasShown: card.wasShown, 
+                wasPassed: card.wasPassed
+            });
+        }
+        return cloneableCards;
+    }
+
+    this.OnTerminateGame = function() {
+        this.worker.terminate();
+    }
+
+    //
+    //  MENUS
+    //
+    this.ShowStartAGameMenu = function() {
+        var menuName = visibleMenuCards[visibleMenuCards.length-1];
+        MenuCardPressDown(menuName);
+        MenuCardAppear("menu_start_a_game");
+    }
+
+    this.menu_start_game_click = function(difficulty) {
+        game.StartAGame(difficulty);
+        while (visibleMenuCards.length > 0) {
+            var topMenu = visibleMenuCards.pop();
+            MenuCardPopUp(topMenu);
+            MenuCardDisappear(topMenu);
+        }
+        ShowMenuButton();
+    }
+
+    this.ShowDifficultiesExplainedMenu = function()
+    {
+        var menuName = visibleMenuCards[visibleMenuCards.length-1];
+        MenuCardPressDown(menuName);
+        MenuCardAppear("menu_difficulties_explained");
+    }
     
-    // Sort to find the descending indices
-    var suits = ['S','H','C','D'];
-    var indices = [0,0,0,0];
-    var suggestedBids = [0,0,0,0];
-    for (var i=0; i<4; i++){
-        indices[i] = i;
-        suggestedBids[i] = roundBidAnalysis.suggestedBids[i];
-    }
-    for (var i=0; i<4; i++) {
-        for (var j=0; j<4; j++) {
-            if (suggestedBids[j] < suggestedBids[i]) {
-                var tmp1 = suggestedBids[i];
-                var tmp2 = indices[i];
-                suggestedBids[i] = suggestedBids[j];
-                indices[i] = indices[j];
-                suggestedBids[j] = tmp1;
-                indices[j] = tmp2;
-            }
-        }
+    this.ShowSettingsMenu = function() {
+        this.InitializeSettingsView();
+        var menuName = visibleMenuCards[visibleMenuCards.length-1];
+        MenuCardPressDown(menuName);
+        MenuCardAppear("menu_settings");
     }
 
-    for (var idx=0; idx<4; idx++) {
-        var curSuit = suits[indices[idx]];
-        var visuals = histogramVisuals[idx];
-        switch (curSuit) {
-            case 'S':
-                visuals.suitImage.src = 'images/score_spade.png';
-                break;
-            case 'H':
-                visuals.suitImage.src = 'images/score_heart.png';
-                break;
-            case 'D':
-                visuals.suitImage.src = 'images/score_diamond.png';
-                break;
-            case 'C':
-                visuals.suitImage.src = 'images/score_club.png';
-                break;
-        }
-
-        var roundScoresHistogram = roundBidAnalysis.histogramsBySuit[curSuit];
+    this.InitializeSettingsView = function() {
+        var scrollDiv = document.getElementById('menu_settings_body');
+        scrollDiv.scrollTop = 0;
+        document.getElementById("setting_hints_checkbox").checked = this.settings.GetSetting('setting_hints');
+        document.getElementById("setting_undo_checkbox").checked = this.settings.GetSetting('setting_undo');
+        document.getElementById("setting_sort_left_to_right_checkbox").checked = this.settings.GetSetting('setting_sort_left_to_right');
+        document.getElementById("setting_score_multiplier_checkbox").checked = this.settings.GetSetting('setting_score_multiplier');
+    
+        document.getElementById("deck_count_dropdown").value = this.settings.GetSetting('setting_deck_count');
+        document.getElementById("winning_score_dropdown").value = this.settings.GetSetting('setting_winning_score');
+        document.getElementById("bidding_speed_dropdown").value = this.settings.GetSetting('setting_bidding_speed');
+        document.getElementById("minimum_bid_dropdown").value = this.settings.GetSetting('setting_minimum_bid');
+        document.getElementById("passing_cards_count_dropdown").value = this.settings.GetSetting('setting_passing_cards_count');
+        document.getElementById("trick_taking_speed_dropdown").value = this.settings.GetSetting('setting_trick_speed');
+        document.getElementById("trick_taking_display_dropdown").value = this.settings.GetSetting('setting_counters_display');
         
-        // Find the max count
-        var maxHistogramCount = 10;
-        for (var i=0; i<=histogramMaxVisibleScore; i++) {
-            if (roundScoresHistogram[i] == null) {
-                continue;
-            }
-            var histogramCountForScore = roundScoresHistogram[i];
-            if (histogramCountForScore > maxHistogramCount) {
-                maxHistogramCount = histogramCountForScore;
+        var board_color = GetSetting('setting_board_color');
+        var allElems = document.getElementsByName('settings_boardbackground_selector');
+        for (i = 0; i < allElems.length; i++) {
+            if (allElems[i].type == 'radio' && allElems[i].value == board_color) {
+                allElems[i].checked = true;
             }
         }
-
-        // Draw all the histogram bars
-        for (var i=0; i<histogramMaxVisibleScore; i++) {
-            if (visuals.bars[i] == null) {
-                continue;
+        
+        var card_color = GetSetting('setting_card_color');
+        var allElems = document.getElementsByName('settings_card_color_selector');
+        for (i = 0; i < allElems.length; i++) {
+            if (allElems[i].type == 'radio' && allElems[i].value == card_color) {
+                allElems[i].checked = true;
             }
-            var bar = visuals.bars[i];
-            if (roundScoresHistogram[i] == null) {
-                bar.style.transform = 'scaleY(0)';
+        }
+    
+        this.GenerateWinningScoreOptions();
+        this.GenerateMinimumBidOptions();
+    }
+    
+    var WinningScoreOptions = [100, 150, 200, 250, 300, 500, 1000];
+    
+    this.GenerateWinningScoreOptions = function() {
+        var winningScoreDropDown = document.getElementById("winning_score_dropdown");
+        var isUsingScoreMultiplier = this.settings.GetSetting('setting_score_multiplier');
+        for (var i=0; i<winningScoreDropDown.children.length; i++) {
+            winningScoreDropDown.children[i].textContent = isUsingScoreMultiplier ? WinningScoreOptions[i]*10 : WinningScoreOptions[i];
+        }
+    }
+    
+    this.GenerateMinimumBidOptions = function() {
+        var miniumBidDropDown = document.getElementById("minimum_bid_dropdown");
+        var isUsingScoreMultiplier = this.settings.GetSetting('setting_score_multiplier');
+        for (var i=0; i<miniumBidDropDown.children.length; i++) {
+            miniumBidDropDown.children[i].textContent = isUsingScoreMultiplier ? (i+1)*10 : (i+1);
+        }
+    }
+    
+    this.SettingHintsClicked = function(cb) {
+        this.settings.SetSetting('setting_hints', cb.checked);
+        this.UpdateShowHintButton();
+    }
+    
+    this.SettingUndoClicked = function(cb) {
+        this.settings.SetSetting('setting_undo', cb.checked);
+        this.UpdateShowUndoButton();
+    }
+    
+    this.SettingSortLeftToRightClicked = function(cb) {
+        this.settings.SetSetting('setting_sort_left_to_right', cb.checked);
+        this.UpdateSortLeftToRight();
+    }
+    
+    this.SettingScoreMultiplierClicked = function(cb) {
+        this.settings.SetSetting('setting_score_multiplier', cb.checked);
+    
+        this.GenerateWinningScoreOptions();
+        this.GenerateMinimumBidOptions();
+        this.UpdateScoreMultiplier();
+    }
+    
+    this.SettingDeckCountChanged = function(selector) {
+        this.settings.SetSetting('setting_deck_count', selector.value);
+    
+        var passingCardsCount = 3;
+        var minimumBid = 20;
+        var deckCount = this.settings.GetSetting('setting_deck_count');
+        if (deckCount == 1) {
+            passingCardsCount = 4;
+            minimumBid = 50;
+        }
+    
+        var passingCardsDropDown = document.getElementById("passing_cards_count_dropdown");
+        passingCardsDropDown.value = passingCardsCount;
+        this.settings.SetSetting('setting_passing_cards_count', passingCardsCount);
+        var minimumBidDropDown = document.getElementById("minimum_bid_dropdown");
+        minimumBidDropDown.value = minimumBid;
+        this.settings.SetSetting('setting_minimum_bid', minimumBid);
+    }
+    
+    this.SettingWinningScoreChanged = function(winningScoreSelect) {
+        this.settings.SetSetting('setting_winning_score', winningScoreSelect.value);
+    }
+    
+    this.SettingBiddingSpeedChanged = function(selector) {
+        this.settings.SetSetting('setting_bidding_speed', selector.value);
+    }
+    
+    this.SettingMinimumBidChanged = function(selector) {
+        this.settings.SetSetting('setting_minimum_bid', selector.value);
+    }
+    
+    this.SettingPassingCardsCountChanged = function(selector) {
+        this.settings.SetSetting('setting_passing_cards_count', selector.value);
+    }
+    
+    this.SettingTrickTakingSpeedChanged = function(selector) {
+        this.settings.SetSetting('setting_trick_speed', selector.value);
+    }
+    
+    this.SettingTrickTakingDisplayChanged = function(selector) {
+        this.settings.SetSetting('setting_counters_display', selector.value);
+        this.UpdateTrickTakingDisplay();
+    }
+    
+    this.SettingPreferredDifficultyDisplayChanged = function(selector) {
+        this.settings.SetSetting('setting_preferred_skill', selector.value);
+    }
+    
+    this.ShowStatisticsMenu = function() {
+        var menuName = visibleMenuCards[visibleMenuCards.length-1];
+        MenuCardPressDown(menuName);
+        this.InitializeStatisticsView();
+        MenuCardAppear("menu_statistics");
+    }
+    
+    this.InitializeStatisticsView = function() {
+    
+        var scrollDiv = document.getElementById('menu_statistics_body');
+        scrollDiv.scrollTop = 0;
+        
+        var isUsingScoreMultiplier = this.settings.GetSetting('setting_score_multiplier');
+        var deckCount = this.settings.GetSetting('setting_deck_count');
+        var doubleDeckString = "";
+        if (deckCount == 1) {
+            doubleDeckString = "_DoubleDeck";
+        }
+        
+        var difficulties = ["Easy", "Standard", "Pro"];
+        var totalGamesPlayed = 0;
+        var totalWins = 0;
+        for (var i=0; i<difficulties.length; i++) {
+            var curDifficulty = difficulties[i];
+            var wins = this.settings.GetStatistic('stat_wins_' + curDifficulty + doubleDeckString);
+            var losses = this.settings.GetStatistic('stat_losses_' + curDifficulty + doubleDeckString);
+            var gamesPlayed = wins + losses;
+            var gamesPlayedElement = document.getElementById('menu_stat_games_played_' + curDifficulty);
+            var winsElement = document.getElementById('menu_stat_wins_' + curDifficulty);
+            var winPercentElement = document.getElementById('menu_stat_win_percent_' + curDifficulty);
+            if (gamesPlayed > 0) {
+                gamesPlayedElement.innerText = gamesPlayed;
+                winsElement.innerText = wins;
+                winPercentElement.innerText = parseFloat(100*wins / gamesPlayed).toFixed(0) + "%";
             } else {
-                var score = roundScoresHistogram[i];
-                var percent = score/maxHistogramCount;
-                bar.style.transform = 'scaleY(' + percent + ')';
+                gamesPlayedElement.innerText = "";
+                winsElement.innerText = "";
+                winPercentElement.innerText = "";
+            }
+            totalGamesPlayed = totalGamesPlayed + gamesPlayed;
+            totalWins = totalWins + wins;
+        }
+        var gamesPlayedElement = document.getElementById('menu_stat_games_played_Total');
+        var winsElement = document.getElementById('menu_stat_wins_Total');
+        var winPercentElement = document.getElementById('menu_stat_win_percent_Total');
+        if (totalGamesPlayed > 0) {
+            gamesPlayedElement.innerText = totalGamesPlayed;
+            winsElement.innerText = totalWins;
+            winPercentElement.innerText = parseFloat(100*totalWins / totalGamesPlayed).toFixed(0) + "%";
+        } else {
+            gamesPlayedElement.innerText = "0";
+            winsElement.innerText = "0";
+            winPercentElement.innerText = "";
+        }
+    
+        // Stats with bid
+        var totalWinningBidTotal = 0;
+        var totalWinningBidCount = 0;
+        var totalMakeContract = 0;
+        var totalMeldWithBidTotal = 0;
+        var totalMeldWithBidCount = 0;
+        var totalCountersWithBidTotal = 0;
+        var totalCountersWithBidCount = 0;
+        var totalRoundScoresWithBidTotal = 0;
+        var totalRoundScoresWithBidCount = 0;
+        var totalMeldWithoutBidTotal = 0;
+        var totalMeldWithoutBidCount = 0;
+        var totalCountersWithoutBidTotal = 0;
+        var totalCountersWithoutBidCount = 0;
+        var totalRoundScoresWithoutBidTotal = 0;
+        var totalRoundScoresWithoutBidCount = 0;
+        for (var i=0; i<difficulties.length; i++) {
+            var curDifficulty = difficulties[i];
+            
+            // Avg Contract
+            var winningBidTotal = this.settings.GetStatistic('stat_winningbid_total_' + curDifficulty + doubleDeckString);
+            var winningBidCount = GetStatistic('stat_winningbid_count_' + curDifficulty + doubleDeckString);
+            var notWinningBidCount = this.settings.GetStatistic('stat_notwinningbid_count_' + curDifficulty + doubleDeckString);
+            var bidsWonAndNotWon = winningBidCount + notWinningBidCount;
+            var curElement = document.getElementById('menu_stat_avg_bid_contract_with_bid_' + curDifficulty);
+            if (bidsWonAndNotWon > 0) {
+                var avg = isUsingScoreMultiplier ? parseFloat(10*winningBidTotal/bidsWonAndNotWon).toFixed(1) : parseFloat(winningBidTotal/bidsWonAndNotWon).toFixed(1);
+                curElement.innerText = avg;
+            } else {
+                curElement.innerText = "";
+            }
+            totalWinningBidTotal += winningBidTotal;
+            totalWinningBidCount += bidsWonAndNotWon;
+    
+            // Make Contract
+            curElement = document.getElementById('menu_stat_make_contract_percent_' + curDifficulty);
+            if (bidsWonAndNotWon > 0) {
+                var contractMakePercent = bidsWonAndNotWon > 0 ? winningBidCount/bidsWonAndNotWon : 0;
+                curElement.innerText = parseFloat(100*contractMakePercent).toFixed(0) + "%";	
+            } else {
+                curElement.innerText = "";
+            }
+            totalMakeContract += winningBidCount;
+    
+            // Avg meld
+            var meldWithBidTotal = this.settings.GetStatistic('stat_meld_withbid_total_' + curDifficulty + doubleDeckString);
+            var meldWithBidCount = this.settings.GetStatistic('stat_meld_withbid_count_' + curDifficulty + doubleDeckString);
+            var meldWithBidAverage = meldWithBidCount > 0 ? meldWithBidTotal/meldWithBidCount : 0;
+            if (isUsingScoreMultiplier) {
+                meldWithBidAverage = meldWithBidAverage*10;
+            }
+            curElement = document.getElementById('menu_stat_avg_meld_with_bid_' + curDifficulty);
+            curElement.innerText = meldWithBidCount > 0 ? parseFloat(meldWithBidAverage).toFixed(1) : "";
+            totalMeldWithBidTotal += meldWithBidTotal;
+            totalMeldWithBidCount += meldWithBidCount;
+    
+            // Avg counters
+            var countersWithBidTotal = this.settings.GetStatistic('stat_counters_withbid_total_' + curDifficulty + doubleDeckString);
+            var countersWithBidCount = this.settings.GetStatistic('stat_counters_withbid_count_' + curDifficulty + doubleDeckString);
+            var countersWithBidAverage = countersWithBidCount > 0 ? countersWithBidTotal/countersWithBidCount : 0;
+            if (isUsingScoreMultiplier) {
+                countersWithBidAverage = countersWithBidAverage*10;
+            }
+            curElement = document.getElementById('menu_stat_avg_counters_with_bid_' + curDifficulty);
+            curElement.innerText = countersWithBidCount > 0 ? parseFloat(countersWithBidAverage).toFixed(1) : "";
+            totalCountersWithBidTotal += countersWithBidTotal;
+            totalCountersWithBidCount += countersWithBidCount;
+    
+            // Avg positive round score
+            var roundScoresWithBidTotal = this.settings.GetStatistic('stat_roundscores_withbid_total_' + curDifficulty + doubleDeckString);
+            var roundScoresWithBidCount = this.settings.GetStatistic('stat_roundscores_withbid_count_' + curDifficulty + doubleDeckString);
+            var roundScoresWithBidAverage = roundScoresWithBidCount > 0 ? roundScoresWithBidTotal/roundScoresWithBidCount : 0;
+            if (isUsingScoreMultiplier) {
+                roundScoresWithBidAverage = roundScoresWithBidAverage*10;
+            }
+            curElement = document.getElementById('menu_stat_avg_round_score_with_bid_' + curDifficulty);
+            curElement.innerText = roundScoresWithBidCount > 0 ? parseFloat(roundScoresWithBidAverage).toFixed(1) : "";
+            totalRoundScoresWithBidTotal += roundScoresWithBidTotal;
+            totalRoundScoresWithBidCount += roundScoresWithBidCount;
+    
+            // Avg meld
+            var meldWithOutBidTotal = this.settings.GetStatistic('stat_meld_withoutbid_total_' + curDifficulty + doubleDeckString);
+            var meldWithOutBidCount = this.settings.GetStatistic('stat_meld_withoutbid_count_' + curDifficulty + doubleDeckString);
+            var meldWithOutBidAverage = meldWithOutBidCount > 0 ? meldWithOutBidTotal/meldWithOutBidCount : 0;
+            if (isUsingScoreMultiplier) {
+                meldWithOutBidAverage = meldWithOutBidAverage*10;
+            }
+            curElement = document.getElementById('menu_stat_avg_meld_without_bid_' + curDifficulty);
+            curElement.innerText = meldWithOutBidCount > 0 ? parseFloat(meldWithOutBidAverage).toFixed(1) : "";
+            totalMeldWithoutBidTotal += meldWithOutBidTotal;
+            totalMeldWithoutBidCount += meldWithOutBidCount;
+    
+            // Avg counters
+            var countersWithoutBidTotal = this.settings.GetStatistic('stat_counters_withoutbid_total_' + curDifficulty + doubleDeckString);
+            var countersWithoutBidCount = this.settings.GetStatistic('stat_counters_withoutbid_count_' + curDifficulty + doubleDeckString);
+            var countersWithoutBidAverage = countersWithoutBidCount > 0 ? countersWithoutBidTotal/countersWithoutBidCount : 0;
+            if (isUsingScoreMultiplier) {
+                countersWithoutBidAverage = countersWithoutBidAverage*10;
+            }
+            curElement = document.getElementById('menu_stat_avg_counters_without_bid_' + curDifficulty);
+            curElement.innerText = countersWithoutBidCount > 0 ? parseFloat(countersWithoutBidAverage).toFixed(1) : "";
+            totalCountersWithoutBidTotal += countersWithoutBidTotal;
+            totalCountersWithoutBidCount += countersWithoutBidCount;
+    
+            // Avg round score
+            var roundScoresWithoutBidTotal = this.settings.GetStatistic('stat_roundscores_withoutbid_total_' + curDifficulty + doubleDeckString);
+            var roundScoresWithoutBidCount = this.settings.GetStatistic('stat_roundscores_withoutbid_count_' + curDifficulty + doubleDeckString);
+            var roundScoresWithoutBidAverage = roundScoresWithoutBidCount > 0 ? roundScoresWithoutBidTotal/roundScoresWithoutBidCount : 0;
+            if (isUsingScoreMultiplier) {
+                roundScoresWithoutBidAverage = roundScoresWithoutBidAverage*10;
+            }
+            curElement = document.getElementById('menu_stat_avg_round_score_without_bid_' + curDifficulty);
+            curElement.innerText = roundScoresWithoutBidCount > 0 ? parseFloat(roundScoresWithoutBidAverage).toFixed(1) : "";
+            totalRoundScoresWithoutBidTotal += roundScoresWithoutBidTotal;
+            totalRoundScoresWithoutBidCount += roundScoresWithoutBidCount;
+        }
+    
+        // Totals
+        curElement = document.getElementById('menu_stat_avg_bid_contract_with_bid_Total');	
+        if (totalWinningBidCount > 0) {
+            var avg = totalWinningBidTotal/totalWinningBidCount;
+            if (isUsingScoreMultiplier) {
+                avg = avg*10;
+            }
+            curElement.innerText = parseFloat(avg).toFixed(1);
+        } else {
+            curElement.innerText = "";
+        }
+        
+        curElement = document.getElementById('menu_stat_avg_meld_with_bid_Total');
+        if (totalMeldWithBidCount > 0) {
+            avg = totalMeldWithBidTotal/totalMeldWithBidCount;
+            if (isUsingScoreMultiplier) {
+                avg = avg*10;
+            }
+            curElement.innerText = parseFloat(avg).toFixed(1);
+        } else {
+            curElement.innerText = "";
+        }
+    
+        curElement = document.getElementById('menu_stat_avg_counters_with_bid_Total');
+        if (totalCountersWithBidCount > 0) {
+            avg = totalCountersWithBidTotal/totalCountersWithBidCount;
+            if (isUsingScoreMultiplier) {
+                avg = avg*10;
+            }
+            curElement.innerText = parseFloat(avg).toFixed(1);
+        } else {
+            curElement.innerText = "";
+        }
+    
+        curElement = document.getElementById('menu_stat_avg_round_score_with_bid_Total');
+        if (totalRoundScoresWithBidCount > 0) {
+            avg = totalRoundScoresWithBidTotal/totalRoundScoresWithBidCount;
+            if (isUsingScoreMultiplier) {
+                avg = avg*10;
+            }
+            curElement.innerText = parseFloat(avg).toFixed(1);
+        } else {
+            curElement.innerText = "";
+        }
+    
+        curElement = document.getElementById('menu_stat_make_contract_percent_Total');
+        if (totalWinningBidCount > 0) {
+            avg = totalMakeContract/totalWinningBidCount;
+            curElement.innerText = parseFloat(avg).toFixed(0) + "%";
+        } else {
+            curElement.innerText = "";
+        }
+        
+        curElement = document.getElementById('menu_stat_avg_meld_without_bid_Total');
+        if (totalMeldWithoutBidCount > 0) {
+            avg = totalMeldWithoutBidTotal/totalMeldWithoutBidCount;
+            if (isUsingScoreMultiplier) {
+                avg = avg*10;
+            }
+            curElement.innerText = parseFloat(avg).toFixed(1);
+        } else {
+            curElement.innerText = "";
+        }
+    
+        curElement = document.getElementById('menu_stat_avg_counters_without_bid_Total');
+        if (totalCountersWithoutBidCount > 0) {
+            avg = totalCountersWithoutBidTotal/totalCountersWithoutBidCount;
+            if (isUsingScoreMultiplier) {
+                avg = avg*10;
+            }
+            curElement.innerText = parseFloat(avg).toFixed(1);
+        } else {
+            curElement.innerText = "";
+        }
+    
+        curElement = document.getElementById('menu_stat_avg_round_score_without_bid_Total');
+        if (totalRoundScoresWithoutBidCount > 0) {
+            avg = totalRoundScoresWithoutBidTotal/totalRoundScoresWithoutBidCount;
+            if (isUsingScoreMultiplier) {
+                avg = avg*10;
+            }
+            curElement.innerText = parseFloat(avg).toFixed(1);
+        } else {
+            curElement.innerText = "";
+        }
+    }
+    
+    this.GetTotalGamesPlayed = function() {
+        var difficulties = ["Easy", "Standard", "Pro"];
+        var totalGamesPlayed = 0;
+        for (var i=0; i<difficulties.length; i++) {
+            var curDifficulty = difficulties[i];
+            var wins = this.settings.GetStatistic('stat_wins_' + curDifficulty);
+            var losses = this.settings.GetStatistic('stat_losses_' + curDifficulty);
+            totalGamesPlayed += (wins + losses);
+        }
+        return totalGamesPlayed;
+    }
+    
+    this.ResetStatisticsButtonClick = function() {
+        var r = confirm("Are you sure you want to reset your statistics?");
+        if (r != true) {
+            return;
+        }
+    
+        var doubleDeckString = "";
+        if (this.settings.GetSetting('setting_deck_count')==1) {
+            doubleDeckString = "_DoubleDeck";
+        }
+        var difficulties = ['Easy', 'Standard', 'Pro'];
+        var statsToReset = [
+            'stat_wins_',
+            'stat_losses_',
+            'stat_winningbid_total_',
+            'stat_winningbid_count_',
+            'stat_notwinningbid_count_',
+            'stat_meld_withbid_total_',
+            'stat_meld_withbid_count_',
+            'stat_counters_withbid_total_',
+            'stat_counters_withbid_count_',
+            'stat_roundscores_withbid_total_',
+            'stat_roundscores_withbid_count_',
+            'stat_meld_withoutbid_total_',
+            'stat_meld_withoutbid_count_',
+            'stat_counters_withoutbid_total_',
+            'stat_counters_withoutbid_count_',
+            'stat_roundscores_withoutbid_total_',
+            'stat_roundscores_withoutbid_count_'
+        ];
+        for (var i=0; i<statsToReset.length; i++) {
+            for (var j=0; j<difficulties.length; j++) {
+                var statName = statsToReset[i] + difficulties[j] + doubleDeckString;
+                window.localStorage.removeItem(statName);
+            }
+        }
+        
+        this.InitializeStatisticsView();
+    }
+    
+    this.ShowRulesMenu = function() {
+        var menuName = visibleMenuCards[visibleMenuCards.length-1];
+        MenuCardPressDown(menuName);
+        this.InitializeRulesView();
+        MenuCardAppear("menu_rules");
+    }
+    
+    this.InitializeRulesView = function() {
+        var scrollDiv = document.getElementById('menu_rules_body');
+        scrollDiv.scrollTop = 0;
+    
+        var isUsingDoubleDeck = this.settings.GetSetting('setting_deck_count') == 1;
+        var isUsingScoreMultiplier = this.settings.GetSetting('setting_score_multiplier');
+    
+        var curElement = document.getElementById('menu_rules_card_deck');
+        if (isUsingDoubleDeck) {
+            curElement.innerText = "The deck has 80 cards consisting of the 10s through Aces.  There are four of every card. The cards are ranked from highest to lowest: A,10,K,Q,J. Notice that the 10s are ranked higher than the Kings!";
+        } else {
+            curElement.innerText = "The deck has 48 cards consisting of the 9s through Aces.  There are two of every card. The cards are ranked from highest to lowest: A,10,K,Q,J,9. Notice that the 10s are ranked higher than the Kings!";
+        }
+        
+        curElement = document.getElementById('menu_rules_passing_cards');
+        if (isUsingDoubleDeck) {
+            curElement.innerText = "The team that declares trump then gets to pass cards to each other.  The default number of cards passed is 4 but this setting can be changed in the app settings.  First the non-declaring partner passes to the declarer and then the declarer passes cards back.";
+        } else {
+            curElement.innerText = "The team that declares trump then gets to pass cards to each other.  The default number of cards passed is 3 but this setting can be changed in the app settings.  First the non-declaring partner passes to the declarer and then the declarer passes cards back.";
+        }
+    
+        curElement = document.getElementById('menu_rules_tricktaking');
+        if (isUsingScoreMultiplier) {
+            curElement.innerHTML = "The last stage of a round is trick-taking.  A trick is four cards (one from each player).<br><br>The player who won the bid starts by playing a lead card.  Then, in a clockwise order, each other player also plays a card.<br><br>When trick-taking there are rules that limit which cards you can play.  Pinochle Classic will only let you make legal moves, but you should understand the rules:  You must play the lead suit if possible.  If you don't have a card in lead suit you must play a trump suited card if possible.  You must beat the winning card in the trick if you can.<br><br>Once all four players have played a card, the highest card of the lead suit or the highest trump card wins the trick.  If two identical cards are played, the first wins.<br><br>The trick winner receives ten points for each Ace, 10, or King in the trick pile.  These cards are called 'Counters'.  The final trick of the round is worth an extra ten points.<br><br>The trick winner then gets to play the next lead card and play continues until all players are out of cards.";
+        } else {
+            curElement.innerHTML = "The last stage of a round is trick-taking.  A trick is four cards (one from each player).<br><br>The player who won the bid starts by playing a lead card.  Then, in a clockwise order, each other player also plays a card.<br><br>When trick-taking there are rules that limit which cards you can play.  Pinochle Classic will only let you make legal moves, but you should understand the rules:  You must play the lead suit if possible.  If you don't have a card in lead suit you must play a trump suited card if possible.  You must beat the winning card in the trick if you can.<br><br>Once all four players have played a card, the highest card of the lead suit or the highest trump card wins the trick.  If two identical cards are played, the first wins.<br><br>The trick winner receives a point for each Ace, 10, or King in the trick pile.  These cards are called 'Counters'.  The final trick of the round is worth an extra point.<br><br>The trick winner then gets to play the next lead card and play continues until all players are out of cards.";	
+        }
+    
+        var doubleDeckCells = [
+            'menu_rules_cell_pinochle_3x',
+            'menu_rules_cell_pinochle_4x',
+            'menu_rules_cell_jacksaround_3x',
+            'menu_rules_cell_jacksaround_4x',
+            'menu_rules_cell_queensaround_3x',
+            'menu_rules_cell_queensaround_4x',
+            'menu_rules_cell_kingsaround_3x',
+            'menu_rules_cell_kingsaround_4x',
+            'menu_rules_cell_acesaround_3x',
+            'menu_rules_cell_acesaround_4x',
+            'menu_rules_cell_marriage_3x',
+            'menu_rules_cell_marriage_4x',
+            'menu_rules_cell_royalmarriage_3x',
+            'menu_rules_cell_royalmarriage_4x',
+            'menu_rules_cell_run_3x',
+            'menu_rules_cell_run_4x',
+            'menu_rules_cell_points_3x',
+            'menu_rules_cell_points_4x'
+        ]
+        if (isUsingDoubleDeck) {
+            curElement = document.getElementById('menu_rules_row_dix');
+            curElement.style = "visibility:collapse;";
+            curElement = document.getElementById('menu_rules_cell_points');
+            curElement.setAttribute('colspan', '4');
+            for (var i=0; i<doubleDeckCells.length; i++) {
+                curElement = document.getElementById(doubleDeckCells[i]);
+                curElement.style = "display:;"
+            }
+            
+        } else {
+            curElement = document.getElementById('menu_rules_row_dix');
+            curElement.style = "visibility:visible;";	
+            curElement = document.getElementById('menu_rules_cell_points');
+            curElement.setAttribute('colspan', '2');
+            for (var i=0; i<doubleDeckCells.length; i++) {
+                curElement = document.getElementById(doubleDeckCells[i]);
+                curElement.style = "display:none;"
+            }
+        }
+    }
+
+    // 
+    // Round Bid Analysis Simulations View
+    //
+    this.histogramVisuals = [];
+    this.histogramMinScore = 0;
+    this.histogramMaxVisibleScore = 0;
+    this.histogramBarWidth = 0;
+    this.histogramBarsLeftOffset = 80;
+    this.histogramRegionWidth = 450;
+
+    this.CreateSimulationHistogramVisuals = function() {
+
+        this.histogramVisuals = [];
+        if (game.isDoubleDeck) {
+            this.histogramMinScore = 40;
+            this.histogramMaxVisibleScore = 105;
+        } else {
+            this.histogramMinScore = 10;
+            this.histogramMaxVisibleScore = 55;
+        }
+        document.getElementById('pinochle_round_simulations_subtitle').innerText = "This is the range of scores for your hand after many round simulations*";
+        for (var i=0; i<4; i++) {
+            var visuals = {};
+            this.histogramVisuals.push(visuals);
+            var histogramContainer = document.getElementById('round_simulations_histogram_' + i);
+            while (histogramContainer.firstChild) {
+                histogramContainer.removeChild(histogramContainer.firstChild);
+            }
+
+            var elem = document.createElement('div');
+            elem.className = 'pinochle_round_simulations_horizontal_axis';
+            histogramContainer.appendChild(elem);
+
+            for (var j=this.histogramMinScore+10; j<this.histogramMaxVisibleScore; j+=10) {
+                elem = document.createElement('div');
+                elem.className = 'pinochle_round_simulations_horizontal_axis_label';
+                elem.innerText = j;
+                var leftOffset = this.histogramBarsLeftOffset + (this.histogramRegionWidth-this.histogramBarsLeftOffset)*(j-this.histogramMinScore)/(this.histogramMaxVisibleScore-this.histogramMinScore);
+                elem.style = "left: " + leftOffset + "px";
+                histogramContainer.appendChild(elem);
+            }
+
+            this.histogramBarWidth = Math.floor((this.histogramRegionWidth-this.histogramBarsLeftOffset)/(this.histogramMaxVisibleScore-this.histogramMinScore)-1);
+            visuals.bars = [];
+            for (var j=this.histogramMinScore; j<this.histogramMaxVisibleScore; j++) {
+                elem = document.createElement('div');
+                elem.className = 'pinochle_round_simulations_bar';
+                var leftOffset = this.histogramBarsLeftOffset + (this.histogramRegionWidth-this.histogramBarsLeftOffset)*(j-this.histogramMinScore)/(this.histogramMaxVisibleScore-this.histogramMinScore);
+                elem.style = "left: " + leftOffset + "px; width: " + this.histogramBarWidth + "px; transform: scaleY(0);";
+                histogramContainer.appendChild(elem);
+                visuals.bars[j] = elem;
+            }
+
+            visuals.safeBidLine = document.createElement('div');
+            visuals.safeBidLine.className = 'pinochle_round_simulations_vertical_line';
+            visuals.safeBidLine.style.left = '0px';
+            visuals.safeBidLine.style.opacity = 0;
+            histogramContainer.appendChild(visuals.safeBidLine);
+            visuals.safeBidValue = document.createElement('div');
+            visuals.safeBidValue.className = 'pinochle_round_simulations_safe_bid_value';
+            visuals.safeBidValue.style.left = '0px';
+            visuals.safeBidValue.style.opacity = 0;
+            visuals.safeBidValue.innerText = '21';
+            histogramContainer.appendChild(visuals.safeBidValue);
+            visuals.safeBidLabel = document.createElement('div');
+            visuals.safeBidLabel.className = 'pinochle_round_simulations_safe_bid_label';
+            visuals.safeBidLabel.style.left = '0px';
+            visuals.safeBidLabel.style.opacity = 0;
+            visuals.safeBidLabel.innerText = 'Safe bid';
+            histogramContainer.appendChild(visuals.safeBidLabel);
+
+            visuals.suggestedBidLine = document.createElement('div');
+            visuals.suggestedBidLine.className = 'pinochle_round_simulations_vertical_line';
+            visuals.suggestedBidLine.style.left = '450px;';
+            visuals.suggestedBidLine.style.opacity = 0;
+            histogramContainer.appendChild(visuals.suggestedBidLine);
+            visuals.suggestedBidValue = document.createElement('div');
+            visuals.suggestedBidValue.className = 'pinochle_round_simulations_suggested_bid_value';
+            visuals.suggestedBidValue.style.left = '450px';
+            visuals.suggestedBidValue.style.opacity = 0;
+            visuals.suggestedBidValue.innerText = '21';
+            histogramContainer.appendChild(visuals.suggestedBidValue);
+            visuals.suggestedBidLabel = document.createElement('div');
+            visuals.suggestedBidLabel.className = 'pinochle_round_simulations_suggested_bid_label';
+            visuals.suggestedBidLabel.style.left = '450px';
+            visuals.suggestedBidLabel.style.opacity = 0;
+            visuals.suggestedBidLabel.innerText = 'Suggested bid';
+            histogramContainer.appendChild(visuals.suggestedBidLabel);
+
+            visuals.suitImage = document.createElement('img');
+            visuals.suitImage.className = 'pinochle_round_simulations_suit_image';
+            histogramContainer.appendChild(visuals.suitImage);
+        }
+    }
+
+    this.UpdateRoundSimulationsView = function(roundBidAnalysis) {
+        var isUsingScoreMultiplier = this.settings.GetSetting('setting_score_multiplier');
+        document.getElementById('pinochle_round_simulations_subtitle').innerText = "This is the range of scores for your hand after " + roundBidAnalysis.simulationsCount + " round simulations*";
+        
+        // Sort to find the descending indices
+        var suits = ['S','H','C','D'];
+        var indices = [0,0,0,0];
+        var suggestedBids = [0,0,0,0];
+        for (var i=0; i<4; i++){
+            indices[i] = i;
+            suggestedBids[i] = roundBidAnalysis.suggestedBids[i];
+        }
+        for (var i=0; i<4; i++) {
+            for (var j=0; j<4; j++) {
+                if (suggestedBids[j] < suggestedBids[i]) {
+                    var tmp1 = suggestedBids[i];
+                    var tmp2 = indices[i];
+                    suggestedBids[i] = suggestedBids[j];
+                    indices[i] = indices[j];
+                    suggestedBids[j] = tmp1;
+                    indices[j] = tmp2;
+                }
             }
         }
 
-        var safeBid = roundBidAnalysis.safeBids[indices[idx]];
-        var leftOffset = histogramBarsLeftOffset + (histogramRegionWidth-histogramBarsLeftOffset)*(safeBid-histogramMinScore)/(histogramMaxVisibleScore-histogramMinScore) + histogramBarWidth/2;
-        visuals.safeBidLine.style.left = leftOffset + 'px';
-        visuals.safeBidLine.style.opacity = 1;
-        visuals.safeBidValue.innerText = safeBid;
-        visuals.safeBidValue.style.left = leftOffset + 'px';
-        visuals.safeBidValue.style.opacity = 1;
-        visuals.safeBidLabel.style.left = leftOffset + 'px';
-        visuals.safeBidLabel.style.opacity = 1;
+        for (var idx=0; idx<4; idx++) {
+            var curSuit = suits[indices[idx]];
+            var visuals = this.histogramVisuals[idx];
+            switch (curSuit) {
+                case 'S':
+                    visuals.suitImage.src = 'shared/images/score_spade.png';
+                    break;
+                case 'H':
+                    visuals.suitImage.src = 'shared/images/score_heart.png';
+                    break;
+                case 'D':
+                    visuals.suitImage.src = 'shared/images/score_diamond.png';
+                    break;
+                case 'C':
+                    visuals.suitImage.src = 'shared/images/score_club.png';
+                    break;
+            }
 
-        var suggestedBid = roundBidAnalysis.suggestedBids[indices[idx]];
-        leftOffset = histogramBarsLeftOffset + (histogramRegionWidth-histogramBarsLeftOffset)*(suggestedBid-histogramMinScore)/(histogramMaxVisibleScore-histogramMinScore) + histogramBarWidth/2;
-        visuals.suggestedBidLine.style.left = leftOffset + 'px';
-        visuals.suggestedBidLine.style.opacity = 1;
-        visuals.suggestedBidValue.innerText = suggestedBid;
-        visuals.suggestedBidValue.style.left = leftOffset + 'px';
-        visuals.suggestedBidValue.style.opacity = 1;
-        visuals.suggestedBidLabel.style.left = leftOffset + 'px';
-        visuals.suggestedBidLabel.style.opacity = 1;
+            var roundScoresHistogram = roundBidAnalysis.histogramsBySuit[curSuit];
+            
+            // Find the max count
+            var maxHistogramCount = 10;
+            for (var i=0; i<=this.histogramMaxVisibleScore; i++) {
+                if (roundScoresHistogram[i] == null) {
+                    continue;
+                }
+                var histogramCountForScore = roundScoresHistogram[i];
+                if (histogramCountForScore > maxHistogramCount) {
+                    maxHistogramCount = histogramCountForScore;
+                }
+            }
+
+            // Draw all the histogram bars
+            for (var i=0; i<this.histogramMaxVisibleScore; i++) {
+                if (visuals.bars[i] == null) {
+                    continue;
+                }
+                var bar = visuals.bars[i];
+                if (roundScoresHistogram[i] == null) {
+                    bar.style.transform = 'scaleY(0)';
+                } else {
+                    var score = roundScoresHistogram[i];
+                    var percent = score/maxHistogramCount;
+                    bar.style.transform = 'scaleY(' + percent + ')';
+                }
+            }
+
+            var safeBid = roundBidAnalysis.safeBids[indices[idx]];
+            var leftOffset = this.histogramBarsLeftOffset + (this.histogramRegionWidth-this.histogramBarsLeftOffset)*(safeBid-this.histogramMinScore)/(this.histogramMaxVisibleScore-this.histogramMinScore) + this.histogramBarWidth/2;
+            visuals.safeBidLine.style.left = leftOffset + 'px';
+            visuals.safeBidLine.style.opacity = 1;
+            visuals.safeBidValue.innerText = safeBid;
+            visuals.safeBidValue.style.left = leftOffset + 'px';
+            visuals.safeBidValue.style.opacity = 1;
+            visuals.safeBidLabel.style.left = leftOffset + 'px';
+            visuals.safeBidLabel.style.opacity = 1;
+
+            var suggestedBid = roundBidAnalysis.suggestedBids[indices[idx]];
+            leftOffset = this.histogramBarsLeftOffset + (this.histogramRegionWidth-this.histogramBarsLeftOffset)*(suggestedBid-this.histogramMinScore)/(this.histogramMaxVisibleScore-this.histogramMinScore) + this.histogramBarWidth/2;
+            visuals.suggestedBidLine.style.left = leftOffset + 'px';
+            visuals.suggestedBidLine.style.opacity = 1;
+            visuals.suggestedBidValue.innerText = suggestedBid;
+            visuals.suggestedBidValue.style.left = leftOffset + 'px';
+            visuals.suggestedBidValue.style.opacity = 1;
+            visuals.suggestedBidLabel.style.left = leftOffset + 'px';
+            visuals.suggestedBidLabel.style.opacity = 1;
+        }
     }
-}
 
-function ShowRoundSimulationsView() {
-    
-    CreateSimulationHistogramVisuals();
+    this.ShowRoundSimulationsView = function() {
+        
+        this.CreateSimulationHistogramVisuals();
 
-    worker.postMessage({
-        'cmd': 'FindRoundBidAnalysis', 
-        'gameState': CreateClonableGameState(game),
-        'passingCardsCount': GetSetting('setting_passing_cards_count'),
-        'playerSkill': 'Pro',
-        'playerIndex': 0,
-        'playerCards': CreateClonableCards(game.players[0].cards),
-        'simulationsPerSuit': 1000,
-        'isForSimulationView': true
-    });
-    
-    var elem = document.getElementById('round_simulations_view');
-    with (elem.style) {
-        transition = 'none';
-        transform = 'translate(-50%, -50%) scale(0)';
-        opacity = 1;
-        visibility = 'visible';
+        this.worker.postMessage({
+            'cmd': 'FindRoundBidAnalysis', 
+            'gameState': game.CreateClonableGameState(game),
+            'passingCardsCount': this.settings.GetSetting('setting_passing_cards_count'),
+            'playerSkill': 'Pro',
+            'playerIndex': 0,
+            'playerCards': game.CreateClonableCards(game.players[0].cards),
+            'simulationsPerSuit': 1000,
+            'isForSimulationView': true
+        });
+        
+        var elem = document.getElementById('pinochle_round_simulations_view');
+        with (elem.style) {
+            transition = 'none';
+            transform = 'translate(-50%, -50%) scale(0)';
+            opacity = 1;
+            visibility = 'visible';
+        }
+        setTimeout(function(){
+            with (elem.style) {
+                transition = '0.3s linear';
+                transform = 'translate(-50%, -50%) scale(1)';
+            }
+        }, 100);
     }
-    setTimeout(function(){
+
+    this.HideRoundSimulationsView = function() {
+        var elem = document.getElementById('pinochle_round_simulations_view');
         with (elem.style) {
             transition = '0.3s linear';
-            transform = 'translate(-50%, -50%) scale(1)';
+            transform = 'translate(-50%, -' + gameContainer.innerHeight + 'px) scale(1)';
+            visibility = 'hidden';
         }
-    }, 100);
-}
-
-function HideRoundSimulationsView() {
-    var elem = document.getElementById('round_simulations_view');
-    with (elem.style) {
-        transition = '0.3s linear';
-        transform = 'translate(-50%, -' + window.innerHeight + 'px) scale(1)';
-        visibility = 'hidden';
     }
 }

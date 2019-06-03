@@ -1,4 +1,4 @@
-var Player = function() {
+var PinochlePlayer = function() {
 
     this.name = "";
     this.isHuman = false;
@@ -54,7 +54,7 @@ var Player = function() {
         if (this.isHuman) {
             if (game.currentHighestBidder == null) {
                 // Player must bid minimum
-                this.currentRoundBid = Number(GetSetting('setting_minimum_bid'));
+                this.currentRoundBid = Number(game.settings.GetSetting('setting_minimum_bid'));
                 game.currentHighestBidder = this;
                 game.OnPlayerFinishedChoosingBid(this);
             } else {
@@ -71,13 +71,13 @@ var Player = function() {
             
             if (this.currentRoundMaximumBid == -1) {
                 game.IndicatePlayerIsThinking(this.playerPosition);
-                worker.postMessage({
+                game.worker.postMessage({
                     'cmd': 'FindBestBid', 
-                    'gameState': CreateClonableGameState(game),
-                    'passingCardsCount': GetSetting('setting_passing_cards_count'),
+                    'gameState': game.CreateClonableGameState(game),
+                    'passingCardsCount': game.settings.GetSetting('setting_passing_cards_count'),
                     'playerSkill': this.skillLevel,
                     'playerIndex': this.playerPositionInt,
-                    'playerCards': CreateClonableCards(this.cards),
+                    'playerCards': game.CreateClonableCards(this.cards),
                     'simulationsPerSuit': 1000,
                     'isForSimulationView': false,
                     'minimumEndTime': startTime + minimumWaitTime
@@ -90,7 +90,7 @@ var Player = function() {
                 return;
             } else {
                 if (game.currentHighestBidder == null) {
-                    this.currentRoundBid = Number(GetSetting('setting_minimum_bid'));
+                    this.currentRoundBid = Number(game.settings.GetSetting('setting_minimum_bid'));
                     game.currentHighestBidder = this;
                 } else {
                     // Don't get into a bidding war with your partner
@@ -129,7 +129,7 @@ var Player = function() {
         this.currentRoundWinningBidTrump = bestBid[1];
         
         if (game.currentHighestBidder == null) {
-            this.currentRoundBid = Number(GetSetting('setting_minimum_bid'));
+            this.currentRoundBid = Number(game.settings.GetSetting('setting_minimum_bid'));
             game.currentHighestBidder = this;
         } else {
             // Don't get into a bidding war with your partner
@@ -363,7 +363,7 @@ var Player = function() {
                 // Include cards that have already been selected for passing
                 if (this.passingCards.length > 0) {
                     availableCards = availableCards.concat(this.passingCards);
-                    if (GetSetting('setting_sort_left_to_right')) {
+                    if (game.settings.GetSetting('setting_sort_left_to_right')) {
                         availableCards.sort(function(a,b) {
                             if (a.suit != b.suit) {
                                 return a.suitInt - b.suitInt;

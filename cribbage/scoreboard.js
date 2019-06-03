@@ -1,46 +1,42 @@
-var Scoreboard = function () {
+var CribbageScoreboard = function () {
 
-    constructor
-    var startPegGroupHolePositionOffsetBlue = [[21,21], [21,5]];
-    var startPegGroupHolePositionOffsetRed = [[37,21], [37,5]];
+    this.startPegGroupHolePositionOffsetBlue = [[21,21], [21,5]];
+    this.startPegGroupHolePositionOffsetRed = [[37,21], [37,5]];
 
-    var verticalPegGroupHolePositionOffsetsBlue = [ [21,53], [21, 37], [21, 21], [21,5], [21,-11]];
-    var verticalPegGroupHolePositionOffsetsRed = [ [37,53], [37, 37], [37, 21], [37,5], [37,-11]];
+    this.verticalPegGroupHolePositionOffsetsBlue = [ [21,53], [21, 37], [21, 21], [21,5], [21,-11]];
+    this.verticalPegGroupHolePositionOffsetsRed = [ [37,53], [37, 37], [37, 21], [37,5], [37,-11]];
     
-    var leftTurnPegGroupHolePositionOffsetsBlue = [ [21, 39], [23, 21], [30, 0], [50, -10], [67,-12]];
-    var leftTurnPegGroupHolePositionOffsetsRed = [ [37, 40], [38, 25], [42, 12], [54, 6], [70, 5]];
+    this.leftTurnPegGroupHolePositionOffsetsBlue = [ [21, 39], [23, 21], [30, 0], [50, -10], [67,-12]];
+    this.leftTurnPegGroupHolePositionOffsetsRed = [ [37, 40], [38, 25], [42, 12], [54, 6], [70, 5]];
 
-    var horizontalPegGroupHolePositionOffsetsBlue = [ [21, -12], [37, -12], [53, -12], [69, -12], [85, -12]];
-    var horizontalPegGroupHolePositionOffsetsRed = [ [21, 5], [37, 5], [53, 5], [69, 5], [85, 5]];
+    this.horizontalPegGroupHolePositionOffsetsBlue = [ [21, -12], [37, -12], [53, -12], [69, -12], [85, -12]];
+    this.horizontalPegGroupHolePositionOffsetsRed = [ [21, 5], [37, 5], [53, 5], [69, 5], [85, 5]];
     
-    var rightTurnPegGroupHolePositionOffsetsBlue = [ [122, -14], [104, -12], [83, -4], [73, 16], [71, 32] ];
-    var rightTurnPegGroupHolePositionOffsetsRed = [ [122, 5], [108, 5], [95, 8], [88, 20], [87, 35] ];
+    this.rightTurnPegGroupHolePositionOffsetsBlue = [ [122, -14], [104, -12], [83, -4], [73, 16], [71, 32] ];
+    this.rightTurnPegGroupHolePositionOffsetsRed = [ [122, 5], [108, 5], [95, 8], [88, 20], [87, 35] ];
 
-    var verticalRightPegGroupHolePositionOffsetsBlue = [ [71, -11], [71, 5], [71, 21], [71, 37], [71, 52]];
-    var verticalRightPegGroupHolePositionOffsetsRed = [ [87, -11], [87, 5], [87, 21], [87, 37], [87, 52]];
+    this.verticalRightPegGroupHolePositionOffsetsBlue = [ [71, -11], [71, 5], [71, 21], [71, 37], [71, 52]];
+    this.verticalRightPegGroupHolePositionOffsetsRed = [ [87, -11], [87, 5], [87, 21], [87, 37], [87, 52]];
 
-    var finishPegGroupHolePositionOffset = [76,8];
+    this.finishPegGroupHolePositionOffset = [76,8];
 
-    var pegHolePositionsBlue = [];
-    var pegHolePositionsRed = [];
-    var frontPegBlue;
-    var backPegBlue;
-    var frontPegRed;
-    var backPegRed;
+    this.pegHolePositionsBlue = [];
+    this.pegHolePositionsRed = [];
+    this.frontPegBlue;
+    this.backPegBlue;
+    this.frontPegRed;
+    this.backPegRed;
 
-    var leftTurnStartPegHoleIndex = 0;
-    var rightTurnStartPegHoleIndex = 0;
+    this.leftTurnStartPegHoleIndex = 0;
+    this.rightTurnStartPegHoleIndex = 0;
 
-    var compactPegImageStartLeft = 48;
+    this.compactPegImageStartLeft = 48;
 
-    var curScorePlayer = 0;
-    var curScoreComputer = 0;
+    this.curScorePlayer = 0;
+    this.curScoreComputer = 0;
 
-    var isCompact = false;
-    this.IsCompactLayout = function() {
-        return isCompact;
-    }
-
+    this.isCompact = false;
+    
     this.SetOpponentName = function(gameDifficulty) {
         var oppText = document.getElementById('scoreboard_pegs_score_opp_text');
         var compactOppText = document.getElementById('scoreboard_compact_opp_text');
@@ -74,8 +70,8 @@ var Scoreboard = function () {
 
     this.InitializeScore = function() {
 
-        curScoreComputer = 0;
-        curScorePlayer = 0;
+        this.curScoreComputer = 0;
+        this.curScorePlayer = 0;
 
         var pegsScoreBoard = document.getElementById('scoreboard_pegs_score_view');
         pegsScoreBoard.style.opacity = 0;
@@ -92,9 +88,9 @@ var Scoreboard = function () {
         var compactScoreFillOpp = document.getElementById('scoreboard_compact_opp_fill_bar');
         compactScoreFillOpp.style.width = "0px";
         var compactScoreYouPeg = document.getElementById('scoreboard_compact_you_peg');
-        compactScoreYouPeg.style.left = compactPegImageStartLeft + "px";
+        compactScoreYouPeg.style.left = this.compactPegImageStartLeft + "px";
         var compactScoreOppPeg = document.getElementById('scoreboard_compact_opp_peg');
-        compactScoreOppPeg.style.left = compactPegImageStartLeft + "px";
+        compactScoreOppPeg.style.left = this.compactPegImageStartLeft + "px";
 
         var scoreText = document.getElementById('scoreboard_pegs_score_you_points');
         scoreText.innerText = "0";
@@ -106,40 +102,40 @@ var Scoreboard = function () {
         var bluePeg1 = document.getElementById('scoreboard_pegs_bluepeg_1');
         var bluePeg2 = document.getElementById('scoreboard_pegs_bluepeg_2');
         
-        frontPegRed = redPeg1;
-        backPegRed = redPeg2;
-        frontPegRed.style.transition = "0s";
-        backPegRed.style.transition = "0s";
-        frontPegRed.holeIndex = 1;
-        backPegRed.holeIndex = 0;
-        frontPegRed.style.zIndex = 0;
-        backPegRed.style.zIndex = 1;
-        if (pegHolePositionsRed.length > 0) {
-            frontPegRed.style.transform = "translate(" + pegHolePositionsRed[1][0] + "px," + pegHolePositionsRed[1][1] + "px)";
-            backPegRed.style.transform = "translate(" + pegHolePositionsRed[0][0] + "px," + pegHolePositionsRed[0][1] + "px)";
+        this.frontPegRed = redPeg1;
+        this.backPegRed = redPeg2;
+        this.frontPegRed.style.transition = "0s";
+        this.backPegRed.style.transition = "0s";
+        this.frontPegRed.holeIndex = 1;
+        this.backPegRed.holeIndex = 0;
+        this.frontPegRed.style.zIndex = 0;
+        this.backPegRed.style.zIndex = 1;
+        if (this.pegHolePositionsRed.length > 0) {
+            this.frontPegRed.style.transform = "translate(" + this.pegHolePositionsRed[1][0] + "px," + this.pegHolePositionsRed[1][1] + "px)";
+            this.backPegRed.style.transform = "translate(" + this.pegHolePositionsRed[0][0] + "px," + this.pegHolePositionsRed[0][1] + "px)";
         }
 
-        frontPegBlue = bluePeg1;
-        backPegBlue = bluePeg2;
-        frontPegBlue.style.transition = "0s";
-        backPegBlue.style.transition = "0s";
-        frontPegBlue.holeIndex = 1;
-        backPegBlue.holeIndex = 0;
-        frontPegBlue.style.zIndex = 2;
-        backPegBlue.style.zIndex = 3;
-        if (pegHolePositionsBlue.length > 0) {
-            frontPegBlue.style.transform = "translate(" + pegHolePositionsBlue[1][0] + "px," + pegHolePositionsBlue[1][1] + "px)";
-            backPegBlue.style.transform = "translate(" + pegHolePositionsBlue[0][0] + "px," + pegHolePositionsBlue[0][1] + "px)";
+        this.frontPegBlue = bluePeg1;
+        this.backPegBlue = bluePeg2;
+        this.frontPegBlue.style.transition = "0s";
+        this.backPegBlue.style.transition = "0s";
+        this.frontPegBlue.holeIndex = 1;
+        this.backPegBlue.holeIndex = 0;
+        this.frontPegBlue.style.zIndex = 2;
+        this.backPegBlue.style.zIndex = 3;
+        if (this.pegHolePositionsBlue.length > 0) {
+            this.frontPegBlue.style.transform = "translate(" + this.pegHolePositionsBlue[1][0] + "px," + this.pegHolePositionsBlue[1][1] + "px)";
+            this.backPegBlue.style.transform = "translate(" + this.pegHolePositionsBlue[0][0] + "px," + this.pegHolePositionsBlue[0][1] + "px)";
         }
 
 
     }
 
     this.SetScorePlayer = function(playerScore) {
-        if (curScorePlayer === playerScore) {
+        if (this.curScorePlayer === playerScore) {
             return;
         }
-        curScorePlayer = playerScore;
+        this.curScorePlayer = playerScore;
 
         var scorePegIndex = playerScore;
         if (scorePegIndex > 121) {
@@ -154,14 +150,14 @@ var Scoreboard = function () {
             scoreText.style.transform = "translate(0px,0px)";            
         }, 205);
     
-        backPegBlue.holeIndex = scorePegIndex + 1;
-        if (pegHolePositionsBlue.length > scorePegIndex + 1) {
-            backPegBlue.style.transition = "0.5s ease-in-out";
-            backPegBlue.style.transform = "translate(" + pegHolePositionsBlue[scorePegIndex+1][0] + "px," + pegHolePositionsBlue[scorePegIndex+1][1] + "px)";
+        this.backPegBlue.holeIndex = scorePegIndex + 1;
+        if (this.pegHolePositionsBlue.length > scorePegIndex + 1) {
+            this.backPegBlue.style.transition = "0.5s ease-in-out";
+            this.backPegBlue.style.transform = "translate(" + this.pegHolePositionsBlue[scorePegIndex+1][0] + "px," + this.pegHolePositionsBlue[scorePegIndex+1][1] + "px)";
         }
-        var temp = frontPegBlue;
-        frontPegBlue = backPegBlue;
-        backPegBlue = temp;
+        var temp = this.frontPegBlue;
+        this.frontPegBlue = this.backPegBlue;
+        this.backPegBlue = temp;
         SetCorrectPegZIndexForPlayer();
     
         var compactPlayerScoreText = document.getElementById('scoreboard_compact_you_score');
@@ -178,14 +174,14 @@ var Scoreboard = function () {
         }
         compactPlayerScoreFill.style.width = 100.0*fillPercent + "px";
         var peg = document.getElementById('scoreboard_compact_you_peg');
-        peg.style.left = compactPegImageStartLeft + fillPercent*100.0 + "px";
+        peg.style.left = this.compactPegImageStartLeft + fillPercent*100.0 + "px";
     }
 
     this.SetScoreOpp = function(score) {
-        if (curScoreComputer === score) {
+        if (this.curScoreComputer === score) {
             return;
         }
-        curScoreComputer = score;
+        this.curScoreComputer = score;
 
         var scorePegIndex = score;
         if (scorePegIndex > 121) {
@@ -200,14 +196,14 @@ var Scoreboard = function () {
             scoreText.style.transform = "translate(0px,0px)";            
         }, 250);
 
-        backPegRed.holeIndex = scorePegIndex+1;
-        if (pegHolePositionsRed.length > scorePegIndex + 1) {
-            backPegRed.style.transition = "0.5s ease-in-out";
-            backPegRed.style.transform = "translate(" + pegHolePositionsRed[scorePegIndex+1][0] + "px," + pegHolePositionsRed[scorePegIndex+1][1] + "px)";
+        this.backPegRed.holeIndex = scorePegIndex+1;
+        if (this.pegHolePositionsRed.length > scorePegIndex + 1) {
+            this.backPegRed.style.transition = "0.5s ease-in-out";
+            this.backPegRed.style.transform = "translate(" + this.pegHolePositionsRed[scorePegIndex+1][0] + "px," + this.pegHolePositionsRed[scorePegIndex+1][1] + "px)";
         }
-        var temp = frontPegRed;
-        frontPegRed = backPegRed;
-        backPegRed = temp;
+        var temp = this.frontPegRed;
+        this.frontPegRed = this.backPegRed;
+        this.backPegRed = temp;
         SetCorrectPegZIndexForComputer();
    
         var compactOppcoreText = document.getElementById('scoreboard_compact_opp_score');
@@ -225,33 +221,33 @@ var Scoreboard = function () {
         }
         compactOppScoreFill.style.width = 100.0*fillPercent + "px";
         var peg = document.getElementById('scoreboard_compact_opp_peg');
-        peg.style.left = compactPegImageStartLeft + fillPercent*100.0 + "px";
+        peg.style.left = this.compactPegImageStartLeft + fillPercent*100.0 + "px";
     }
 
     function SetCorrectPegZIndexForPlayer() {
-        if (frontPegBlue != null && backPegBlue != null) {
-            if (frontPegBlue.holeIndex > rightTurnStartPegHoleIndex) {
-                frontPegBlue.style.zIndex = 3;
-                backPegBlue.style.zIndex = 2;    
+        if (this.frontPegBlue != null && this.backPegBlue != null) {
+            if (this.frontPegBlue.holeIndex > this.rightTurnStartPegHoleIndex) {
+                this.frontPegBlue.style.zIndex = 3;
+                this.backPegBlue.style.zIndex = 2;    
             } else {
-                frontPegBlue.style.zIndex = 2;
-                backPegBlue.style.zIndex = 3;
+                this.frontPegBlue.style.zIndex = 2;
+                this.backPegBlue.style.zIndex = 3;
             }
         }
     }
 
     function SetCorrectPegZIndexForComputer() {
-        if (frontPegRed != null && backPegRed != null) {
-            if (frontPegRed.holeIndex < leftTurnStartPegHoleIndex) {
-                frontPegRed.style.zIndex = 0;
-                backPegRed.style.zIndex = 1;
+        if (this.frontPegRed != null && this.backPegRed != null) {
+            if (this.frontPegRed.holeIndex < this.leftTurnStartPegHoleIndex) {
+                this.frontPegRed.style.zIndex = 0;
+                this.backPegRed.style.zIndex = 1;
             } else {
-                if (frontPegRed.holeIndex > rightTurnStartPegHoleIndex) {
-                    frontPegRed.style.zIndex = 5;
-                    backPegRed.style.zIndex = 4;
+                if (this.frontPegRed.holeIndex > this.rightTurnStartPegHoleIndex) {
+                    this.frontPegRed.style.zIndex = 5;
+                    this.backPegRed.style.zIndex = 4;
                 } else {
-                    frontPegRed.style.zIndex = 4;
-                    backPegRed.style.zIndex = 5;
+                    this.frontPegRed.style.zIndex = 4;
+                    this.backPegRed.style.zIndex = 5;
                 }
             }
         }
@@ -264,15 +260,15 @@ var Scoreboard = function () {
         var compactScoreboard = document.getElementById('scoreboard_compact');
         compactScoreboard.style.opacity = 1;
         
-        if (frontPegRed != null && backPegRed != null && frontPegBlue != null && backPegBlue != null) {
-            frontPegBlue.style.transition = "0.5s ease-in-out";
-            backPegBlue.style.transition = "0.5s ease-in-out";
-            frontPegRed.style.transition = "0.5s ease-in-out";
-            backPegRed.style.transition = "0.5s ease-in-out";
-            frontPegRed.style.opacity = 1;
-            backPegRed.style.opacity = 1;
-            frontPegBlue.style.opacity = 1;
-            backPegBlue.style.opacity = 1;
+        if (this.frontPegRed != null && this.backPegRed != null && this.frontPegBlue != null && this.backPegBlue != null) {
+            this.frontPegBlue.style.transition = "0.5s ease-in-out";
+            this.backPegBlue.style.transition = "0.5s ease-in-out";
+            this.frontPegRed.style.transition = "0.5s ease-in-out";
+            this.backPegRed.style.transition = "0.5s ease-in-out";
+            this.frontPegRed.style.opacity = 1;
+            this.backPegRed.style.opacity = 1;
+            this.frontPegBlue.style.opacity = 1;
+            this.backPegBlue.style.opacity = 1;
         }
     }
 
@@ -284,8 +280,8 @@ var Scoreboard = function () {
     }
 
     this.RedrawView = function() {
-        var width = window.innerWidth;
-        var height = window.innerHeight;
+        var width = gameContainer.innerWidth;
+        var height = gameContainer.innerHeight;
 
         var leftColumn = document.getElementById('scoreboard_leftColumn');
         var topRow = document.getElementById('scoreboard_topRow');
@@ -295,8 +291,8 @@ var Scoreboard = function () {
         leftColumn.innerHTML = [];
         topRow.innerHTML = [];
         rightColumn.innerHTML = [];
-        pegHolePositionsBlue = [];
-        pegHolePositionsRed = [];
+        this.pegHolePositionsBlue = [];
+        this.pegHolePositionsRed = [];
 
         var sideMargin = 58;
         var topMargin = 57;
@@ -317,7 +313,7 @@ var Scoreboard = function () {
         if (topPegGroupCount + rightPegGroupCount + leftPegGroupCount + 2 < 24) {
             
             // The peg board holes do not fit on the screen so we will not show them
-            isCompact = true;
+            this.isCompact = true;
             var compactScoreboard = document.getElementById('scoreboard_compact');
             compactScoreboard.style.visibility = "visible";
             var pegsScoreboard = document.getElementById('scoreboard_pegs');
@@ -325,7 +321,7 @@ var Scoreboard = function () {
             
         } else {
             
-            isCompact = false;
+            this.isCompact = false;
             var compactScoreboard = document.getElementById('scoreboard_compact');
             compactScoreboard.style.visibility = "hidden";
 
@@ -340,51 +336,54 @@ var Scoreboard = function () {
             
             var startHoles = document.createElement('img');
             startHoles.className = "scoreboard_pegholes_start";
-            startHoles.src = "images/scoreboard_pegholes_start.png";
+            startHoles.src = "shared/images/scoreboard_pegholes_start.png";
             startHoles.style.top = curTop + 'px';
             leftColumn.appendChild(startHoles);
 
-            pegHolePositionsBlue.push([startPegGroupHolePositionOffsetBlue[0][0], startPegGroupHolePositionOffsetBlue[0][1] + curTop]);
-            pegHolePositionsBlue.push([startPegGroupHolePositionOffsetBlue[1][0], startPegGroupHolePositionOffsetBlue[1][1] + curTop])
-            pegHolePositionsRed.push([startPegGroupHolePositionOffsetRed[0][0], startPegGroupHolePositionOffsetRed[0][1] + curTop]);
-            pegHolePositionsRed.push([startPegGroupHolePositionOffsetRed[1][0], startPegGroupHolePositionOffsetRed[1][1] + curTop]);
+            var leftOffset = 8;
+            var topOffset = 8;
+
+            this.pegHolePositionsBlue.push([this.startPegGroupHolePositionOffsetBlue[0][0] + leftOffset, this.startPegGroupHolePositionOffsetBlue[0][1] + topOffset + curTop]);
+            this.pegHolePositionsBlue.push([this.startPegGroupHolePositionOffsetBlue[1][0] + leftOffset, this.startPegGroupHolePositionOffsetBlue[1][1] + topOffset + curTop])
+            this.pegHolePositionsRed.push([this.startPegGroupHolePositionOffsetRed[0][0] + leftOffset, this.startPegGroupHolePositionOffsetRed[0][1] + topOffset + curTop]);
+            this.pegHolePositionsRed.push([this.startPegGroupHolePositionOffsetRed[1][0] + leftOffset, this.startPegGroupHolePositionOffsetRed[1][1] + topOffset + curTop]);
             
             for (var i=0; i<leftPegGroupCount; i++) {
                 curTop -= pegHoleSegmentLength + pegHoleSegmentSpacing;
                 var leftPegHoles = document.createElement('img');
                 leftPegHoles.className = 'scoreboard_pegholes_left_side_vertical';
-                leftPegHoles.src = 'images/scoreboard_pegholes_horizontal.png';
+                leftPegHoles.src = 'shared/images/scoreboard_pegholes_horizontal.png';
                 leftPegHoles.style.top = curTop + "px";
                 leftColumn.appendChild(leftPegHoles);
 
                 for (var j=0; j<5; j++) {
-                    pegHolePositionsBlue.push([verticalPegGroupHolePositionOffsetsBlue[j][0], verticalPegGroupHolePositionOffsetsBlue[j][1] + curTop]);    
-                    pegHolePositionsRed.push([verticalPegGroupHolePositionOffsetsRed[j][0], verticalPegGroupHolePositionOffsetsRed[j][1] + curTop]);
+                    this.pegHolePositionsBlue.push([this.verticalPegGroupHolePositionOffsetsBlue[j][0] + leftOffset, this.verticalPegGroupHolePositionOffsetsBlue[j][1] + topOffset + curTop]);    
+                    this.pegHolePositionsRed.push([this.verticalPegGroupHolePositionOffsetsRed[j][0] + leftOffset, this.verticalPegGroupHolePositionOffsetsRed[j][1] + topOffset + curTop]);
                 }
             }
             
             var leftCornerPegHoles = document.createElement('img');
             leftCornerPegHoles.className = 'scoreboard_pegholes_turn_left';
-            leftCornerPegHoles.src = 'images/scoreboard_pegholes_turn_left.png';
+            leftCornerPegHoles.src = 'shared/images/scoreboard_pegholes_turn_left.png';
             topRow.appendChild(leftCornerPegHoles);
-            leftTurnStartPegHoleIndex = pegHolePositionsBlue.length;
+            this.leftTurnStartPegHoleIndex = this.pegHolePositionsBlue.length;
 
             for (var j=0; j<5; j++) {
-                pegHolePositionsBlue.push([leftTurnPegGroupHolePositionOffsetsBlue[j][0], leftTurnPegGroupHolePositionOffsetsBlue[j][1]]);    
-                pegHolePositionsRed.push([leftTurnPegGroupHolePositionOffsetsRed[j][0], leftTurnPegGroupHolePositionOffsetsRed[j][1]]);
+                this.pegHolePositionsBlue.push([this.leftTurnPegGroupHolePositionOffsetsBlue[j][0] + leftOffset, this.leftTurnPegGroupHolePositionOffsetsBlue[j][1] + topOffset]);    
+                this.pegHolePositionsRed.push([this.leftTurnPegGroupHolePositionOffsetsRed[j][0] + leftOffset, this.leftTurnPegGroupHolePositionOffsetsRed[j][1] + topOffset]);
             }
 
             var curLeft = sideMargin + topPegHoleSegmentSpacing;
             for (var i=0; i<topPegGroupCount; i++) {
                 var topPegHoles = document.createElement('img');
                 topPegHoles.className = 'scoreboard_pegholes_horizontal';
-                topPegHoles.src = 'images/scoreboard_pegholes_horizontal.png';
+                topPegHoles.src = 'shared/images/scoreboard_pegholes_horizontal.png';
                 topPegHoles.style.left = curLeft + "px";
                 leftColumn.appendChild(topPegHoles);
 
                 for (var j=0; j<5; j++) {
-                    pegHolePositionsBlue.push([horizontalPegGroupHolePositionOffsetsBlue[j][0] + curLeft, horizontalPegGroupHolePositionOffsetsBlue[j][1] ]);    
-                    pegHolePositionsRed.push([horizontalPegGroupHolePositionOffsetsRed[j][0] + curLeft, horizontalPegGroupHolePositionOffsetsRed[j][1] ]);
+                    this.pegHolePositionsBlue.push([this.horizontalPegGroupHolePositionOffsetsBlue[j][0] + leftOffset + curLeft, this.horizontalPegGroupHolePositionOffsetsBlue[j][1] + topOffset]);    
+                    this.pegHolePositionsRed.push([this.horizontalPegGroupHolePositionOffsetsRed[j][0] + leftOffset + curLeft, this.horizontalPegGroupHolePositionOffsetsRed[j][1] + topOffset]);
                 }
 
                 curLeft += pegHoleSegmentLength + topPegHoleSegmentSpacing;
@@ -392,26 +391,26 @@ var Scoreboard = function () {
 
             var rightCornerPegHoles = document.createElement('img');
             rightCornerPegHoles.className = 'scoreboard_pegholes_turn_right';
-            rightCornerPegHoles.src = 'images/scoreboard_pegholes_turn_left.png';
+            rightCornerPegHoles.src = 'shared/images/scoreboard_pegholes_turn_left.png';
             topRow.appendChild(rightCornerPegHoles);
-            rightTurnStartPegHoleIndex = pegHolePositionsBlue.length + 1;
+            this.rightTurnStartPegHoleIndex = this.pegHolePositionsBlue.length + 1;
 
             for (var j=0; j<5; j++) {
-                pegHolePositionsBlue.push([width - rightTurnPegGroupHolePositionOffsetsBlue[j][0], rightTurnPegGroupHolePositionOffsetsBlue[j][1]]);    
-                pegHolePositionsRed.push([width - rightTurnPegGroupHolePositionOffsetsRed[j][0], rightTurnPegGroupHolePositionOffsetsRed[j][1]]);
+                this.pegHolePositionsBlue.push([width - this.rightTurnPegGroupHolePositionOffsetsBlue[j][0] + leftOffset, this.rightTurnPegGroupHolePositionOffsetsBlue[j][1] + topOffset]);    
+                this.pegHolePositionsRed.push([width - this.rightTurnPegGroupHolePositionOffsetsRed[j][0] + leftOffset, this.rightTurnPegGroupHolePositionOffsetsRed[j][1] + topOffset]);
             }
 
             var curTop = topMargin + pegHoleSegmentSpacing;
             for (var i=0; i<rightPegGroupCount; i++) {
                 var rightPegHoles = document.createElement('img');
                 rightPegHoles.className = 'scoreboard_pegholes_right_side_vertical';
-                rightPegHoles.src = 'images/scoreboard_pegholes_horizontal.png';
+                rightPegHoles.src = 'shared/images/scoreboard_pegholes_horizontal.png';
                 rightPegHoles.style.top = curTop + "px";
                 rightColumn.appendChild(rightPegHoles);
 
                 for (var j=0; j<5; j++) {
-                    pegHolePositionsBlue.push([width - verticalRightPegGroupHolePositionOffsetsBlue[j][0], verticalRightPegGroupHolePositionOffsetsBlue[j][1] + curTop]);    
-                    pegHolePositionsRed.push([width - verticalRightPegGroupHolePositionOffsetsRed[j][0], verticalRightPegGroupHolePositionOffsetsRed[j][1] + curTop]);
+                    this.pegHolePositionsBlue.push([width - this.verticalRightPegGroupHolePositionOffsetsBlue[j][0] + leftOffset, this.verticalRightPegGroupHolePositionOffsetsBlue[j][1] + topOffset + curTop]);    
+                    this.pegHolePositionsRed.push([width - this.verticalRightPegGroupHolePositionOffsetsRed[j][0] + leftOffset, this.verticalRightPegGroupHolePositionOffsetsRed[j][1] + topOffset + curTop]);
                 }
 
                 curTop += pegHoleSegmentLength + pegHoleSegmentSpacing;
@@ -419,26 +418,26 @@ var Scoreboard = function () {
 
             var finishHoles = document.createElement('img');
             finishHoles.className = 'scoreboard_pegholes_finish';
-            finishHoles.src = 'images/scoreboard_pegholes_finish.png';
+            finishHoles.src = 'shared/images/scoreboard_pegholes_finish.png';
             finishHoles.style.top = curTop + 'px';
             rightColumn.appendChild(finishHoles);
             
-            pegHolePositionsBlue.push([width - finishPegGroupHolePositionOffset[0], finishPegGroupHolePositionOffset[1] + curTop]);
-            pegHolePositionsRed.push([width - finishPegGroupHolePositionOffset[0], finishPegGroupHolePositionOffset[1] + curTop]);
+            this.pegHolePositionsBlue.push([width - this.finishPegGroupHolePositionOffset[0] + leftOffset, this.finishPegGroupHolePositionOffset[1] + topOffset + curTop]);
+            this.pegHolePositionsRed.push([width - this.finishPegGroupHolePositionOffset[0] + leftOffset, this.finishPegGroupHolePositionOffset[1] + topOffset + curTop]);
             
-            if (frontPegRed != null && backPegRed != null && frontPegBlue != null && backPegBlue != null) {
-                frontPegRed.style.transform = "translate(" + pegHolePositionsRed[frontPegRed.holeIndex][0] + "px," + pegHolePositionsRed[frontPegRed.holeIndex][1] + "px)";
-                backPegRed.style.transform = "translate(" + pegHolePositionsRed[backPegRed.holeIndex][0] + "px," + pegHolePositionsRed[backPegRed.holeIndex][1] + "px)";
-                frontPegBlue.style.transform = "translate(" + pegHolePositionsBlue[frontPegBlue.holeIndex][0] + "px," + pegHolePositionsBlue[frontPegBlue.holeIndex][1] + "px)";
-                backPegBlue.style.transform = "translate(" + pegHolePositionsBlue[backPegBlue.holeIndex][0] + "px," + pegHolePositionsBlue[backPegBlue.holeIndex][1] + "px)";
+            if (this.frontPegRed != null && this.backPegRed != null && this.frontPegBlue != null && this.backPegBlue != null) {
+                this.frontPegRed.style.transform = "translate(" + this.pegHolePositionsRed[this.frontPegRed.holeIndex][0] + "px," + this.pegHolePositionsRed[this.frontPegRed.holeIndex][1] + "px)";
+                this.backPegRed.style.transform = "translate(" + this.pegHolePositionsRed[this.backPegRed.holeIndex][0] + "px," + this.pegHolePositionsRed[this.backPegRed.holeIndex][1] + "px)";
+                this.frontPegBlue.style.transform = "translate(" + this.pegHolePositionsBlue[this.frontPegBlue.holeIndex][0] + "px," + this.pegHolePositionsBlue[this.frontPegBlue.holeIndex][1] + "px)";
+                this.backPegBlue.style.transform = "translate(" + this.pegHolePositionsBlue[this.backPegBlue.holeIndex][0] + "px," + this.pegHolePositionsBlue[this.backPegBlue.holeIndex][1] + "px)";
             
                 SetCorrectPegZIndexForPlayer();
                 SetCorrectPegZIndexForComputer();
 
-                frontPegRed.style.opacity = 1;
-                backPegRed.style.opacity = 1;
-                frontPegBlue.style.opacity = 1;
-                backPegBlue.style.opacity = 1;
+                this.frontPegRed.style.opacity = 1;
+                this.backPegRed.style.opacity = 1;
+                this.frontPegBlue.style.opacity = 1;
+                this.backPegBlue.style.opacity = 1;
                 
                 pegsScoreView.style.opacity = 1; 
             }
@@ -446,24 +445,20 @@ var Scoreboard = function () {
             // Place the skunk line indicator
             var horizontalSkunkLine = document.getElementById('skunk_line_horizontal');
             var verticalSkunkLine = document.getElementById('skunk_line_vertical');
-            if (rightPegGroupCount == 6) {
+            if (rightPegGroupCount >= 6) {
                 verticalSkunkLine.style.opacity = 0;
-                horizontalSkunkLine.style.left = pegHolePositionsBlue[91][0] - 61 + 'px';
-                horizontalSkunkLine.style.top = pegHolePositionsBlue[91][1] + 20 + 'px';
-                horizontalSkunkLine.style.opacity = 1;
-            } else if (rightPegGroupCount > 6) {
-                verticalSkunkLine.style.opacity = 0;
-                horizontalSkunkLine.style.left = pegHolePositionsBlue[91][0] - 61 + 'px';
-                horizontalSkunkLine.style.top = pegHolePositionsBlue[91][1] + 42 + 'px';
+                horizontalSkunkLine.style.left = this.pegHolePositionsBlue[91][0] - 69 + 'px';
+                horizontalSkunkLine.style.top = this.pegHolePositionsBlue[91][1] - 14 + menuBarHeight + 'px';
                 horizontalSkunkLine.style.opacity = 1;
             } else {
                 horizontalSkunkLine.style.opacity = 0;
-                verticalSkunkLine.style.left = pegHolePositionsBlue[91][0] + 9 + 'px';
-                verticalSkunkLine.style.top = pegHolePositionsBlue[91][1] + 32 + 'px';
+                verticalSkunkLine.style.left = this.pegHolePositionsBlue[91][0] - 2 + 'px';
+                verticalSkunkLine.style.top = this.pegHolePositionsBlue[91][1] - 25 + menuBarHeight + 'px';
                 verticalSkunkLine.style.opacity = 1;
             }
         }
     }
 
+    // TODO: do I need this?
     this.RedrawView();
 }

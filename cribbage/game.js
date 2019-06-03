@@ -1,4 +1,7 @@
-var Game = function () {
+var CribbageGame = function () {
+
+    // Global Game Settings
+    this.settings = new CribbageSettings();
 
     // Constants
     var cardLoweredWidth = 115;
@@ -32,7 +35,6 @@ var Game = function () {
     var playerSaysGo = false;
     var computerSaysGo = false;
 
-    var scoreboard = new Scoreboard();
     var visibleLowCardOptionsCount = 0;
     var playerSelectedLowCardView;
     var computerSelectedLowCardView;
@@ -41,7 +43,7 @@ var Game = function () {
     var currentPlayerHandCardSpacing = 0;
     var autoPlayBoundaryY = 0;
 
-    var computerPlayer = new ComputerPlayer();
+    var computerPlayer = new CribbagePlayer();
 
     var computerPeggingPointsTotal = 0;
     var playerPeggingPointsTotal = 0;
@@ -63,60 +65,1229 @@ var Game = function () {
     var mostRecentHandCards = [];
     var mostRecentIsPlayersCrib = false;
 
+    gameContainer.innerHTML = 
+    '<div id="below_cards_messages_region">\
+        <div id="select_low_card_message">Click on a card. Lowest card gets the first crib.</div>\
+        <div id="low_card_you_text" class="low_card_text">You</div>\
+        <div id="low_card_computer_text" class="low_card_text">Opponent</div>\
+        \
+        <div id="pegging_prompt">Drop a<br>card here</div>\
+        \
+        <div id="manual_prompt">Click on cards to start counting your points</div>\
+        \
+        <button id="hint_button" onclick="game.OnHintButtonClick()">Hint</button>\
+        \
+        <div id="crib_region">\
+            <div id="crib_region_top_left_side" class="crib_region_border"></div>\
+            <div id="crib_region_top_left_top" class="crib_region_border"></div>\
+            <div id="crib_region_top_right_top" class="crib_region_border"></div>\
+            <div id="crib_region_top_right_side" class="crib_region_border"></div>\
+            <div id="crib_region_bottom_right_side" class="crib_region_border"></div>\
+            <div id="crib_region_bottom_right_bottom" class="crib_region_border"></div>\
+            <div id="crib_region_bottom_left_bottom" class="crib_region_border"></div>\
+            <div id="crib_region_bottom_left_side" class="crib_region_border"></div>\
+            <div id="crib_region_center_text">Opponent\'s Crib</div>\
+            <div id="crib_region_prompt">Drop 2 cards here</div>\
+        </div>\
+        \
+        <div id="confirm_crib_region">\
+            <div id="confirm_crib_region_shadow"></div>\
+            <button id="confirm_crib_button" onclick="game.cribCardsConfirmed()">Confirm Crib Cards</button>\
+        </div>\
+    </div>\
+    \
+    <div id="scoreboard">\
+        <div id="scoreboard_pegs">\
+            <div id="skunk_line_vertical"></div>\
+            <div id="skunk_line_horizontal"></div>\
+            <div id="scoreboard_leftColumn">\
+            </div>\
+            <div id="scoreboard_topRow">\
+            </div>\
+            <div id="scoreboard_rightColumn">\
+            </div>\
+            <div id="scoreboard_pegs_score_view">\
+                <table>\
+                    <tr>\
+                        <td id="scoreboard_pegs_crib_indicator_group" rowspan="2">\
+                            <div id="scoreboard_pegs_score_crib_indicator">CRIB</div>\
+                            <div id="scoreboard_pegs_score_crib_arrow">\
+                                <div class="arrow-right-shadow"></div>\
+                                <div class="arrow-right"></div>\
+                            </div>\
+                        </td>\
+                        <td>\
+                            <div id="scoreboard_pegs_score_you_text">YOU</div>\
+                        </td>\
+                        <td>\
+                            <div>\
+                                <img src="shared/images/PegBlue.png" ondragstart="return false;" />\
+                            </div>\
+                        </td>\
+                        <td>\
+                            <div id="scoreboard_pegs_score_you_points_container">\
+                                <div id="scoreboard_pegs_score_you_points">0</div>\
+                            </div>\
+                        </td>\
+                    </tr>\
+                    <tr>\
+                        <td>\
+                            <div id="scoreboard_pegs_score_opp_text">OPP</div>\
+                        </td>\
+                        <td>\
+                            <div style="overflow: visible; height:0px;">\
+                                <img src="shared/images/PegRed.png" style="transform: translate(0px,-25px);" ondragstart="return false;" />\
+                            </div>\
+                        </td>\
+                        <td>\
+                            <div id="scoreboard_pegs_score_opp_points_container">\
+                                <div id="scoreboard_pegs_score_opp_points">0</div>\
+                            </div>\
+                        </td>\
+                    </tr>\
+                </table>\
+            </div>\
+            \
+            <img id="scoreboard_pegs_redpeg_1" class="scoreboard_pegs_peg" src="shared/images/PegRed.png" ondragstart="return false;" />\
+            <img id="scoreboard_pegs_redpeg_2" class="scoreboard_pegs_peg" src="shared/images/PegRed.png" ondragstart="return false;" />\
+            <img id="scoreboard_pegs_bluepeg_1" class="scoreboard_pegs_peg" src="shared/images/PegBlue.png" ondragstart="return false;" />\
+            <img id="scoreboard_pegs_bluepeg_2" class="scoreboard_pegs_peg" src="shared/images/PegBlue.png" ondragstart="return false;" />\
+        </div>\
+        <div id="scoreboard_compact">\
+            <div id="scoreboard_compact_crib_indicator">\
+                <div id="scoreboard_compact_crib_indicator_group">\
+                    <div id="scoreboard_compact_score_crib_indicator">CRIB</div>\
+                    <div id="scoreboard_compact_score_crib_arrow">\
+                        <div class="arrow-down-shadow"></div>\
+                        <div class="arrow-down"></div>\
+                    </div>\
+                </div>\
+            </div>\
+            \
+            <div id="scoreboard_compact_you_text">YOU</div>\
+            <div id="scoreboard_compact_you_left_nib_shadow"></div>\
+            <div id="scoreboard_compact_you_back_bar_shadow"></div>\
+            <div id="scoreboard_compact_you_right_nib_shadow"></div>\
+            <div id="scoreboard_compact_you_left_nib"></div>\
+            <div id="scoreboard_compact_you_back_bar"></div>\
+            <div id="scoreboard_compact_you_right_nib"></div>\
+            <div id="scoreboard_compact_you_fill_bar"></div>\
+            <img id="scoreboard_compact_you_peg" src="shared/images/PegBlue.png" ondragstart="return false;" />\
+            <div id="scoreboard_compact_you_score_container">\
+                <div id="scoreboard_compact_you_score">0</div>\
+            </div>\
+            \
+            <div id="scoreboard_compact_opp_text">STND</div>\
+            <div id="scoreboard_compact_opp_left_nib_shadow"></div>\
+            <div id="scoreboard_compact_opp_back_bar_shadow"></div>\
+            <div id="scoreboard_compact_opp_right_nib_shadow"></div>\
+            <div id="scoreboard_compact_opp_left_nib"></div>\
+            <div id="scoreboard_compact_opp_back_bar"></div>\
+            <div id="scoreboard_compact_opp_right_nib"></div>\
+            <div id="scoreboard_compact_opp_fill_bar"></div>\
+            <img id="scoreboard_compact_opp_peg" src="shared/images/PegRed.png" ondragstart="return false;" />\
+            <div id="scoreboard_compact_opp_score_container">\
+                <div id="scoreboard_compact_opp_score">0</div>\
+            </div>\
+        </div>\
+    </div>\
+    \
+    <div id="cards_region">\
+        <div id="crib_indicator_card_overlap">\
+            <table style="width: 114px; margin-top: 5px;">\
+                <tr>\
+                    <td id="crib_indicator_card_overlap_text">Your</td>\
+                </tr>\
+                <tr>\
+                    <td>Crib</td>\
+                </tr>\
+            </table>\
+        </div>\
+        <div id="PeggingCountIndicator">\
+            <div id="PeggingCountCardShadow"></div>\
+            <div id="PeggingCountCard">\
+                <table style="width: 114px; margin-top: 5px;">\
+                    <tr>\
+                        <td>\
+                            <div>Pegging Count:</div>\
+                        </td>\
+                    </tr>\
+                    <tr>\
+                        <td>\
+                            <div id="PeggingCountIndicatorScore">14</div>\
+                        </td>\
+                    </tr>\
+                </table>\
+            </div>\
+        </div>\
+    </div>\
+    \
+    <div id="adView" align="center"></div>\
+    \
+    <div id="low_card_result_message">\
+        <div id="low_card_result_text">You drew the lower card!\
+            <br>You get the first crib.</div>\
+        <center>\
+            <button id="low_card_selected_accept_button" onclick="game.lowCardAcceptClick()">OK</button>\
+        </center>\
+    </div>\
+    \
+    <div id="no_hint_view">\
+        <div id="no_hint_view_shadow"></div>\
+        <div id="no_hint_view_card">\
+            <table style="width: 200px;">\
+                <tr>\
+                    <td>\
+                        <div>No optimal play detected.</div>\
+                    </td>\
+                </tr>\
+                <tr>\
+                    <td>\
+                        <div>Go with your gut!</div>\
+                    </td>\
+                </tr>\
+                <tr>\
+                    <td>\
+                        <button id="no_hint_view_button" onclick="game.OnNoHintAcceptedClick()">OK</button>\
+                    </td>\
+                </tr>\
+            </table>\
+        </div>\
+    </div>\
+    \
+    <div id="computer_says_go">\
+        <div id="computer_says_go_shadow"></div>\
+        <div id="computer_says_go_card">\
+            <table style="width: 114px;">\
+                <tr>\
+                    <td>\
+                        <div>Computer says</div>\
+                    </td>\
+                </tr>\
+                <tr>\
+                    <td>\
+                        <div id="computer_says_go_text">\'GO\'</div>\
+                    </td>\
+                </tr>\
+            </table>\
+        </div>\
+    </div>\
+    <div id="player_says_go">\
+        <div id="player_says_go_shadow"></div>\
+        <div id="player_says_go_card">\
+            <table style="width: 114px;">\
+                <tr>\
+                    <td>\
+                        <div>You must say</div>\
+                    </td>\
+                </tr>\
+                <tr>\
+                    <td>\
+                        <button id="player_says_go_button" onclick="game.OnUserSaysGoClick()">GO</button>\
+                    </td>\
+                </tr>\
+            </table>\
+        </div>\
+    </div>\
+    \
+    <div id="allcounted">\
+        <table style="width: 114px;">\
+            <tr>\
+                <td>\
+                    <div>All points are already counted.</div>\
+                </td>\
+            </tr>\
+            <tr>\
+                <td>\
+                    <button id="allcountedOKButton" onclick="game.OnAllCountedOKClick()">OK</button>\
+                </td>\
+            </tr>\
+        </table>\
+    </div>\
+    \
+    <div id="HandScoreView">\
+        <div id="HandScoreTitle">Opponent hand:</div>\
+        <div id="HandScoreBubble">\
+            <div id="HandScoreBubbleGlare"></div>\
+            <div id="HandScoreBubbleBottomGlare"></div>\
+            <div id="HandScoreBubblePoints">1</div>\
+            <div id="HandScoreBubblePointsLabel">points</div>\
+        </div>\
+        <div id="HandScorePointsDescription">Run of 3 for 3</div>\
+        <button id="HandScoreAcceptButton" onclick="game.OnAcceptHandScoreClick()">OK</button>\
+    </div>\
+    \
+    <div id="RecountHandsView">\
+        <button id="RecountHandsButton" onclick="game.OnRecountButtonClick()">\
+            <img id="RecountHandsButtonImage" src="shared/images/RefreshButton.png" ondragstart="return false;" />\
+        </button>\
+        <div id="RecountHandsText">Reshow<br>count</div>\
+    </div>\
+    \
+    <div id="ManualCount">\
+        <div id="HandScoreBubble">\
+            <div id="HandScoreBubbleGlare"></div>\
+            <div id="HandScoreBubbleBottomGlare"></div>\
+            <div id="ManualScoreBubblePoints">0</div>\
+            <div id="HandScoreBubblePointsLabel">points</div>\
+        </div>\
+        <button id="ManualCountAcceptButton" onclick="game.OnManualCountAcceptClick()">Click here when<br>finished counting</button>\
+        <div id="ManualPointsDesc"></div>\
+        <button id="ManualPointConfirmButton" onclick="game.OnManualPointConfirmClick()">Click here to add:<br>15 for 2</button>\
+    </div>\
+    \
+    <div id="SuboptimalWarning">\
+        <div id="SuboptimalWarningTitle">That is not the<br>optimal discard</div>\
+        <div id="SuboptimalWarningTextRegion">\
+            <div id="SuboptimalWarningText">Your discards will result in an average round score of 0.0\
+                <br>\
+                <br>A better play exists that would result in an average score of 0.0</div>\
+        </div>\
+        <button class="SuboptimalWarningButton" onclick="game.SuboptimalWarningTryAgainClick()">OK, let me try again</button>\
+        <button class="SuboptimalWarningButton" onclick="game.SuboptimalWarningShowAllScoresClick()" id="SuboptimalWarningShowAllScoresButton">Show scores for all plays</button>\
+        <button class="SuboptimalWarningButton" onclick="game.SuboptimalWarningHintClick()">Give me a hint</button>\
+        <button class="SuboptimalWarningButton" onclick="game.SuboptimalWarningPlayAnywaysClick()" id="SuboptimalWarningPlayAnywaysButton">Play these cards anyways</button>\
+    </div>\
+    \
+    <div id="GameOverView">\
+        <div id="GameOverResultText">You win!</div>\
+        <div id="GameOverSkunkText">Skunk!</div>\
+        <button id="game_over_close_button" class="close_button" onclick="game.GameOverClosedClick()">X</button>\
+        \
+        <table id="GameOverResultsTable">\
+            <tr>\
+                <td></td>\
+                <td style="width:100px">You</td>\
+                <td style="width:100px">Opponent</td>\
+            </tr>\
+            <tr>\
+                <td>Total score:</td>\
+                <td colspan="2" style="position: absolute; width:200px; height:25px;">\
+                    <div class="GameOverViewTableResultBackgroundFill"></div>\
+                    <div id="GameOverTotalFill" class="GameoverViewTableResultComputerFill"></div>\
+                    <div id="GameOverTotalScoreYou" class="GameOverViewTableResultYouScore" style="font-weight:bold; font-size:16pt;">107</div>\
+                    <div id="GameOverTotalScoreOpp" class="GameOverViewTableResultOppScore" style="font-weight:bold; font-size:16pt;">128</div>\
+                </td>\
+            </tr>\
+            <tr>\
+                <td>Pegging:</td>\
+                <td colspan="2" style="position: absolute; width:200px; height:25px;">\
+                    <div class="GameOverViewTableResultBackgroundFill"></div>\
+                    <div id="GameOverPeggingFill" class="GameoverViewTableResultComputerFill"></div>\
+                    <div id="GameOverPeggingYou" class="GameOverViewTableResultYouScore">107</div>\
+                    <div id="GameOverPeggingOpp" class="GameOverViewTableResultOppScore">128</div>\
+                </td>\
+            </tr>\
+            <tr>\
+                <td>Hands:</td>\
+                <td colspan="2" style="position: absolute; width:200px; height:25px;">\
+                    <div class="GameOverViewTableResultBackgroundFill"></div>\
+                    <div id="GameOverHandsFill" class="GameoverViewTableResultComputerFill"></div>\
+                    <div id="GameOverHandsYou" class="GameOverViewTableResultYouScore">107</div>\
+                    <div id="GameOverHandsOpp" class="GameOverViewTableResultOppScore">128</div>\
+                </td>\
+            </tr>\
+            <tr>\
+                <td>Cribs:</td>\
+                <td colspan="2" style="position: absolute; width:200px; height:25px;">\
+                    <div class="GameOverViewTableResultBackgroundFill"></div>\
+                    <div id="GameOverCribsFill" class="GameoverViewTableResultComputerFill"></div>\
+                    <div id="GameOverCribsYou" class="GameOverViewTableResultYouScore">107</div>\
+                    <div id="GameOverCribsOpp" class="GameOverViewTableResultOppScore">128</div>\
+                </td>\
+            </tr>\
+        </table>\
+        \
+        <button id="GameOverSuboptimalButton" onclick="game.ShowSuboptimalHistoryButtonClick()">You made 6 suboptimal plays this game for a cummultaive error of 10.1 points.</button>\
+        \
+        <div id="GameOverSuboptimalPlaysView"></div>\
+    </div>\
+    \
+    <div id="GameOverSuboptimalHeaderTemplate" class="GameOverSuboptimalHeader">Sub-Optimal Discard Plays</div>\
+    <div id="GameOverSuboptimalDiscardTemplate" class="GameOverSuboptimalDiscard" onclick="game.ShowAllPlaysForSuboptimalPlayView(this)">\
+        <div class="suboptimalSituation">Hand dealt - Opp. crib</div>\
+        <div class="tinycard" id="subTiny1" style="left:0px; margin-top:18px;"></div>\
+        <div class="tinycard" id="subTiny2" style="left:22px; margin-top:18px;"></div>\
+        <div class="tinycard" id="subTiny3" style="left:44px; margin-top:18px;"></div>\
+        <div class="tinycard" id="subTiny4" style="left:66px; margin-top:18px;"></div>\
+        <div class="tinycard" id="subTiny5" style="left:88px; margin-top:18px;"></div>\
+        <div class="tinycard" id="subTiny6" style="left:110px; margin-top:18px;"></div>\
+        <div class="suboptimalYouPlayed">You played</div>\
+        <div class="tinycard" id="subTiny7" style="left:145px; margin-top:18px;"></div>\
+        <div class="tinycard" id="subTiny8" style="left:167px; margin-top:18px;"></div>\
+        <div class="suboptimalPlayedLine1">avg</div>\
+        <div class="suboptimalPlayedLine2">1.9</div>\
+        <div class="suboptimalPlayedLine3">points</div>\
+        <div class="suboptimalOptimalPlay">Optimal play</div>\
+        <div class="tinycard" id="subTiny9" style="left:240px; margin-top:18px;"></div>\
+        <div class="tinycard" id="subTiny10" style="left:262px; margin-top:18px;"></div>\
+        <div class="suboptimalOptimalLine1">avg</div>\
+        <div class="suboptimalOptimalLine2">1.9</div>\
+        <div class="suboptimalOptimalLine3">points</div>\
+        <div class="suboptimalDivider"></div>\
+    </div>\
+    \
+    <div id="BubbleScorePlayerTemplate" class="BubbleScorePlayer">\
+        <div class="BubbleScoreGlare"></div>\
+        <div class="BubbleScoreBottomGlare"></div>\
+        <table style="width: 100px; margin-top: 5px;">\
+            <tr>\
+                <td class="BubbleScoreDescription">Run of 4 for</td>\
+            </tr>\
+            <tr>\
+                <td class="BubbleScorePoints">29</td>\
+            </tr>\
+            <tr>\
+                <td class="BubbleScorePointsLabel">points</td>\
+            </tr>\
+        </table>\
+    </div>\
+    \
+    <button id="menu_button" onclick="MenuButtonPressed()">\
+        <img src="shared/images/MenuButton.png" ondragstart="return false;" />\
+    </button>\
+    \
+    <div id="menu_main" class="menu_view">\
+        <button id="menu_main_close_button" class="close_button" onclick="menu_main_close_click()">X</button>\
+        <button id="start_game_button" class="menu_button" onclick="game.ShowStartAGameMenu()">Start A Game</button>\
+        <button id="settings_button" class="menu_button" onclick="game.ShowSettingsMenu()">Settings</button>\
+        <button id="statistics_button" class="menu_button" onclick="game.ShowStatisticsMenu()">Statistics</button>\
+        <button id="discard_analyzer_button" class="menu_button" onclick="game.ShowDiscardAnalyzer()">Discard Analyzer</button>\
+        <button id="tutorial_button" class="menu_button" onclick="game.ShowTutorialMenu()">Tutorial</button>\
+    </div>\
+    \
+    <div id="menu_start_a_game" class="menu_view">\
+        <div id="menu_start_a_game_title" class="menu_card_title">Choose a difficulty level:</div>\
+        <button id="menu_start_a_game_close_button" class="close_button" onclick="menu_card_close_click()">X</button>\
+        <button id="easy_game_button" class="menu_button" onclick="game.menu_start_game_click(\'Easy\')">Easy</button>\
+        <button id="standard_game_button" class="menu_button" onclick="game.menu_start_game_click(\'Standard\')">Standard</button>\
+        <button id="pro_game_button" class="menu_button" onclick="game.menu_start_game_click(\'Pro\')">Pro</button>\
+        <div style="text-align:center;font-size:12pt; pointer-events: none;">Cards are dealt randomly for all difficulty levels.</div>\
+        <a id="menu_start_a_game_difficulties_link" onclick="game.ShowDifficultiesExplainedMenu()" href="#">Click here to learn how difficulties work</a>\
+    </div>\
+    \
+    <div id="menu_difficulties_explained" class="menu_view">\
+        <div id="menu_difficulties_explained_title" class="menu_card_title">Computer Difficulty Levels Explained</div>\
+        <button id="menu_difficulties_explained_close_button" class="close_button" onclick="menu_card_close_click()">X</button>\
+        <div id="menu_difficulties_explained_body">\
+            For all three difficulty levels the cards are dealt completely at random to both you and to the computer. The difference\
+            between the easy, standard and pro levels is the strategy used to choose the computer\'s discards and pegging plays. If\
+            you are finding that your computer opponent is beating you, you will likely benefit from understanding how the computer\
+            chooses its next move.\
+            <br>\
+            <br>\
+            <center>\
+                <div style="font-size:16pt">\
+                    <u>Easy Computer Strategy</u>\
+                </div>\
+            </center>\
+            <table style="width:100%; text-align:left; font-size:12pt;">\
+                <tr>\
+                    <td valign="top" width="80pt">Discarding:</td>\
+                    <td>Chooses a random pair of cards.</td>\
+                </tr>\
+                <tr>\
+                    <td valign="top" width="80pt">Pegging:</td>\
+                    <td>Chooses a random valid card.</td>\
+                </tr>\
+            </table>\
+            <br>\
+            <center>\
+                <div style="font-size:16pt">\
+                    <u>Standard Computer Strategy</u>\
+                </div>\
+            </center>\
+            <table style="width:100%; text-align:left; font-size:12pt;">\
+                <tr>\
+                    <td valign="top" width="80pt">Discarding:</td>\
+                    <td>Chooses the pair of cards that will result in the best hand score ignoring the possible flip card. If the discards are\
+                        a pair or sum to 15, it adjusts the analyzed hand value by 2 (plus or minus depending on the crib owner.) Notice that\
+                        this strategy does not account for flushes or possible runs that could result from the flip card.</td>\
+                </tr>\
+                <tr>\
+                    <td valign="top" width="80pt">Pegging:</td>\
+                    <td>Chooses the next card that will result in the highest score for itself. If all plays are of equal value then it chooses\
+                        at random.</td>\
+                </tr>\
+            </table>\
+            <br>\
+            <center>\
+                <div style="font-size:16pt">\
+                    <u>Pro Computer Strategy</u>\
+                </div>\
+            </center>\
+            <table style="width:100%; text-align:left; font-size:12pt;">\
+                <tr>\
+                    <td valign="top" width="80pt">Discarding:</td>\
+                    <td>Evaluates the score for each pair of discards for all possible flip cards still left in the deck. Then takes the play\
+                        that averages the highest outcome. For the cards in the crib, evaluates their value as well with each possible flip\
+                        card and adds or subtracts depending on who will count the crib. Note that the potential from the two additional crib\
+                        cards are not included in the crib analysis.</td>\
+                </tr>\
+                <tr>\
+                    <td valign="top" width="80pt">Pegging:</td>\
+                    <td>Chooses the next card that will result in the highest score for itself. It also prefers not to leave the pegging count\
+                        at 5 or 21. If all plays are of equal value then it chooses at random.</td>\
+                </tr>\
+            </table>\
+        </div>\
+    </div>\
+    \
+    <div id="menu_settings" class="menu_view">\
+        <div id="menu_settings_title" class="menu_card_title">Settings</div>\
+        <button id="menu_settings_close_button" class="close_button" onclick="menu_card_close_click()">X</button>\
+        <div id="menu_settings_body">\
+            <table style="margin-left:5%; width:95%; margin-bottom: 10px; text-align:left; font-size:16pt;">\
+                <tr>\
+                    <td>Manually count scores:</td>\
+                    <td>\
+                        <label class="switch">\
+                            <input id="setting_manually_count_scores_checkbox" type="checkbox" onclick="game.SettingManuallyCountScoresClicked(this)">\
+                            <span class="slider round"></span>\
+                        </label>\
+                    </td>\
+                </tr>\
+                <tr>\
+                    <td>Muggins:</td>\
+                    <td>\
+                        <label class="switch">\
+                            <input id="setting_muggins_checkbox" type="checkbox" onclick="game.SettingMugginsClicked(this)">\
+                            <span class="slider round"></span>\
+                        </label>\
+                    </td>\
+                </tr>\
+                <tr>\
+                    <td>Hint button on all levels:</td>\
+                    <td>\
+                        <label class="switch">\
+                            <input id="setting_hints_checkbox" type="checkbox" onclick="game.SettingHintsClicked(this)">\
+                            <span class="slider round"></span>\
+                        </label>\
+                    </td>\
+                </tr>\
+                <tr>\
+                    <td>Warn of suboptimal plays:</td>\
+                    <td>\
+                        <label class="switch">\
+                            <input id="setting_warn_suboptimal_checkbox" type="checkbox" onclick="game.SettingWarnSuboptimalClicked(this)">\
+                            <span class="slider round"></span>\
+                        </label>\
+                    </td>\
+                </tr>\
+                <tr>\
+                    <td>Fast counting:</td>\
+                    <td>\
+                        <label class="switch">\
+                            <input id="setting_fast_count_checkbox" type="checkbox" onclick="game.SettingFastCountClicked(this)">\
+                            <span class="slider round"></span>\
+                        </label>\
+                    </td>\
+                </tr>\
+            </table>\
+            <div style="margin-left:5%; width:95%; text-align:left; font-size:16pt;">Board Background:</div>\
+            <div class="image-selector">\
+                <input id="wood_light" type="radio" name="settings_boardbackground_selector" value="wood_light" onclick="BoardSelectorClick(this)"/>\
+                <label class="board-selector-item background_wood_light" for="wood_light"></label>\
+                <input id="wood" type="radio" name="settings_boardbackground_selector" value="wood" onclick="BoardSelectorClick(this)" />\
+                <label class="board-selector-item background_wood" for="wood"></label>\
+                <input id="wood_dark" type="radio" name="settings_boardbackground_selector" value="wood_dark" onclick="BoardSelectorClick(this)"/>\
+                <label class="board-selector-item background_wood_dark" for="wood_dark"></label>\
+                <input id="wood_gray" type="radio" name="settings_boardbackground_selector" value="wood_gray" onclick="BoardSelectorClick(this)"/>\
+                <label class="board-selector-item background_wood_gray" for="wood_gray"></label>\
+                <input id="green" type="radio" name="settings_boardbackground_selector" value="green" onclick="BoardSelectorClick(this)"/>\
+                <label class="board-selector-item background_green" for="green"></label>\
+                <input id="red" type="radio" name="settings_boardbackground_selector" value="red" onclick="BoardSelectorClick(this)" />\
+                <label class="board-selector-item background_red" for="red"></label>\
+                <input id="blue" type="radio" name="settings_boardbackground_selector" value="blue" onclick="BoardSelectorClick(this)" />\
+                <label class="board-selector-item background_blue" for="blue"></label>\
+            </div>\
+            \
+            <div style="margin-left:5%; width:95%; text-align:left; font-size:16pt;">Card Color:</div>\
+            <div class="image-selector">\
+                <input id="card_blue" type="radio" name="settings_card_color_selector" value="blue" onclick="CardSelectorClick(this)" />\
+                <label class="card-selector-item card_back_blue" for="card_blue"></label>\
+                <input id="card_red" type="radio" name="settings_card_color_selector" value="red" onclick="CardSelectorClick(this)" />\
+                <label class="card-selector-item card_back_red" for="card_red"></label>\
+                <input id="card_green" type="radio" name="settings_card_color_selector" value="green" onclick="CardSelectorClick(this)" />\
+                <label class="card-selector-item card_back_green" for="card_green"></label>\
+            </div>\
+        </div>\
+    </div>\
+    \
+    <div id="menu_statistics" class="menu_view">\
+        <div id="menu_statistics_title" class="menu_card_title">Statistics</div>\
+        <button id="menu_statistics_close_button" class="close_button" onclick="menu_card_close_click()">X</button>\
+        \
+        <table id="menu_statistics_table">\
+            <tr>\
+                <td></td>\
+                <td class="menu_statistics_table_stat">Easy</td>\
+                <td class="menu_statistics_table_stat">Standard</td>\
+                <td class="menu_statistics_table_stat">Pro</td>\
+                <td class="menu_statistics_table_stat_total">Total</td>\
+            </tr>\
+            <tr>\
+                <td class="menu_statistics_table_category">Games Played</td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_games_played_Easy"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_games_played_Standard"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_games_played_Pro"></td>\
+                <td class="menu_statistics_table_stat_total" id="menu_stat_games_played_Total">0</td>\
+            </tr>\
+            <tr>\
+                <td class="menu_statistics_table_category">Wins</td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_wins_Easy"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_wins_Standard"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_wins_Pro"></td>\
+                <td class="menu_statistics_table_stat_total" id="menu_stat_wins_Total">0</td>\
+            </tr>\
+            <tr>\
+                <td class="menu_statistics_table_category">Losses</td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_losses_Easy"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_losses_Standard"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_losses_Pro"></td>\
+                <td class="menu_statistics_table_stat_total" id="menu_stat_losses_Total">0</td>\
+            </tr>\
+            <tr>\
+                <td class="menu_statistics_table_category">Skunk Wins</td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_skunks_Easy"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_skunks_Standard"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_skunks_Pro"></td>\
+                <td class="menu_statistics_table_stat_total" id="menu_stat_skunks_Total">0</td>\
+            </tr>\
+            <tr>\
+                <td class="menu_statistics_table_category">Win Percentage</td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_win_percent_Easy"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_win_percent_Standard"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_win_percent_Pro"></td>\
+                <td class="menu_statistics_table_stat_total" id="menu_stat_win_percent_Total"></td>\
+            </tr>\
+            <tr>\
+                <td class="menu_statistics_table_category">Avg Pegging Score</td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_pegging_Easy"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_pegging_Standard"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_pegging_Pro"></td>\
+                <td class="menu_statistics_table_stat_total" id="menu_stat_pegging_Total">0</td>\
+            </tr>\
+            <tr>\
+                <td class="menu_statistics_table_category">Avg Hand Score</td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_hands_Easy"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_hands_Standard"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_hands_Pro"></td>\
+                <td class="menu_statistics_table_stat_total" id="menu_stat_hands_Total">0</td>\
+            </tr>\
+            <tr>\
+                <td class="menu_statistics_table_category">Avg Crib Score</td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_cribs_Easy"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_cribs_Standard"></td>\
+                <td class="menu_statistics_table_stat" id="menu_stat_cribs_Pro"></td>\
+                <td class="menu_statistics_table_stat_total" id="menu_stat_cribs_Total">0</td>\
+            </tr>\
+        </table>\
+        <table id="menu_statistics_buttons_table">\
+            <tr>\
+                <td>\
+                    <center>\
+                        <button id="menu_statistics_reset_button" onclick="game.ResetStatisticsButtonClick()">Reset\
+                            <br>Statistics</button>\
+                    </center>\
+                </td>\
+                <td>\
+                    <center>\
+                        <button id="menu_statistics_suboptimal_history_button" onclick="game.ShowSuboptimalHistoryButtonClick()">Suboptimal<br>Play History</button>\
+                    </center>\
+                </td>\
+            </tr>\
+        </table>\
+    </div>\
+    \
+    <div id="menu_tutorial" class="menu_view">\
+        <div id="menu_tutorial_title" class="menu_card_title">Tutorial</div>\
+        <button id="menu_tutorial_close_button" class="close_button" onclick="menu_card_close_click()">X</button>\
+        \
+        <div id="mtContainer">\
+            <div id="mtPager">\
+                    <div class="mtp" id="mt0">\
+                        <center>\
+                            <div>Page 1 of 7</div>\
+                            <div style="margin-top:30px">Cribbage is a simple two person card game.</div>\
+                            <img src="shared/images/Card_Club_Jack.jpg" style="width:57px; border-radius:3.5px; margin-top:10px;"/>\
+                            <img src="shared/images/Card_Heart_Jack.jpg" style="width:57px; border-radius:3.5px;"/>\
+                            <img src="shared/images/Card_Spade_Jack.jpg" style="width:57px; border-radius:3.5px;"/>\
+                            <img src="shared/images/Card_Diamond_Jack.jpg" style="width:57px; border-radius:3.5px;"/>\
+                            <div style="margin-left:30px; margin-right:30px; margin-top:20px; text-align:left;">The game involves scoring points by playing and grouping cards into pairs, runs, and combinations of cards that sum to fifteen.<br><br>To use this tutorial, click on the arrows on the side of this panel.</div>\
+                        </center>\
+                    </div>\
+                    <div class="mtp" id="mt1">\
+                        <center>\
+                            <div>Page 2 of 7</div>\
+                            <div style="margin-top:10px; margin-left:40px; margin-right:40px; margin-bottom:20px; text-align:left;">The winner of a game is the first person to score 121 points.<br><br>We keep track of the score using pegs.  Your peg is blue and the computer is red.</div>\
+                            <div style="background: url(shared/images/woodboard.jpg); width: 200px; height: 50px; position:absolute; left: 100px;	">\
+                                <img style="position:absolute; left: 10px; top: 13px;" src="shared/images/scoreboard_pegholes_horizontal.png"/>\
+                                <img style="position:absolute; left: 100px; top: 13px;" src="shared/images/scoreboard_pegholes_horizontal.png"/>\
+                                <img style="position:absolute; left: 0px; top: -10px;" src="shared/images/PegBlue.png"/>\
+                                <img style="position:absolute; left: 48px; top: -10px;" src="shared/images/PegBlue.png"/>\
+                                <img style="position:absolute; left: 0px; top: 5px;" src="shared/images/PegRed.png"/>\
+                                <img style="position:absolute; left: 90px; top: 5px;" src="shared/images/PegRed.png"/>\
+                            </div>\
+                            <div style="margin-top:90px; margin-left:40px; margin-right:40px; margin-bottom:20px; text-align:left;">Each time you score points, your back peg will move ahead of your front peg.  There are 120 peg holes for each player so the first to get to the end of the path wins.</div>\
+                        </center>\
+                    </div>\
+                    <div class="mtp" id="mt2">\
+                        <center>\
+                            <div>Page 3 of 7</div>\
+                            <div style="margin-top:30px; margin-left:40px; margin-right:40px; margin-bottom:20px; text-align:left;">\
+                                Cribbage is played in rounds and each round consists of four stages:\
+                                <ol>\
+                                    <li>Discarding into the crib</li>\
+                                    <li>Pegging</li>\
+                                    <li>Counting points in hand</li>\
+                                    <li>Counting points in the crib</li>\
+                                </ol>\
+                            </div>\
+                        </center>\
+                    </div>\
+                    <div class="mtp" id="mt3">\
+                        <center>\
+                            <div>Page 4 of 7</div>\
+                            <div>Discarding</div>\
+                            <div style="font-size:11pt; margin-top:3px; margin-left:40px; margin-right:40px; margin-bottom:3px; text-align:left;">\
+                                At the beginning of the round, each player is dealt six cards and must choose two cards to discard into the crib.\
+                            </div>\
+                            <div style="background: url(shared/images/woodboard.jpg); width: 280px; height: 150px; position:absolute; left: 60px;	">\
+                                <img style="position:absolute; left: 10px; top: 3px; width:45px; border-radius:3px;" src="shared/images/card_back_blue.jpg"/>\
+                                <img style="position:absolute; left: 50px; top: 80px; width:45px; border-radius:3px;" src="shared/images/Card_Spade_2.jpg"/>\
+                                <img style="position:absolute; left: 80px; top: 80px; width:45px; border-radius:3px;" src="shared/images/Card_Diamond_3.jpg"/>\
+                                <img style="position:absolute; left: 120px; top: 80px; width:45px; border-radius:3px;" src="shared/images/Card_Heart_Jack.jpg"/>\
+                                <img style="position:absolute; left: 150px; top: 80px; width:45px; border-radius:3px;" src="shared/images/Card_Club_Queen.jpg"/>\
+                                <img style="position:absolute; left: 180px; top: 80px; width:45px; border-radius:3px;" src="shared/images/Card_Heart_King.jpg"/>\
+                                <img style="position:absolute; left: 210px; top: 80px; width:45px; border-radius:3px;" src="shared/images/Card_Club_King.jpg"/>\
+                                \
+                                <div id="mtcr">\
+                                    <div id="crib_region_top_left_side" class="mtcrb"></div>\
+                                    <div id="crib_region_top_left_top" class="mtcrb"></div>\
+                                    <div id="crib_region_top_right_top" class="mtcrb"></div>\
+                                    <div id="crib_region_top_right_side" class="mtcrb"></div>\
+                                    <div id="crib_region_bottom_right_side" class="mtcrb"></div>\
+                                    <div id="crib_region_bottom_right_bottom" class="mtcrb"></div>\
+                                    <div id="crib_region_bottom_left_bottom" class="mtcrb"></div>\
+                                    <div id="crib_region_bottom_left_side" class="mtcrb"></div>\
+                                </div>\
+                            </div>\
+                            <div style="font-size:11pt; margin-top:160px; margin-left:40px; margin-right:40px; margin-bottom:3px; text-align:left;">\
+                                To discard, click on two cards or drag them to the center of the board.  Then click on the button that appears to confirm your discards.  The crib cards are then put aside to be counted later<br><br>Strategy: Keep in your hand cards that are pairs, runs, and groups that sum to 15.  All face cards are worth 10 and aces are worth 1.\
+                            </div>\
+                        </center>\
+                    </div>\
+                    <div class="mtp" id="mt4">\
+                        <center>\
+                            <div>Page 5 of 7</div>\
+                            <div>Pegging</div>\
+                            <div style="font-size:10pt; margin-top:3px; margin-left:20px; margin-right:20px; margin-bottom:10px; text-align:left;">\
+                                Starting with whomever is not the dealer, each player lays one card face up in the center of the board.  The cumulative sum of the cards is tracked and play continues until neither player can play without putting the sum over 31.  At that point the cumulative sum is reset to zero and the same process is continued until both players have played all four of their cards.\
+                            </div>\
+                            <div style="font-size:10pt">During pegging points are awarded for:</div>\
+                            <table style="font-size:10pt; text-align:center;">\
+                                <tr>\
+                                    <td>Cumulative sum of 15</td>\
+                                    <td style="width:100px">2 points</td>\
+                                </tr>\
+                                <tr>\
+                                    <td>Cumulative sum of 31</td>\
+                                    <td>2 points</td>\
+                                </tr>\
+                                <tr>\
+                                    <td>Last card below 31</td>\
+                                    <td>1 point</td>\
+                                </tr>\
+                                <tr>\
+                                    <td>Run of N Cards</td>\
+                                    <td>N points</td>\
+                                </tr>\
+                                <tr>\
+                                    <td>Pair</td>\
+                                    <td>2 points</td>\
+                                </tr>\
+                                <tr>\
+                                    <td>3 of a kind</td>\
+                                    <td>6 points</td>\
+                                </tr>\
+                                <tr>\
+                                    <td>4 of a kind</td>\
+                                    <td>12 points</td>\
+                                </tr>\
+                            </table>\
+                            <div style="font-size:10pt; margin-top:3px; margin-left:20px; margin-right:20px; margin-bottom:3px; text-align:left;">\
+                                To get credit for a run the most recent played cards do not need to be played in order.  For example, if the last cards played were 2, 4, 3 then the person who played the 3 would get 3 points for a run.\
+                            </div>\
+                        </center>\
+                    </div>\
+                    <div class="mtp" id="mt5">\
+                        <center>\
+                            <div>Page 6 of 7</div>\
+                            <div>Counting Hands</div>\
+                            <div style="font-size:10pt; margin-top:3px; margin-left:20px; margin-right:20px; margin-bottom:10px; text-align:left;">\
+                                Starting with whoever is not the dealer, each player counts the points that can be made using the cards in their hand and the one shared card that was flipped over on the top of the deck.	\
+                            </div>\
+                            <div style="font-size:10pt">When counting, points are awarded for:</div>\
+                            <table style="font-size:10pt; text-align:center;">\
+                                <tr>\
+                                    <td>Set of cards sum to 15</td>\
+                                    <td style="width:100px">2 points</td>\
+                                </tr>\
+                                <tr>\
+                                    <td>Run of N Cards</td>\
+                                    <td>N points</td>\
+                                </tr>\
+                                <tr>\
+                                    <td>Pair</td>\
+                                    <td>2 points</td>\
+                                </tr>\
+                                <tr>\
+                                    <td>3 of a kind</td>\
+                                    <td>6 points</td>\
+                                </tr>\
+                                <tr>\
+                                    <td>4 of a kind</td>\
+                                    <td>12 points</td>\
+                                </tr>\
+                                <tr>\
+                                    <td>Flush (not including top card)</td>\
+                                    <td>4 points</td>\
+                                </tr>\
+                                <tr>\
+                                    <td>Flush (including top card)</td>\
+                                    <td>5 points</td>\
+                                </tr>\
+                                <tr>\
+                                    <td>Jack of top suit (Nobs)</td>\
+                                    <td>1 point</td>\
+                                </tr>\
+                            </table>\
+                            <div style="font-size:10pt; margin-top:3px; margin-left:20px; margin-right:20px; margin-bottom:3px; text-align:left;">\
+                                By default, the game will count your hand for you.  However, you can change the settings to count manually.  Counting is done by clicking on each subset of cards that form points and then clicking on the submit button that appears.  Once all points have been counted tap the \'Finished Counting\' button to move on.  If \'Muggins\' is enabled, the computer player will get credit for any points that you miss.	\
+                            </div>\
+                        </center>\
+                    </div>\
+                    <div class="mtp" id="mt6">\
+                        <center>\
+                            <div>Page 7 of 7</div>\
+                            <div>Counting the Crib</div>\
+                            <div style="font-size:10pt; margin-top:3px; margin-left:20px; margin-right:20px; margin-bottom:10px; text-align:left;">\
+                                After both players have counted the points in their hand, the dealer is given the crib cards (which were discarded at the start of the round.)  The points in the crib are counted using the same rules as for counting cards in hand.*	\
+                            </div>\
+                            <div style="font-size:10pt">When counting, points are awarded for:</div>\
+                            <table style="font-size:10pt; text-align:center;">\
+                                <tr>\
+                                    <td>Set of cards sum to 15</td>\
+                                    <td style="width:100px">2 points</td>\
+                                </tr>\
+                                <tr>\
+                                    <td>Run of N Cards</td>\
+                                    <td>N points</td>\
+                                </tr>\
+                                <tr>\
+                                    <td>Pair</td>\
+                                    <td>2 points</td>\
+                                </tr>\
+                                <tr>\
+                                    <td>3 of a kind</td>\
+                                    <td>6 points</td>\
+                                </tr>\
+                                <tr>\
+                                    <td>4 of a kind</td>\
+                                    <td>12 points</td>\
+                                </tr>\
+                                <tr>\
+                                    <td>Flush (including top card)</td>\
+                                    <td>5 points</td>\
+                                </tr>\
+                                <tr>\
+                                    <td>Jack of top suit (Nobs)</td>\
+                                    <td>1 point</td>\
+                                </tr>\
+                            </table>\
+                            <div style="font-size:10pt; margin-top:23px; margin-left:20px; margin-right:20px; margin-bottom:3px; text-align:left;">\
+                                *The only difference between hand scoring and crib scoring is that in order to get a flush in the crib, the top card on the deck must also match the suit of the flush.	\
+                            </div>\
+                        </center>\
+                    </div>\
+            </div>\
+        </div>\
+        <button id="mtIncButton" onclick="game.IncrementTutorial()">\
+            <svg class="mtBSVG"><polygon points="0,0 20,20 0,40" style="fill:white;" /></sgv>\
+        </button>\
+        <button id="mtDecButton" onclick="game.DecrementTutorial()">	\
+            <svg class="mtBSVG"><polygon points="20,0 20,40 0,20" style="fill:white;" /></sgv>\
+        </button>\
+    </div>\
+    \
+    <div id="menu_suboptimal_history" class="menu_view">\
+        <div id="menu_suboptimal_title" class="menu_card_title">Suboptimal Play History</div>\
+        <button id="menu_suboptimal_close_button" class="close_button" onclick="menu_card_close_click()">X</button>\
+        <div id="msoDesc">When you are playing cribbage you will sometimes play suboptimal crib discards or suboptimal pegging cards.  This graph shows your cummulative suboptimal error count in average points for each game over time.</div>\
+        <div id="msoNoHistory">After you finish your first game your history will appear here.</div>\
+        <svg id="msoHistory"></svg>\
+    </div>\
+    \
+    <div id="menu_discard_analyzer" class="menu_view">\
+        <div id="discard_analyzer_title" class="menu_card_title">Discard Analyzer</div>\
+        <button id="da_close_button" class="close_button" onclick="menu_card_close_click()">X</button>\
+        <div id="daPrompt">Select 6 cards to analyze the optimal discard:</div>\
+        <label class="daSwitch">\
+            <input id="da_crib_checkbox" type="checkbox" onclick="game.daCribSwitched(this)">\
+            <span class="slider round"></span>\
+        </label>\
+        <div id="daCribIndicatorText">Your Crib</div>\
+        <div style="width:100%; height:1px; background:white;"></div>\
+        <table>\
+            <tr>\
+                <td class="daCardCell" id="daCardCell_AD" onclick="game.daCardCellClick(this, \'AD\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Diamond_Ace.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_2D" onclick="game.daCardCellClick(this, \'2D\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Diamond_2.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_3D" onclick="game.daCardCellClick(this, \'3D\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Diamond_3.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_4D" onclick="game.daCardCellClick(this, \'4D\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Diamond_4.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_5D" onclick="game.daCardCellClick(this, \'5D\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Diamond_5.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_6D" onclick="game.daCardCellClick(this, \'6D\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Diamond_6.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_7D" onclick="game.daCardCellClick(this, \'7D\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Diamond_7.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_8D" onclick="game.daCardCellClick(this, \'8D\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Diamond_8.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_9D" onclick="game.daCardCellClick(this, \'9D\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Diamond_9.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_TD" onclick="game.daCardCellClick(this, \'TD\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Diamond_10.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_JD" onclick="game.daCardCellClick(this, \'JD\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Diamond_Jack.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_QD" onclick="game.daCardCellClick(this, \'QD\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Diamond_Queen.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_KD" onclick="game.daCardCellClick(this, \'KD\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Diamond_King.jpg);"></div>\
+                </td>\
+            </tr>\
+            <tr>\
+                <td class="daCardCell" id="daCardCell_AC" onclick="game.daCardCellClick(this, \'AC\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Club_Ace.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_2C" onclick="game.daCardCellClick(this, \'2C\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Club_2.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_3C" onclick="game.daCardCellClick(this, \'3C\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Club_3.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_4C" onclick="game.daCardCellClick(this, \'4C\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Club_4.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_5C" onclick="game.daCardCellClick(this, \'5C\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Club_5.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_6C" onclick="game.daCardCellClick(this, \'6C\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Club_6.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_7C" onclick="game.daCardCellClick(this, \'7C\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Club_7.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_8C" onclick="game.daCardCellClick(this, \'8C\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Club_8.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_9C" onclick="game.daCardCellClick(this, \'9C\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Club_9.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_TC" onclick="game.daCardCellClick(this, \'TC\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Club_10.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_JC" onclick="game.daCardCellClick(this, \'JC\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Club_Jack.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_QC" onclick="game.daCardCellClick(this, \'QC\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Club_Queen.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_KC" onclick="game.daCardCellClick(this, \'KC\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Club_King.jpg);"></div>\
+                </td>\
+            </tr>\
+            <tr>\
+                <td class="daCardCell" id="daCardCell_AH" onclick="game.daCardCellClick(this, \'AH\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Heart_Ace.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_2H" onclick="game.daCardCellClick(this, \'2H\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Heart_2.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_3H" onclick="game.daCardCellClick(this, \'3H\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Heart_3.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_4H" onclick="game.daCardCellClick(this, \'4H\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Heart_4.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_5H" onclick="game.daCardCellClick(this, \'5H\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Heart_5.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_6H" onclick="game.daCardCellClick(this, \'6H\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Heart_6.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_7H" onclick="game.daCardCellClick(this, \'7H\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Heart_7.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_8H" onclick="game.daCardCellClick(this, \'8H\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Heart_8.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_9H" onclick="game.daCardCellClick(this, \'9H\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Heart_9.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_TH" onclick="game.daCardCellClick(this, \'TH\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Heart_10.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_JH" onclick="game.daCardCellClick(this, \'JH\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Heart_Jack.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_QH" onclick="game.daCardCellClick(this, \'QH\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Heart_Queen.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_KH" onclick="game.daCardCellClick(this, \'KH\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Heart_King.jpg);"></div>\
+                </td>\
+            </tr>\
+            <tr>\
+                <td class="daCardCell" id="daCardCell_AS" onclick="game.daCardCellClick(this, \'AS\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Spade_Ace.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_2S" onclick="game.daCardCellClick(this, \'2S\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Spade_2.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_3S" onclick="game.daCardCellClick(this, \'3S\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Spade_3.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_4S" onclick="game.daCardCellClick(this, \'4S\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Spade_4.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_5S" onclick="game.daCardCellClick(this, \'5S\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Spade_5.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_6S" onclick="game.daCardCellClick(this, \'6S\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Spade_6.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_7S" onclick="game.daCardCellClick(this, \'7S\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Spade_7.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_8S" onclick="game.daCardCellClick(this, \'8S\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Spade_8.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_9S" onclick="game.daCardCellClick(this, \'9S\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Spade_9.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_TS" onclick="game.daCardCellClick(this, \'TS\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Spade_10.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_JS" onclick="game.daCardCellClick(this, \'JS\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Spade_Jack.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_QS" onclick="game.daCardCellClick(this, \'QS\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Spade_Queen.jpg);"></div>\
+                </td>\
+                <td class="daCardCell" id="daCardCell_KS" onclick="game.daCardCellClick(this, \'KS\')">\
+                    <div class="daTinyCard" style="background:url(shared/images/Card_Spade_King.jpg);"></div>\
+                </td>\
+            </tr>\
+        </table>\
+        <div style="width:100%; height:1px; background:white; float:left;"></div>\
+        <div style="width:100%; background:#BB0000; float:left">\
+            <center>\
+                <div id="daHandCardsLabel">Hand Cards:</div>\
+            </center>\
+            <table id="daHandTable" cellpadding="0">\
+                <tr>\
+                    <td class="daCardHandCell">\
+                        <div class="daTinyHandCard" id="daHandCard0"></div>\
+                    </td>\
+                    <td class="daCardHandCell">\
+                        <div class="daTinyHandCard" id="daHandCard1"></div>\
+                    </td>\
+                    <td class="daCardHandCell">\
+                        <div class="daTinyHandCard" id="daHandCard2"></div>\
+                    </td>\
+                    <td class="daCardHandCell">\
+                        <div class="daTinyHandCard" id="daHandCard3"></div>\
+                    </td>\
+                    <td class="daCardHandCell">\
+                        <div class="daTinyHandCard" id="daHandCard4"></div>\
+                    </td>\
+                    <td class="daCardHandCell">\
+                        <div class="daTinyHandCard" id="daHandCard5"></div>\
+                    </td>\
+                </tr>\
+            </table>\
+        </div>\
+        <div style="width:100%; height:1px; background:white; float:left;"></div>\
+        <table>\
+            <tr>\
+                <td id="daOptimalCell">\
+                    <button class="daButton" id="daOptimalButton" onclick="game.daOptimalButtonClick()">\
+                        <div id="daOptimalScoreTextTop">Optimal Discard</div>\
+                        <center>\
+                            <table>\
+                                <tr>\
+                                    <td>\
+                                        <div class="daTinyCard" id="daOptimalCardView1" style="background:url(shared/images/Card_Spade_Queen.jpg);"></div>\
+                                    </td>\
+                                    <td>\
+                                        <div class="daTinyCard" id="daOptimalCardView2" style="background:url(shared/images/Card_Spade_Queen.jpg);"></div>\
+                                    </td>\
+                                </tr>\
+                            </table>\
+                        </center>\
+                        <div id="daOptimalScoreText">avg score: 0.0 pts</div>\
+                    </button>\
+                </td>\
+                <td id="daAllPlaysCell">\
+                    <button class="daButton" id="daAllPlaysButton" onclick="game.daAllPlaysButtonClick()">Analyze all possible discard plays</button>\
+                </td>\
+            </tr>\
+        </table>\
+    </div>\
+    \
+    <div id="menu_allplays" class="menu_view">\
+        <div id="menu_allplays_title" class="menu_card_title">All Plays</div>\
+        <button id="mallpcb" class="close_button" onclick="menu_card_close_click()">X</button>	\
+        <div id="mallpd">By analyzing all possible flipped top cards we can find the min, max, and average amount of points that each set of discards will yield.  Click on any row to see a more in depth analysis.</div>\
+        <div id="mallplist"></div>\
+    </div>\
+    \
+    <div id="mallpcelltemplate" class="mallpcell" onclick="game.mallcellClick(this)">\
+        <div class="mallpcribtitle">Crib</div>\
+        <div class="tinycard" style="left:22px; margin-top:20px;"></div>\
+        <div class="tinycard" style="left:42px; margin-top:20px;"></div>\
+        \
+        <div class="mallphandtitle">Hand</div>\
+        <div class="tinycard" style="left:75px; margin-top:20px;"></div>\
+        <div class="tinycard" style="left:97px; margin-top:20px;"></div>\
+        <div class="tinycard" style="left:119px; margin-top:20px;"></div>\
+        <div class="tinycard" style="left:141px; margin-top:20px;"></div>\
+        \
+        <div class="mallpmintitle">Min.</div>\
+        <div class="mallpminpts">-2</div>\
+        \
+        <div class="mallpmaxtitle">Max.</div>\
+        <div class="mallpmaxpts">24</div>\
+        \
+        <div class="mallpbubble">\
+            <div class="mallpGlare"></div>\
+            <div class="mallpBottomGlare"></div>\
+            <div class="mallpavgtitle">Avg.</div>\
+            <div class="mallpBubblePoints">12.34</div>\
+            <div class="mallpBubblePointsLabel">points</div>\
+        </div>\
+        \
+        <div class="mallpPlayed">You made this play</div>\
+        \
+        <div class="mallpDivider"></div>\
+    </div>\
+    \
+    <div id="menu_handAnalysis" class="menu_view">\
+        <div class="menu_card_title">Discard Analysis</div>\
+        <button id="mhaclosebutton" class="close_button" onclick="menu_card_close_click()">X</button>	\
+        \
+        <div id="mhahandtitle">Your hand</div>\
+        <div class="tinycard" id="mhacard0" style="left:166px; margin-top:65px;"></div>\
+        <div class="tinycard" id="mhacard1" style="left:188px; margin-top:65px;"></div>\
+        <div class="tinycard" id="mhacard2" style="left:210px; margin-top:65px;"></div>\
+        <div class="tinycard" id="mhacard3" style="left:232px; margin-top:65px;"></div>\
+        \
+        <div id="mhacribtitle">Your crib</div>\
+        <div class="tinycard" id="mhacard4" style="right:48px; margin-top:63px; transform: scale(0.7);"></div>\
+        <div class="tinycard" id="mhacard5" style="right:32px; margin-top:63px; transform: scale(0.7);"></div>\
+        <div id="mhacribpoints">+2 pts</div>\
+        \
+        <div id="mhaplus">+</div>\
+        <div id="mhainstructions">(Scroll to see the score for each possible flip card.)</div>\
+        \
+        <div id="mhaarrow" class="arrow-down"></div>\
+        <div id="mhatopcards" onscroll="game.OnTopCardScroll()">\
+            <div id="mhatopcardsContainer"></div>\
+        </div>\
+        <div id="mhatopcardsOverlayLeft"></div>\
+        <div id="mhatopcardsOverlayRight"></div>\
+        <div id="mhatotalScore">= 8 points</div>\
+        <div id="mhaHistorgram"></div>\
+        <div id="mhaMin">0</div>\
+        <div id="mhaAvg">10</div>\
+        <div id="mhaMax">24</div>\
+        <div id="mhaMinLabel">Minimum<br>points</div>\
+        <div id="mhaAvgLabel">Average<br>points</div>\
+        <div id="mhaMaxLabel">Maximum<br>points</div>\
+    </div>';
+
+    var scoreboard = new CribbageScoreboard();
+    
     var deckTopIndex = 0;
     var cards = [
-        { id: 'AS', rank: 1, value: 1, suit: 'S', image: "url('images/Card_Spade_Ace.jpg')" },
-        { id: '2S', rank: 2, value: 2, suit: 'S', image: "url('images/Card_Spade_2.jpg')" },
-        { id: '3S', rank: 3, value: 3, suit: 'S', image: "url('images/Card_Spade_3.jpg')" },
-        { id: '4S', rank: 4, value: 4, suit: 'S', image: "url('images/Card_Spade_4.jpg')" },
-        { id: '5S', rank: 5, value: 5, suit: 'S', image: "url('images/Card_Spade_5.jpg')" },
-        { id: '6S', rank: 6, value: 6, suit: 'S', image: "url('images/Card_Spade_6.jpg')" },
-        { id: '7S', rank: 7, value: 7, suit: 'S', image: "url('images/Card_Spade_7.jpg')" },
-        { id: '8S', rank: 8, value: 8, suit: 'S', image: "url('images/Card_Spade_8.jpg')" },
-        { id: '9S', rank: 9, value: 9, suit: 'S', image: "url('images/Card_Spade_9.jpg')" },
-        { id: 'TS', rank: 10, value: 10, suit: 'S', image: "url('images/Card_Spade_10.jpg')" },
-        { id: 'JS', rank: 11, value: 10, suit: 'S', image: "url('images/Card_Spade_Jack.jpg')" },
-        { id: 'QS', rank: 12, value: 10, suit: 'S', image: "url('images/Card_Spade_Queen.jpg')" },
-        { id: 'KS', rank: 13, value: 10, suit: 'S', image: "url('images/Card_Spade_King.jpg')" },
-        { id: 'AD', rank: 1, value: 1, suit: 'D', image: "url('images/Card_Diamond_Ace.jpg')" },
-        { id: '2D', rank: 2, value: 2, suit: 'D', image: "url('images/Card_Diamond_2.jpg')" },
-        { id: '3D', rank: 3, value: 3, suit: 'D', image: "url('images/Card_Diamond_3.jpg')" },
-        { id: '4D', rank: 4, value: 4, suit: 'D', image: "url('images/Card_Diamond_4.jpg')" },
-        { id: '5D', rank: 5, value: 5, suit: 'D', image: "url('images/Card_Diamond_5.jpg')" },
-        { id: '6D', rank: 6, value: 6, suit: 'D', image: "url('images/Card_Diamond_6.jpg')" },
-        { id: '7D', rank: 7, value: 7, suit: 'D', image: "url('images/Card_Diamond_7.jpg')" },
-        { id: '8D', rank: 8, value: 8, suit: 'D', image: "url('images/Card_Diamond_8.jpg')" },
-        { id: '9D', rank: 9, value: 9, suit: 'D', image: "url('images/Card_Diamond_9.jpg')" },
-        { id: 'TD', rank: 10, value: 10, suit: 'D', image: "url('images/Card_Diamond_10.jpg')" },
-        { id: 'JD', rank: 11, value: 10, suit: 'D', image: "url('images/Card_Diamond_Jack.jpg')" },
-        { id: 'QD', rank: 12, value: 10, suit: 'D', image: "url('images/Card_Diamond_Queen.jpg')" },
-        { id: 'KD', rank: 13, value: 10, suit: 'D', image: "url('images/Card_Diamond_King.jpg')" },
-        { id: 'AC', rank: 1, value: 1, suit: 'C', image: "url('images/Card_Club_Ace.jpg')" },
-        { id: '2C', rank: 2, value: 2, suit: 'C', image: "url('images/Card_Club_2.jpg')" },
-        { id: '3C', rank: 3, value: 3, suit: 'C', image: "url('images/Card_Club_3.jpg')" },
-        { id: '4C', rank: 4, value: 4, suit: 'C', image: "url('images/Card_Club_4.jpg')" },
-        { id: '5C', rank: 5, value: 5, suit: 'C', image: "url('images/Card_Club_5.jpg')" },
-        { id: '6C', rank: 6, value: 6, suit: 'C', image: "url('images/Card_Club_6.jpg')" },
-        { id: '7C', rank: 7, value: 7, suit: 'C', image: "url('images/Card_Club_7.jpg')" },
-        { id: '8C', rank: 8, value: 8, suit: 'C', image: "url('images/Card_Club_8.jpg')" },
-        { id: '9C', rank: 9, value: 9, suit: 'C', image: "url('images/Card_Club_9.jpg')" },
-        { id: 'TC', rank: 10, value: 10, suit: 'C', image: "url('images/Card_Club_10.jpg')" },
-        { id: 'JC', rank: 11, value: 10, suit: 'C', image: "url('images/Card_Club_Jack.jpg')" },
-        { id: 'QC', rank: 12, value: 10, suit: 'C', image: "url('images/Card_Club_Queen.jpg')" },
-        { id: 'KC', rank: 13, value: 10, suit: 'C', image: "url('images/Card_Club_King.jpg')" },
-        { id: 'AH', rank: 1, value: 1, suit: 'H', image: "url('images/Card_Heart_Ace.jpg')" },
-        { id: '2H', rank: 2, value: 2, suit: 'H', image: "url('images/Card_Heart_2.jpg')" },
-        { id: '3H', rank: 3, value: 3, suit: 'H', image: "url('images/Card_Heart_3.jpg')" },
-        { id: '4H', rank: 4, value: 4, suit: 'H', image: "url('images/Card_Heart_4.jpg')" },
-        { id: '5H', rank: 5, value: 5, suit: 'H', image: "url('images/Card_Heart_5.jpg')" },
-        { id: '6H', rank: 6, value: 6, suit: 'H', image: "url('images/Card_Heart_6.jpg')" },
-        { id: '7H', rank: 7, value: 7, suit: 'H', image: "url('images/Card_Heart_7.jpg')" },
-        { id: '8H', rank: 8, value: 8, suit: 'H', image: "url('images/Card_Heart_8.jpg')" },
-        { id: '9H', rank: 9, value: 9, suit: 'H', image: "url('images/Card_Heart_9.jpg')" },
-        { id: 'TH', rank: 10, value: 10, suit: 'H', image: "url('images/Card_Heart_10.jpg')" },
-        { id: 'JH', rank: 11, value: 10, suit: 'H', image: "url('images/Card_Heart_Jack.jpg')" },
-        { id: 'QH', rank: 12, value: 10, suit: 'H', image: "url('images/Card_Heart_Queen.jpg')" },
-        { id: 'KH', rank: 13, value: 10, suit: 'H', image: "url('images/Card_Heart_King.jpg')" }
+        { id: 'AS', rank: 1, value: 1, suit: 'S', image: "url('shared/images/Card_Spade_Ace.jpg')" },
+        { id: '2S', rank: 2, value: 2, suit: 'S', image: "url('shared/images/Card_Spade_2.jpg')" },
+        { id: '3S', rank: 3, value: 3, suit: 'S', image: "url('shared/images/Card_Spade_3.jpg')" },
+        { id: '4S', rank: 4, value: 4, suit: 'S', image: "url('shared/images/Card_Spade_4.jpg')" },
+        { id: '5S', rank: 5, value: 5, suit: 'S', image: "url('shared/images/Card_Spade_5.jpg')" },
+        { id: '6S', rank: 6, value: 6, suit: 'S', image: "url('shared/images/Card_Spade_6.jpg')" },
+        { id: '7S', rank: 7, value: 7, suit: 'S', image: "url('shared/images/Card_Spade_7.jpg')" },
+        { id: '8S', rank: 8, value: 8, suit: 'S', image: "url('shared/images/Card_Spade_8.jpg')" },
+        { id: '9S', rank: 9, value: 9, suit: 'S', image: "url('shared/images/Card_Spade_9.jpg')" },
+        { id: 'TS', rank: 10, value: 10, suit: 'S', image: "url('shared/images/Card_Spade_10.jpg')" },
+        { id: 'JS', rank: 11, value: 10, suit: 'S', image: "url('shared/images/Card_Spade_Jack.jpg')" },
+        { id: 'QS', rank: 12, value: 10, suit: 'S', image: "url('shared/images/Card_Spade_Queen.jpg')" },
+        { id: 'KS', rank: 13, value: 10, suit: 'S', image: "url('shared/images/Card_Spade_King.jpg')" },
+        { id: 'AD', rank: 1, value: 1, suit: 'D', image: "url('shared/images/Card_Diamond_Ace.jpg')" },
+        { id: '2D', rank: 2, value: 2, suit: 'D', image: "url('shared/images/Card_Diamond_2.jpg')" },
+        { id: '3D', rank: 3, value: 3, suit: 'D', image: "url('shared/images/Card_Diamond_3.jpg')" },
+        { id: '4D', rank: 4, value: 4, suit: 'D', image: "url('shared/images/Card_Diamond_4.jpg')" },
+        { id: '5D', rank: 5, value: 5, suit: 'D', image: "url('shared/images/Card_Diamond_5.jpg')" },
+        { id: '6D', rank: 6, value: 6, suit: 'D', image: "url('shared/images/Card_Diamond_6.jpg')" },
+        { id: '7D', rank: 7, value: 7, suit: 'D', image: "url('shared/images/Card_Diamond_7.jpg')" },
+        { id: '8D', rank: 8, value: 8, suit: 'D', image: "url('shared/images/Card_Diamond_8.jpg')" },
+        { id: '9D', rank: 9, value: 9, suit: 'D', image: "url('shared/images/Card_Diamond_9.jpg')" },
+        { id: 'TD', rank: 10, value: 10, suit: 'D', image: "url('shared/images/Card_Diamond_10.jpg')" },
+        { id: 'JD', rank: 11, value: 10, suit: 'D', image: "url('shared/images/Card_Diamond_Jack.jpg')" },
+        { id: 'QD', rank: 12, value: 10, suit: 'D', image: "url('shared/images/Card_Diamond_Queen.jpg')" },
+        { id: 'KD', rank: 13, value: 10, suit: 'D', image: "url('shared/images/Card_Diamond_King.jpg')" },
+        { id: 'AC', rank: 1, value: 1, suit: 'C', image: "url('shared/images/Card_Club_Ace.jpg')" },
+        { id: '2C', rank: 2, value: 2, suit: 'C', image: "url('shared/images/Card_Club_2.jpg')" },
+        { id: '3C', rank: 3, value: 3, suit: 'C', image: "url('shared/images/Card_Club_3.jpg')" },
+        { id: '4C', rank: 4, value: 4, suit: 'C', image: "url('shared/images/Card_Club_4.jpg')" },
+        { id: '5C', rank: 5, value: 5, suit: 'C', image: "url('shared/images/Card_Club_5.jpg')" },
+        { id: '6C', rank: 6, value: 6, suit: 'C', image: "url('shared/images/Card_Club_6.jpg')" },
+        { id: '7C', rank: 7, value: 7, suit: 'C', image: "url('shared/images/Card_Club_7.jpg')" },
+        { id: '8C', rank: 8, value: 8, suit: 'C', image: "url('shared/images/Card_Club_8.jpg')" },
+        { id: '9C', rank: 9, value: 9, suit: 'C', image: "url('shared/images/Card_Club_9.jpg')" },
+        { id: 'TC', rank: 10, value: 10, suit: 'C', image: "url('shared/images/Card_Club_10.jpg')" },
+        { id: 'JC', rank: 11, value: 10, suit: 'C', image: "url('shared/images/Card_Club_Jack.jpg')" },
+        { id: 'QC', rank: 12, value: 10, suit: 'C', image: "url('shared/images/Card_Club_Queen.jpg')" },
+        { id: 'KC', rank: 13, value: 10, suit: 'C', image: "url('shared/images/Card_Club_King.jpg')" },
+        { id: 'AH', rank: 1, value: 1, suit: 'H', image: "url('shared/images/Card_Heart_Ace.jpg')" },
+        { id: '2H', rank: 2, value: 2, suit: 'H', image: "url('shared/images/Card_Heart_2.jpg')" },
+        { id: '3H', rank: 3, value: 3, suit: 'H', image: "url('shared/images/Card_Heart_3.jpg')" },
+        { id: '4H', rank: 4, value: 4, suit: 'H', image: "url('shared/images/Card_Heart_4.jpg')" },
+        { id: '5H', rank: 5, value: 5, suit: 'H', image: "url('shared/images/Card_Heart_5.jpg')" },
+        { id: '6H', rank: 6, value: 6, suit: 'H', image: "url('shared/images/Card_Heart_6.jpg')" },
+        { id: '7H', rank: 7, value: 7, suit: 'H', image: "url('shared/images/Card_Heart_7.jpg')" },
+        { id: '8H', rank: 8, value: 8, suit: 'H', image: "url('shared/images/Card_Heart_8.jpg')" },
+        { id: '9H', rank: 9, value: 9, suit: 'H', image: "url('shared/images/Card_Heart_9.jpg')" },
+        { id: 'TH', rank: 10, value: 10, suit: 'H', image: "url('shared/images/Card_Heart_10.jpg')" },
+        { id: 'JH', rank: 11, value: 10, suit: 'H', image: "url('shared/images/Card_Heart_Jack.jpg')" },
+        { id: 'QH', rank: 12, value: 10, suit: 'H', image: "url('shared/images/Card_Heart_Queen.jpg')" },
+        { id: 'KH', rank: 13, value: 10, suit: 'H', image: "url('shared/images/Card_Heart_King.jpg')" }
     ];
 
     this.GetCards = function () {
@@ -145,7 +1316,7 @@ var Game = function () {
     front.className = "cardFront";
     flipContainer.appendChild(front);
 
-    var cardBackURI = "url('images/card_back_" + GetSetting('setting_card_color') + ".jpg')";
+    var cardBackURI = "url('shared/images/card_back_" + GetSetting('setting_card_color') + ".jpg')";
 
     for (var i = 0; i < cards.length; i++) {
         var newCard = cardElement.cloneNode(true);
@@ -501,9 +1672,9 @@ var Game = function () {
 
     function BumpCard(cardView) {
         cardView.addEventListener("animationend", function() {
-            cardView.classList.remove('bump');
+            cardView.classList.remove('cribbage_bump');
         });
-        cardView.classList.add('bump');
+        cardView.classList.add('cribbage_bump');
     }
 
     function TwistCard(cardView) {
@@ -573,23 +1744,23 @@ var Game = function () {
     }
 
     function GetDeckCardPosition() {
-        if (scoreboard.IsCompactLayout()) {
-            return [window.innerWidth * 0.15, 200];
+        if (scoreboard.isCompact) {
+            return [gameContainer.innerWidth * 0.15, 200];
         } else {
-            return [window.innerWidth * 0.15, 315];
+            return [gameContainer.innerWidth * 0.15, 315];
         }
     }
 
     function GetLeftLowCardPosition() {
-        return [window.innerWidth * 0.5 - 110, GetDeckCardPosition()[1]];
+        return [gameContainer.innerWidth * 0.5 - 110, GetDeckCardPosition()[1]];
     }
 
     function GetRightLowCardPosition() {
-        return [window.innerWidth * 0.5 + 110, GetDeckCardPosition()[1]];
+        return [gameContainer.innerWidth * 0.5 + 110, GetDeckCardPosition()[1]];
     }
 
     function GetDiscardRegionPosition() {
-        return [window.innerWidth * 0.5, GetDeckCardPosition()[1]];
+        return [gameContainer.innerWidth * 0.5, GetDeckCardPosition()[1]];
     }
 
     function GetCribWaitingPosition() {
@@ -604,7 +1775,7 @@ var Game = function () {
 
     function GetCribConfirmRegionPosition() {
         var position = GetDiscardRegionPosition();
-        if (scoreboard.IsCompactLayout()) {
+        if (scoreboard.isCompact) {
             return [position[0], position[1] + cardLoweredHeight * 0.5 + 10];
         } else {
             return [position[0] + cardLoweredWidth + 80, position[1]];
@@ -613,7 +1784,7 @@ var Game = function () {
 
     function GetPeggingFirstCardPosition() {
         var deckPosition = GetDeckCardPosition();
-        var left = window.innerWidth * 0.4;
+        var left = gameContainer.innerWidth * 0.4;
         if (left < deckPosition[0] + 130) {
             left = deckPosition[0] + 130;
         }
@@ -626,7 +1797,7 @@ var Game = function () {
         if (currentPeggingCards.length > 0) {
             left = left + 120;
         }
-        if (left + 100 > window.innerWidth) {
+        if (left + 100 > gameContainer.innerWidth) {
             return [nextCardPosition[0] + currentPeggingCards.length * peggingCardsOverlap + 40, nextCardPosition[1] + cardLoweredHeight * 0.5 + 35];
         } else {
             return [left, nextCardPosition[1]];
@@ -641,10 +1812,10 @@ var Game = function () {
     }
 
     function GetPeggingDeadPileFirstCardLeftPosition() {
-        var left = window.innerWidth * 0.75;
+        var left = gameContainer.innerWidth * 0.75;
         var peggingSpaceLeft = GetPeggingFirstCardPosition()[0] + 8 * peggingCardsOverlap + cardLoweredWidth * 0.5;
         if (left < peggingSpaceLeft) {
-            left = window.innerWidth - cardLoweredWidth * 0.22;
+            left = gameContainer.innerWidth - cardLoweredWidth * 0.22;
         }
         return left;
     }
@@ -655,10 +1826,10 @@ var Game = function () {
             if (isPreCrib) {
                 cardCount = 6;
             }
-            var left = (window.innerWidth - cardLoweredWidth * cardCount - handCardsMaxSpacing * (cardCount - 1)) * 0.5;
+            var left = (gameContainer.innerWidth - cardLoweredWidth * cardCount - handCardsMaxSpacing * (cardCount - 1)) * 0.5;
             if (left < 0) {
                 // We will have to overlap
-                var overlapSpacing = window.innerWidth / cardCount - cardLoweredWidth;
+                var overlapSpacing = gameContainer.innerWidth / cardCount - cardLoweredWidth;
                 left = cardIndex * (cardLoweredWidth + overlapSpacing);
                 currentPlayerHandCardSpacing = overlapSpacing;
             } else {
@@ -671,12 +1842,12 @@ var Game = function () {
             if (isPreCrib) {
                 cardCount = 6;
             }
-            var left = (window.innerWidth - cardLoweredWidth * cardCount - computerCardsMaxSpacing * (cardCount - 1)) * 0.5;
+            var left = (gameContainer.innerWidth - cardLoweredWidth * cardCount - computerCardsMaxSpacing * (cardCount - 1)) * 0.5;
             var leftMin = 200;
             var rightMin = cardLoweredWidth + 50;
             if (left < leftMin) {
                 // We will have to overlap
-                var overlapSpacing = (window.innerWidth - leftMin - rightMin) / cardCount - cardLoweredWidth;
+                var overlapSpacing = (gameContainer.innerWidth - leftMin - rightMin) / cardCount - cardLoweredWidth;
                 if (overlapSpacing < -100) {
                     overlapSpacing = -100;
                 }
@@ -691,7 +1862,7 @@ var Game = function () {
     }
 
     function GetComputerHandCountingPosition(index) {
-        if (scoreboard.IsCompactLayout()) {
+        if (scoreboard.isCompact) {
             var pos = GetHandCardPosition(false, false, index);
             return [pos[0], cardLoweredHeight * 0.75];
         } else {
@@ -715,49 +1886,49 @@ var Game = function () {
 
     function GetHandScoreViewPosition(isPlayersPoints) {
         if (isPlayersPoints) {
-            if (scoreboard.IsCompactLayout()) {
-                return [window.innerWidth * 0.5 - 100, 50];
+            if (scoreboard.isCompact) {
+                return [gameContainer.innerWidth * 0.5 - 100, 50];
             } else {
-                return [window.innerWidth * 0.5 - 100, window.innerHeight * 0.2];
+                return [gameContainer.innerWidth * 0.5 - 100, gameContainer.innerHeight * 0.2];
             }
         } else {
-            return [window.innerWidth * 0.5 - 100, window.innerHeight * 0.3];
+            return [gameContainer.innerWidth * 0.5 - 100, gameContainer.innerHeight * 0.3];
         }
     }
 
     function GetManualCountViewPosition() {
-        if (scoreboard.IsCompactLayout()) {
-            return [window.innerWidth * 0.5 - 100, 10];
+        if (scoreboard.isCompact) {
+            return [gameContainer.innerWidth * 0.5 - 100, 10];
         } else {
-            return [window.innerWidth * 0.5 - 100, 100];
+            return [gameContainer.innerWidth * 0.5 - 100, 100];
         }
     }
 
     function GetRecountButtonPosition(isPlayersPoints) {
         var deckPos = GetDeckCardPosition();
         if (isPlayersPoints) {
-            if (scoreboard.IsCompactLayout()) {
-                return [window.innerWidth * 0.5 + 120, deckPos[1] + 70];
+            if (scoreboard.isCompact) {
+                return [gameContainer.innerWidth * 0.5 + 120, deckPos[1] + 70];
             } else {
-                return [window.innerWidth * 0.5 + 120, deckPos[1]];
+                return [gameContainer.innerWidth * 0.5 + 120, deckPos[1]];
             }
         } else {
-            return [window.innerWidth * 0.5 + 120, deckPos[1] + 70];
+            return [gameContainer.innerWidth * 0.5 + 120, deckPos[1] + 70];
         }
     }
 
     function GetHintButtonPosition() {
         var checkPos = GetHandCardPosition(true, false, 0);
         var checkTop = checkPos[1] + cardLoweredHeight * 0.5 + 10;
-        if (checkTop + 25 > window.innerHeight - 90) {
+        if (checkTop + 25 > gameContainer.innerHeight - 90) {
             var pos = GetDeckCardPosition();
             return [pos[0] - 35, pos[1] + cardLoweredHeight * 0.5 + 10];
         } else {
-            return [window.innerWidth * 0.5 - 35, checkTop];
+            return [gameContainer.innerWidth * 0.5 - 35, checkTop];
         }
     }
 
-    Game.GetPeggingPointsForCards = function (peggingCards) {
+    CribbageGame.GetPeggingPointsForCards = function (peggingCards) {
         var peggingPoints = [];
         if (peggingCards.length <= 1) {
             return peggingPoints;
@@ -832,7 +2003,7 @@ var Game = function () {
         return peggingPoints;
     }
 
-    Game.GetPointsForHand = function (handCards, topCard, isCrib) {
+    CribbageGame.GetPointsForHand = function (handCards, topCard, isCrib) {
         var points = [];
         var allCards = handCards.concat(topCard);
         var subsets = [];
@@ -864,7 +2035,7 @@ var Game = function () {
         subsets.push([allCards[0], allCards[1], allCards[2], allCards[3], allCards[4]]);
 
         for (var i = 0; i < subsets.length; i++) {
-            var subsetPoints = Game.GetSubsetPoints(subsets[i]);
+            var subsetPoints = CribbageGame.GetSubsetPoints(subsets[i]);
             points = points.concat(subsetPoints);
         }
 
@@ -1004,7 +2175,7 @@ var Game = function () {
         return points;
     }
 
-    Game.GetSubsetPoints = function (subset) {
+    CribbageGame.GetSubsetPoints = function (subset) {
         var allPoints = [];
 
         // look for sum of 15
@@ -1155,7 +2326,7 @@ var Game = function () {
 
             var cardSpacing = 25.0;
             var pos = GetDeckCardPosition();
-            visibleLowCardOptionsCount = Math.floor((window.innerWidth - pos[0] - 144) / cardSpacing);
+            visibleLowCardOptionsCount = Math.floor((gameContainer.innerWidth - pos[0] - 144) / cardSpacing);
             if (visibleLowCardOptionsCount > 52) {
                 visibleLowCardOptionsCount = 52;
             }
@@ -1450,7 +2621,7 @@ var Game = function () {
             discardRegion.style.opacity = 1;
         }, 1400);
 
-        if (skillLevel === 'Easy' || GetSetting('setting_hints')) {
+        if (skillLevel === 'Easy' || game.settings.GetSetting('setting_hints')) {
             setTimeout(function () {
                 ShowHintButton();
             }, 1400);
@@ -1459,7 +2630,7 @@ var Game = function () {
         currentMoveStage = 'WaitingForUserToDiscardToCrib';
     }
 
-    function hideCribConfirmationButton() {
+    this.hideCribConfirmationButton = function() {
         var confirmCribRegion = document.getElementById('confirm_crib_region');
         with (confirmCribRegion.style) {
             transition = "0.5s linear";
@@ -1502,7 +2673,7 @@ var Game = function () {
             }
 
             if (crib.length != 2) {
-                hideCribConfirmationButton();
+                game.hideCribConfirmationButton();
             }
 
         } else {
@@ -1694,14 +2865,14 @@ var Game = function () {
                 suboptimalPlay.optimalCards.push(optimalStats[0][1]);
 
 
-                if (GetSetting('setting_warn_suboptimal')) {
+                if (this.settings.GetSetting('setting_warn_suboptimal')) {
                     ShowSuboptimalWarning(suboptimalPlay);
                     return;
                 } else {
                     suboptimalPlays.push(suboptimalPlay);
                 }
             }
-            finishCribConfirmation();
+            this.finishCribConfirmation();
         }
     }
 
@@ -1739,7 +2910,7 @@ var Game = function () {
         visibleMenuCards.push('SuboptimalWarning');
     }
 
-    function HideSuboptimalWarning() {
+    this.HideSuboptimalWarning = function() {
         if (currentSuboptimalPlay.isDiscard) {
             currentMoveStage = "WaitingForUserToDiscardToCrib";
         } else {
@@ -1756,18 +2927,18 @@ var Game = function () {
     }
 
     this.SuboptimalWarningTryAgainClick = function () {
-        HideSuboptimalWarning();
+        this.HideSuboptimalWarning();
         if (!currentSuboptimalPlay.isDiscard) {
             returnCardViewToHandPosition(false, currentSuboptimalPlay.playedCards[0].cardView);
         }
     }
 
     this.SuboptimalWarningShowAllScoresClick = function () {
-        ShowAllPlaysForSuboptimalPlay(currentSuboptimalPlay);
+        this.ShowAllPlaysForSuboptimalPlay(currentSuboptimalPlay);
     }
 
     this.SuboptimalWarningHintClick = function () {
-        HideSuboptimalWarning();
+        this.HideSuboptimalWarning();
         if (!currentSuboptimalPlay.isDiscard) {
             returnCardViewToHandPosition(false, currentSuboptimalPlay.playedCards[0].cardView);
         }
@@ -1777,11 +2948,11 @@ var Game = function () {
     }
 
     this.SuboptimalWarningPlayAnywaysClick = function () {
-        HideSuboptimalWarning();
+        this.HideSuboptimalWarning();
         suboptimalPlays.push(currentSuboptimalPlay);
         if (currentSuboptimalPlay.isDiscard) {
             setTimeout(function () {
-                finishCribConfirmation();
+                game.finishCribConfirmation();
             }, 200);
         } else {
             setTimeout(function () {
@@ -1790,9 +2961,9 @@ var Game = function () {
         }
     }
 
-    function finishCribConfirmation() {
+    this.finishCribConfirmation = function() {
         currentMoveStage = 'AnimatingComputerDiscardingToCrib';
-        hideCribConfirmationButton();
+        this.hideCribConfirmationButton();
         HideHintButton();
 
         // Remove the null cards from the player hand
@@ -1977,7 +3148,7 @@ var Game = function () {
             setTimeout(function () {
                 PlayNextPeggingCardForComputer();
                 setTimeout(function () {
-                    if (skillLevel === 'Easy' || GetSetting('setting_hints')) {
+                    if (skillLevel === 'Easy' || game.settings.GetSetting('setting_hints')) {
                         ShowHintButton();
                     }
                     ShowPeggingPrompt("2s");
@@ -1985,7 +3156,7 @@ var Game = function () {
                 }, 500);
             }, pointsShowDelay + 700);
         } else {
-            if (skillLevel === 'Easy' || GetSetting('setting_hints')) {
+            if (skillLevel === 'Easy' || game.settings.GetSetting('setting_hints')) {
                 ShowHintButton();
             }
             ShowPeggingPrompt("1.7s");
@@ -2108,7 +3279,7 @@ var Game = function () {
                     var testPeggingCards = [];
                     testPeggingCards = testPeggingCards.concat(currentPeggingCards);
                     testPeggingCards.push(currentDraggedCardView.card);
-                    var testPoints = Game.GetPeggingPointsForCards(testPeggingCards);
+                    var testPoints = CribbageGame.GetPeggingPointsForCards(testPeggingCards);
                     var curPlayScore = 0;
                     for (var i = 0; i < testPoints.length; i++) {
                         curPlayScore = curPlayScore + testPoints[i].points;
@@ -2129,7 +3300,7 @@ var Game = function () {
                         suboptimalPlay.optimalCards = [];
                         suboptimalPlay.optimalCards.push(optimalStats[0]);
 
-                        if (GetSetting('setting_warn_suboptimal')) {
+                        if (game.settings.GetSetting('setting_warn_suboptimal')) {
                             ShowSuboptimalWarning(suboptimalPlay);
                             return;
                         } else {
@@ -2329,7 +3500,7 @@ var Game = function () {
         for (var i = 0; i < playersHand.length; i++) {
             if (playersHand[i] !== null && playersHand[i].value + currentPeggingCount <= 31) {
                 // There is at least one valid play
-                if (skillLevel === 'Easy' || GetSetting('setting_hints')) {
+                if (skillLevel === 'Easy' || game.settings.GetSetting('setting_hints')) {
                     ShowHintButton();
                 }
                 ShowPeggingPrompt("2s");
@@ -2345,7 +3516,7 @@ var Game = function () {
         var playerSaysGoMessage = document.getElementById('player_says_go');
         playerSaysGoMessage.style.transition = "none";
         playerSaysGoMessage.style.opacity = 0;
-        playerSaysGoMessage.positionLeftFunction = "window.innerWidth*0.5 - 115*0.5 + 'px'";
+        playerSaysGoMessage.positionLeftFunction = "gameContainer.innerWidth*0.5 - 115*0.5 + 'px'";
         playerSaysGoMessage.positionTopFunction = "GetHandCardPosition(true, false, 2)[1] - 65*0.5 + 'px'";
         playerSaysGoMessage.style.left = eval(playerSaysGoMessage.positionLeftFunction);
         playerSaysGoMessage.style.top = eval(playerSaysGoMessage.positionTopFunction);
@@ -2398,7 +3569,7 @@ var Game = function () {
         var computerSaysGoMessage = document.getElementById('computer_says_go');
         computerSaysGoMessage.style.transition = "none";
         computerSaysGoMessage.style.opacity = 0;
-        computerSaysGoMessage.positionLeftFunction = "window.innerWidth*0.5 - 115*0.5 + 'px'";
+        computerSaysGoMessage.positionLeftFunction = "gameContainer.innerWidth*0.5 - 115*0.5 + 'px'";
         computerSaysGoMessage.positionTopFunction = "GetHandCardPosition(false, false, 2)[1] + 15 + 'px'";
         computerSaysGoMessage.style.left = eval(computerSaysGoMessage.positionLeftFunction);
         computerSaysGoMessage.style.top = eval(computerSaysGoMessage.positionTopFunction);
@@ -2418,7 +3589,7 @@ var Game = function () {
     }
 
     function GetPeggingPointsLastPlay() {
-        return Game.GetPeggingPointsForCards(currentPeggingCards);
+        return CribbageGame.GetPeggingPointsForCards(currentPeggingCards);
     }
 
     function PlayNextPeggingCardForComputer() {
@@ -2493,11 +3664,11 @@ var Game = function () {
         playerPeggingPointsTotal = playerPeggingPointsTotal + playerPeggingPointsThisRound;
 
         var setting = 'stat_pegging_count_' + skillLevel;
-        var settingVal = GetStatistic(setting);
-        SetStatistic(setting, settingVal + 1);
+        var settingVal = game.settings.GetStatistic(setting);
+        game.settings.SetStatistic(setting, settingVal + 1);
         setting = 'stat_pegging_points_' + skillLevel;
-        settingVal = GetStatistic(setting);
-        SetStatistic(setting, settingVal + playerPeggingPointsThisRound);
+        settingVal = game.settings.GetStatistic(setting);
+        game.settings.SetStatistic(setting, settingVal + playerPeggingPointsThisRound);
     }
 
     function OnPeggingFinished() {
@@ -2561,7 +3732,7 @@ var Game = function () {
     }
 
     function CountPointsForPlayer() {
-        if (GetSetting('setting_manual_count_scores')) {
+        if (game.settings.GetSetting('setting_manual_count_scores')) {
             ManualCountHandForPlayer();
         } else {
             AutoCountHandForPlayer();
@@ -2581,7 +3752,7 @@ var Game = function () {
 
     function InitializeManualCountingOfCards(cards, isCrib) {
 
-        if (skillLevel === 'Easy' || GetSetting('setting_hints')) {
+        if (skillLevel === 'Easy' || game.settings.GetSetting('setting_hints')) {
             setTimeout(function () {
                 ShowHintButton();
             }, 1000);
@@ -2591,14 +3762,14 @@ var Game = function () {
         currentCountedManualPoints = [];
 
         var acceptButton = document.getElementById('ManualCountAcceptButton');
-        var mugginsEnabled = GetSetting('setting_muggins');
+        var mugginsEnabled = game.settings.GetSetting('setting_muggins');
         acceptButton.disabled = !mugginsEnabled;
         acceptButton.style.visibility = 'visible';
         document.getElementById('ManualPointConfirmButton').style.visibility = 'hidden';
         document.getElementById('ManualScoreBubblePoints').innerHTML = "0";
         document.getElementById('ManualPointsDesc').innerHTML = "";
         
-        manualScoringPointsAvailable = Game.GetPointsForHand(cards, topCard, isCrib);
+        manualScoringPointsAvailable = CribbageGame.GetPointsForHand(cards, topCard, isCrib);
         for (var i=0; i<manualScoringPointsAvailable.length; i++) {
             manualScoringPointsAvailable[i].pointsCounted = false;
         }
@@ -2633,7 +3804,7 @@ var Game = function () {
     }
 
     function UpdateEnabledStateOfManualCountingFinishedButton() {
-        var mugginsEnabled = GetSetting('setting_muggins');
+        var mugginsEnabled = game.settings.GetSetting('setting_muggins');
         var acceptButton = document.getElementById('ManualCountAcceptButton');
         if (mugginsEnabled) {
             acceptButton.disabled = false;
@@ -2774,22 +3945,22 @@ var Game = function () {
         if (isManuallyCountingTheCrib) {
             playerCribPointsTotal = playerCribPointsTotal + recordedScore;
             var setting = 'stat_cribs_count_' + skillLevel;
-            var settingVal = GetStatistic(setting);
-            SetStatistic(setting, settingVal + 1);
+            var settingVal = this.settings.GetStatistic(setting);
+            this.settings.SetStatistic(setting, settingVal + 1);
             setting = 'stat_cribs_points_' + skillLevel;
-            settingVal = GetStatistic(setting);
-            SetStatistic(setting, settingVal + recordedScore);
+            settingVal = this.settings.GetStatistic(setting);
+            this.settings.SetStatistic(setting, settingVal + recordedScore);
         } else {
             playerHandPointsTotal = playerHandPointsTotal + recordedScore;
             var setting = 'stat_hands_count_' + skillLevel;
-            var settingVal = GetStatistic(setting);
-            SetStatistic(setting, settingVal + 1);
+            var settingVal = this.settings.GetStatistic(setting);
+            this.settings.SetStatistic(setting, settingVal + 1);
             setting = 'stat_hands_points_' + skillLevel;
-            settingVal = GetStatistic(setting);
-            SetStatistic(setting, settingVal + recordedScore);
+            settingVal = this.settings.GetStatistic(setting);
+            this.settings.SetStatistic(setting, settingVal + recordedScore);
         }
 
-        if (GetSetting('setting_muggins') && !isGameOver()) {
+        if (this.settings.GetSetting('setting_muggins') && !isGameOver()) {
             mugginsPoints = [];
             var mugginsScore = 0;
             for (var i=0; i<manualScoringPointsAvailable.length; i++) {
@@ -2897,7 +4068,7 @@ var Game = function () {
     }
 
     function AutoCountHandForPlayer() {
-        var scoringPoints = Game.GetPointsForHand(playersHand, topCard, false);
+        var scoringPoints = CribbageGame.GetPointsForHand(playersHand, topCard, false);
 
         var recordHandScore = 0;
         for (var i = 0; i < scoringPoints.length; i++) {
@@ -2906,11 +4077,11 @@ var Game = function () {
 
         playerHandPointsTotal = playerHandPointsTotal + recordHandScore;
         var setting = 'stat_hands_count_' + skillLevel;
-        var settingVal = GetStatistic(setting);
-        SetStatistic(setting, settingVal + 1);
+        var settingVal = game.settings.GetStatistic(setting);
+        game.settings.SetStatistic(setting, settingVal + 1);
         setting = 'stat_hands_points_' + skillLevel;
-        settingVal = GetStatistic(setting);
-        SetStatistic(setting, settingVal + recordHandScore);
+        settingVal = game.settings.GetStatistic(setting);
+        game.settings.SetStatistic(setting, settingVal + recordHandScore);
 
         var delay = RegisterAndAnimateHandScores(scoringPoints, true, false, topCard);
         setTimeout(function () {
@@ -3071,7 +4242,7 @@ var Game = function () {
             totalScore = totalScore + points[i].points;
         }
 
-        if (GetSetting('setting_fast_count')) {
+        if (game.settings.GetSetting('setting_fast_count')) {
             if (isPlayersPoints) {
                 playerScore = playerScore + totalScore;
                 setTimeout(function () {
@@ -3161,7 +4332,7 @@ var Game = function () {
     }
 
     function CountPointsForComputer() {
-        var scoringPoints = Game.GetPointsForHand(computersHand, topCard, false);
+        var scoringPoints = CribbageGame.GetPointsForHand(computersHand, topCard, false);
         var recordHandScore = 0;
         for (var i = 0; i < scoringPoints.length; i++) {
             recordHandScore = recordHandScore + scoringPoints[i].points;
@@ -3169,7 +4340,7 @@ var Game = function () {
         computerHandPointsTotal = computerHandPointsTotal + recordHandScore;
 
         var moveCardsDelay = 200;
-        if (scoreboard.IsCompactLayout()) {
+        if (scoreboard.isCompact) {
             moveCardsDelay = 600;
         }
         // Slide all of the cards to their counting position
@@ -3343,7 +4514,7 @@ var Game = function () {
     }
 
     function CountCribPointsForPlayer() {
-        if (GetSetting('setting_manual_count_scores')) {
+        if (game.settings.GetSetting('setting_manual_count_scores')) {
             ManualCountCribForPlayer();
         } else {
             AutoCountCribForPlayer();
@@ -3356,7 +4527,7 @@ var Game = function () {
     }
 
     function AutoCountCribForPlayer() {
-        var scoringPoints = Game.GetPointsForHand(crib, topCard, true);
+        var scoringPoints = CribbageGame.GetPointsForHand(crib, topCard, true);
 
         var recordCribScore = 0;
         for (var i = 0; i < scoringPoints.length; i++) {
@@ -3365,11 +4536,11 @@ var Game = function () {
 
         playerCribPointsTotal = playerCribPointsTotal + recordCribScore;
         var setting = 'stat_cribs_count_' + skillLevel;
-        var settingVal = GetStatistic(setting);
-        SetStatistic(setting, settingVal + 1);
+        var settingVal = game.settings.GetStatistic(setting);
+        game.settings.SetStatistic(setting, settingVal + 1);
         setting = 'stat_cribs_points_' + skillLevel;
-        settingVal = GetStatistic(setting);
-        SetStatistic(setting, settingVal + recordCribScore);
+        settingVal = game.settings.GetStatistic(setting);
+        game.settings.SetStatistic(setting, settingVal + recordCribScore);
 
         var delay = RegisterAndAnimateHandScores(scoringPoints, true, true, topCard);
         setTimeout(function () {
@@ -3379,7 +4550,7 @@ var Game = function () {
     }
 
     function CountCribPointsForComputer() {
-        var scoringPoints = Game.GetPointsForHand(crib, topCard, true);
+        var scoringPoints = CribbageGame.GetPointsForHand(crib, topCard, true);
 
         var recordCribScore = 0;
         for (var i = 0; i < scoringPoints.length; i++) {
@@ -3461,7 +4632,7 @@ var Game = function () {
         var message = document.getElementById('no_hint_view');
         message.style.transition = "none";
         message.style.opacity = 0;
-        message.positionLeftFunction = "window.innerWidth*0.5 - 200*0.5 + 'px'";
+        message.positionLeftFunction = "gameContainer.innerWidth*0.5 - 200*0.5 + 'px'";
         message.positionTopFunction = "GetHandCardPosition(true, false, 2)[1] - 100*0.5 + 'px'";
         message.style.left = eval(message.positionLeftFunction);
         message.style.top = eval(message.positionTopFunction);
@@ -3513,7 +4684,7 @@ var Game = function () {
 
             // Show that all points are counted
             var allCounted = document.getElementById('allcounted');
-            allCounted.positionLeftFunction = "window.innerWidth*0.5 - 115*0.5 + 'px'";
+            allCounted.positionLeftFunction = "gameContainer.innerWidth*0.5 - 115*0.5 + 'px'";
             allCounted.positionTopFunction = "GetHandCardPosition(true, false, 2)[1] - 65*0.5 + 'px'";
             allCounted.style.left = eval(allCounted.positionLeftFunction);
             allCounted.style.top = eval(allCounted.positionTopFunction);
@@ -3549,17 +4720,17 @@ var Game = function () {
         // Increment the win statistics
         if (isPlayerWon()) {
             var setting = 'stat_wins_' + skillLevel;
-            var settingVal = GetStatistic(setting);
-            SetStatistic(setting, settingVal + 1);
+            var settingVal = game.settings.GetStatistic(setting);
+            game.settings.SetStatistic(setting, settingVal + 1);
             if (isSkunkGame()) {
                 setting = 'stat_skunks_' + skillLevel;
-                settingsVal = GetStatistic(setting);
-                SetStatistic(setting, settingsVal + 1);
+                settingsVal = game.settings.GetStatistic(setting);
+                game.settings.SetStatistic(setting, settingsVal + 1);
             }
         } else {
             var setting = 'stat_losses_' + skillLevel;
-            var settingVal = GetStatistic(setting);
-            SetStatistic(setting, settingVal + 1);
+            var settingVal = game.settings.GetStatistic(setting);
+            game.settings.SetStatistic(setting, settingVal + 1);
         }
 
         // Keep track of suboptimal plays history
@@ -3568,9 +4739,9 @@ var Game = function () {
             suboptimalErrorTotal = suboptimalErrorTotal + suboptimalPlays[i].optimalScore - suboptimalPlays[i].playedScore;
         }
         var setting = 'stat_suboptimal_history';
-        var settingVal = GetStatisticString(setting);
+        var settingVal = game.settings.GetStatisticString(setting);
         settingVal = settingVal + parseFloat(suboptimalErrorTotal).toFixed(1) + ",";
-        SetStatistic(setting, settingVal);
+        game.settings.SetStatistic(setting, settingVal);
 
         ShowGameOver();
 
@@ -3762,6 +4933,9 @@ var Game = function () {
 
     this.OnResizeWindow = function OnResizeWindow() {
 
+        gameContainer.innerWidth = window.innerWidth - codeContainerGutterRightPosition - 20;
+        gameContainer.style.width = gameContainer.innerWidth + 'px';
+        
         var ease = "0.6s ease-out";
 
         // Redraw the scoreboard
@@ -3801,5 +4975,841 @@ var Game = function () {
             view.style.left = eval(view.positionLeftFunction);
             view.style.top = eval(view.positionTopFunction);
         }
+    }
+
+    this.OnTerminateGame = function() {}
+    
+    //
+    // Menus
+    //
+    this.ShowStartAGameMenu = function() {
+        var menuName = visibleMenuCards[visibleMenuCards.length-1];
+        MenuCardPressDown(menuName);
+        MenuCardAppear("menu_start_a_game");
+    }
+    
+    this.menu_start_game_click = function(difficulty) {
+        game.StartAGame(difficulty);
+        while (visibleMenuCards.length > 0) {
+            var topMenu = visibleMenuCards.pop();
+            MenuCardPopUp(topMenu);
+            MenuCardDisappear(topMenu);
+        }
+        ShowMenuButton();
+    }
+    
+    this.ShowDifficultiesExplainedMenu = function()
+    {
+        var menuName = visibleMenuCards[visibleMenuCards.length-1];
+        MenuCardPressDown(menuName);
+        MenuCardAppear("menu_difficulties_explained");
+    }
+    
+    this.ShowSettingsMenu = function() {
+        this.InitializeSettingsView();
+        var menuName = visibleMenuCards[visibleMenuCards.length-1];
+        MenuCardPressDown(menuName);
+        MenuCardAppear("menu_settings");
+    }
+    
+    this.InitializeSettingsView = function() {
+        document.getElementById("setting_manually_count_scores_checkbox").checked = this.settings.GetSetting('setting_manual_count_scores');
+        document.getElementById("setting_muggins_checkbox").checked = this.settings.GetSetting('setting_muggins');
+        document.getElementById("setting_hints_checkbox").checked = this.settings.GetSetting('setting_hints');
+        document.getElementById("setting_warn_suboptimal_checkbox").checked = this.settings.GetSetting('setting_warn_suboptimal');
+        document.getElementById("setting_fast_count_checkbox").checked = this.settings.GetSetting('setting_fast_count');
+        
+        var board_color = GetSetting('setting_board_color');
+        var allElems = document.getElementsByName('settings_boardbackground_selector');
+        for (i = 0; i < allElems.length; i++) {
+            if (allElems[i].type == 'radio' && allElems[i].value == board_color) {
+                allElems[i].checked = true;
+            }
+        }
+        
+        var card_color = GetSetting('setting_card_color');
+        var allElems = document.getElementsByName('settings_card_color_selector');
+        for (i = 0; i < allElems.length; i++) {
+            if (allElems[i].type == 'radio' && allElems[i].value == card_color) {
+                allElems[i].checked = true;
+            }
+        }
+    }
+    
+    this.SettingManuallyCountScoresClicked = function(cb) {
+        this.settings.SetSetting('setting_manual_count_scores', cb.checked);
+    }
+    
+    this.SettingMugginsClicked = function(cb) {
+        this.settings.SetSetting('setting_muggins', cb.checked);
+    }
+    
+    this.SettingHintsClicked = function(cb) {
+        this.settings.SetSetting('setting_hints', cb.checked);
+    }
+    
+    this.SettingWarnSuboptimalClicked = function(cb) {
+        this.settings.SetSetting('setting_warn_suboptimal', cb.checked);
+    }
+    
+    this.SettingFastCountClicked = function(cb) {
+        this.settings.SetSetting('setting_fast_count', cb.checked);
+    }
+    
+    this.ShowStatisticsMenu = function() {
+        var menuName = visibleMenuCards[visibleMenuCards.length-1];
+        MenuCardPressDown(menuName);
+        this.InitializeStatisticsView();
+        MenuCardAppear("menu_statistics");
+    }
+    
+    this.InitializeStatisticsView = function() {
+    
+        var difficulties = ["Easy", "Standard", "Pro"];
+        var totalGamesPlayed = 0;
+        var totalWins = 0;
+        var totalLosses = 0;
+        var totalSkunks = 0;
+        for (var i=0; i<difficulties.length; i++) {
+            var curDifficulty = difficulties[i];
+            var wins = this.settings.GetStatistic('stat_wins_' + curDifficulty);
+            var losses = this.settings.GetStatistic('stat_losses_' + curDifficulty);
+            var skunks = this.settings.GetStatistic('stat_skunks_' + curDifficulty);
+            var gamesPlayed = wins + losses;
+            var gamesPlayedElement = document.getElementById('menu_stat_games_played_' + curDifficulty);
+            var winsElement = document.getElementById('menu_stat_wins_' + curDifficulty);
+            var lossesElement = document.getElementById('menu_stat_losses_' + curDifficulty);
+            var skunksElement = document.getElementById('menu_stat_skunks_' + curDifficulty);
+            var winPercentElement = document.getElementById('menu_stat_win_percent_' + curDifficulty);
+            if (gamesPlayed > 0) {
+                gamesPlayedElement.innerText = gamesPlayed;
+                winsElement.innerText = wins;
+                lossesElement.innerText = losses;
+                skunksElement.innerText = skunks;
+                winPercentElement.innerText = parseFloat(100*wins / gamesPlayed).toFixed(0) + "%";
+            } else {
+                gamesPlayedElement.innerText = "";
+                winsElement.innerText = "";
+                lossesElement.innerText = "";
+                skunksElement.innerText = "";
+                winPercentElement.innerText = "";
+            }
+            totalGamesPlayed = totalGamesPlayed + gamesPlayed;
+            totalWins = totalWins + wins;
+            totalLosses = totalLosses + losses;
+            totalSkunks = totalSkunks + skunks;
+        }
+        var gamesPlayedElement = document.getElementById('menu_stat_games_played_Total');
+        var winsElement = document.getElementById('menu_stat_wins_Total');
+        var lossesElement = document.getElementById('menu_stat_losses_Total');
+        var skunksElement = document.getElementById('menu_stat_skunks_Total');
+        var winPercentElement = document.getElementById('menu_stat_win_percent_Total');
+        if (totalGamesPlayed > 0) {
+            gamesPlayedElement.innerText = totalGamesPlayed;
+            winsElement.innerText = totalWins;
+            lossesElement.innerText = totalLosses;
+            skunksElement.innerText = totalSkunks;
+            winPercentElement.innerText = parseFloat(100*totalWins / totalGamesPlayed).toFixed(0) + "%";
+        } else {
+            gamesPlayedElement.innerText = "0";
+            winsElement.innerText = "0";
+            lossesElement.innerText = "0";
+            skunksElement.innerText = "0";
+            winPercentElement.innerText = "";
+        }
+    
+        var avgCategories = ['stat_pegging', 'stat_hands', 'stat_cribs'];
+        for (var i=0; i<avgCategories.length; i++) {
+            var curCategory = avgCategories[i];
+            var totalCount = 0;
+            var totalPoints = 0;
+            for (var j=0; j<difficulties.length; j++) {
+                var difficulty = difficulties[j];
+                var statName = curCategory + '_count_' + difficulty;
+                var peggingRoundsCount = this.settings.GetStatistic(statName);
+                totalCount = totalCount + peggingRoundsCount;
+                statName = curCategory + '_points_' + difficulty;
+                var peggingRoundsTotal = this.settings.GetStatistic(statName);
+                totalPoints = totalPoints + peggingRoundsTotal;
+                var element = document.getElementById('menu_' + curCategory + '_' + difficulty);
+                if (peggingRoundsCount == 0) {
+                    element.innerText = "";	
+                } else {
+                    element.innerText = parseFloat(peggingRoundsTotal / peggingRoundsCount).toFixed(1);
+                }	
+            }
+            var element = document.getElementById('menu_' + curCategory + '_' + 'Total');
+            if (totalCount == 0) {
+                element.innerText = "";
+            } else {
+                element.innerText = parseFloat(totalPoints / totalCount).toFixed(1);
+            }
+        }
+    }
+    
+    this.ResetStatisticsButtonClick = function() {
+        var r = confirm("Are you sure you want to reset your statistics?");
+        if (r != true) {
+            return;
+        }
+    
+        var difficulties = ['Easy', 'Standard', 'Pro'];
+        var statsToReset = [
+            'stat_pegging_count_',
+            'stat_pegging_points_',
+            'stat_hands_count_',
+            'stat_hands_points_',
+            'stat_cribs_count_',
+            'stat_cribs_points_',
+            'stat_wins_',
+            'stat_skunks_',
+            'stat_losses_',
+        ];
+        for (var i=0; i<statsToReset.length; i++) {
+            for (var j=0; j<difficulties.length; j++) {
+                var statName = statsToReset[i] + difficulties[j];
+                window.localStorage.removeItem(statName);
+            }
+        }
+        window.localStorage.removeItem('stat_suboptimal_history');
+        this.InitializeStatisticsView();
+    }
+    
+    this.ShowSuboptimalHistoryButtonClic = function() {
+        this.InitializeSubOptimalHistoryView();
+        var menuName = visibleMenuCards[visibleMenuCards.length-1];
+        MenuCardPressDown(menuName);
+        MenuCardAppear("menu_suboptimal_history");
+    }
+    
+    this.InitializeSubOptimalHistoryView = function() {
+        var historyString = this.settings.GetStatisticString('stat_suboptimal_history');
+        var historyItems = historyString.split(",");
+        var history = [];
+        for (var i=0; i<historyItems.length; i++) {
+            if (historyItems[i] !== "") {
+                history.push(parseFloat(historyItems[i]));
+            }
+        }
+        
+        var historyCanvas = document.getElementById('msoHistory');
+        historyCanvas.innerHTML = "";
+        var firstGameMessage = document.getElementById('msoNoHistory');
+        if (history.length == 0) {
+            firstGameMessage.style.visibility = 'visible';
+            return;
+        } else {
+            firstGameMessage.style.visibility = 'hidden';
+        }
+    
+        var maxError = 5;
+        for (var i=0; i<history.length; i++) {
+            if (history[i] > maxError) {
+                maxError = history[i];
+            }
+        }
+        maxError = Math.ceil(maxError*1.1);
+    
+        var graphWidth = 350;
+        var graphHeight = 270;
+        var graphPadding = [55,10,50,50]; // left, top right bottom
+        var plotRegionHeight = graphHeight - graphPadding[1] - graphPadding[3];
+        var plotRegionWidth = graphWidth - graphPadding[0] - graphPadding[2];
+        var linesCount =  maxError > 10 ? 10 : 5;
+        var linesErrorSpacing = Math.round(maxError / linesCount);
+        for (var curError=0; curError<=maxError; curError = curError + linesErrorSpacing) {
+            var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.classList.add('msoHLine');
+            var curY = graphHeight - graphPadding[3] - (curError/maxError)*plotRegionHeight;
+            line.setAttribute('x1', graphPadding[0] - 15);
+            line.setAttribute('y1', curY);
+            line.setAttribute('x2', graphPadding[0] + plotRegionWidth + 30);
+            line.setAttribute('y2', curY);
+            historyCanvas.appendChild(line);
+    
+            var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.classList.add('msoAxisText');
+            text.setAttribute('x', graphPadding[0] - 25);
+            text.setAttribute('y', curY);
+            text.innerHTML = curError;
+            historyCanvas.appendChild(text);
+        }
+    
+        var xAxisLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        xAxisLabel.classList.add('msoAxisText');
+        xAxisLabel.setAttribute('x', graphPadding[0] + plotRegionWidth/2);
+        xAxisLabel.setAttribute('y', graphHeight - 15);
+        xAxisLabel.innerHTML = "Games Played";
+        historyCanvas.appendChild(xAxisLabel);
+    
+        var yAxisLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        yAxisLabel.classList.add('msoAxisText');
+        yAxisLabel.setAttribute('x', -110);
+        yAxisLabel.setAttribute('y', 15);
+        yAxisLabel.style.transform = 'rotate(-90deg)';
+        yAxisLabel.innerHTML = "Suboptimal Plays (average missed points)";
+        historyCanvas.appendChild(yAxisLabel);
+    
+        if (history.length == 1) {
+            var curLeft = graphPadding[0] + plotRegionWidth/2;
+            var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.classList.add('msoHLine');
+            line.setAttribute('x1', curLeft);
+            line.setAttribute('y1', graphHeight - graphPadding[3]);
+            line.setAttribute('x2', curLeft);
+            line.setAttribute('y2', graphHeight - graphPadding[3] + 3);
+            historyCanvas.appendChild(line);
+    
+            var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.classList.add('msoAxisText');
+            text.setAttribute('x', curLeft);
+            text.setAttribute('y', graphHeight - graphPadding[3] + 15);
+            text.innerHTML = 1;
+            historyCanvas.appendChild(text);
+    
+            var dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            dot.setAttribute('cx', curLeft);
+            dot.setAttribute('cy', (graphHeight - graphPadding[3] - (history[0]/maxError)*plotRegionHeight));
+            dot.setAttribute('r', 3);
+            dot.setAttribute('fill', '#2196F3');
+            historyCanvas.appendChild(dot);
+    
+            var lastScore = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            lastScore.classList.add('msoLast');
+            lastScore.setAttribute('x', curLeft + 3);
+            lastScore.setAttribute('y', (graphHeight - graphPadding[3] - (history[0]/maxError)*plotRegionHeight));
+            lastScore.innerHTML = history[0];
+            historyCanvas.appendChild(lastScore);
+    
+        } else {
+            var data = "";
+            var curLeft = graphPadding[0];
+            var xSpacing = plotRegionWidth / (history.length - 1);
+            var skip = Math.round(history.length / 5);
+            if (skip < 1) {
+                skip = 1;
+            }
+            for (var i=0; i<history.length; i = i + skip) {
+                var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.classList.add('msoHLine');
+                line.setAttribute('x1', curLeft);
+                line.setAttribute('y1', graphHeight - graphPadding[3]);
+                line.setAttribute('x2', curLeft);
+                line.setAttribute('y2', graphHeight - graphPadding[3] + 3);
+                historyCanvas.appendChild(line);
+            
+                var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.classList.add('msoAxisText');
+                text.setAttribute('x', curLeft);
+                text.setAttribute('y', graphHeight - graphPadding[3] + 15);
+                text.innerHTML = i+1;
+                historyCanvas.appendChild(text);
+            
+                curLeft = curLeft + xSpacing*skip;
+            }
+        
+            curLeft = graphPadding[0];
+            for (var i=0; i<history.length; i++) {
+                data = data + curLeft + "," + (graphHeight - graphPadding[3] - (history[i]/maxError)*plotRegionHeight) + " ";
+                curLeft = curLeft + xSpacing;
+            }
+            var historyLine = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+            historyLine.classList.add('msoStroke');
+            historyLine.setAttribute('points', data);
+            historyCanvas.appendChild(historyLine);
+        
+            var lastValue = history[history.length-1];
+            var lastScore = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            lastScore.classList.add('msoLast');
+            lastScore.setAttribute('x', graphPadding[0] + xSpacing*(history.length-1) + 2);
+            lastScore.setAttribute('y', (graphHeight - graphPadding[3] - (history[history.length-1]/maxError)*plotRegionHeight));
+            lastScore.innerHTML = history[history.length-1];
+            historyCanvas.appendChild(lastScore);
+        }
+    }
+    
+    this.ShowDiscardAnalyzer = function() {
+        var menuName = visibleMenuCards[visibleMenuCards.length-1];
+        MenuCardPressDown(menuName);
+        this.InitializeDiscardAnalyzer();
+        MenuCardAppear("menu_discard_analyzer");	
+    }
+    
+    this.InitializeDiscardAnalyzer = function() {
+        
+        // Load up cards from the game or use a default starting hand
+        var mostRecent = game.GetMostRecentHandCards();
+        var mostRecentCards = mostRecent[0];
+        var mostRecentIsPlayersCrib = mostRecent[1];
+        if (mostRecentCards.length == 6) {
+            while (this.daSelectedCells.length > 0) {
+                var cellToRemove = this.daSelectedCells.shift();
+                cellToRemove.style.background = "black";
+            }
+            this.daSelectedCells = [];
+            this.discardAnalyzerIsPlayersCrib = mostRecentIsPlayersCrib;
+            for (var i=0; i<mostRecentCards.length; i++) {
+                var cell = document.getElementById('daCardCell_' + mostRecentCards[i].id);
+                cell.style.background = "#BB0000";
+                cell.card = mostRecentCards[i];
+                this.daSelectedCells.push(cell);
+            }	
+        }
+    
+        var cribCheckbox = document.getElementById('da_crib_checkbox');
+        var cribText = document.getElementById('daCribIndicatorText');
+        cribCheckbox.checked = !this.discardAnalyzerIsPlayersCrib;	
+        cribText.innerText = this.discardAnalyzerIsPlayersCrib ? "Your Crib" : "Opponent's Crib";	
+        
+        this.PrepareDiscardAnalyzerButtons();
+    }
+    
+    this.discardAnalyzerIsPlayersCrib = true;
+    this.daCribSwitched = function(cb) {
+        var el = document.getElementById('daCribIndicatorText');
+        if (cb.checked) {
+            this.discardAnalyzerIsPlayersCrib = false;
+            el.innerText = "Opponent's Crib";
+        } else {
+            this.discardAnalyzerIsPlayersCrib = true;
+            el.innerText = "Your Crib";
+        }
+        this.PrepareDiscardAnalyzerButtons();
+    }
+    
+    this.daSelectedCells = [];
+    
+    this.daCardCellClick = function(cell, cardString) {
+        if (this.daSelectedCells.indexOf(cell) != -1) {
+            cell.style.background = "black";
+            this.daSelectedCells.splice(this.daSelectedCells.indexOf(cell), 1);	
+        } else {
+            cell.style.background = "#BB0000";
+            cell.card = game.GetCardFromString(cardString);
+            this.daSelectedCells.push(cell);
+            while (this.daSelectedCells.length > 6) {
+                var cellToRemove = this.daSelectedCells.shift();
+                cellToRemove.style.background = "black";
+            }
+        }
+        this.PrepareDiscardAnalyzerButtons();
+    }
+    
+    this.currentOptimalDAHandCards = [];
+    this.currentOptimalDACribCards =[];
+    
+    this.PrepareDiscardAnalyzerButtons = function() {
+        var cards = [];
+        for (var i=0; i<this.daSelectedCells.length; i++) {
+            cards.push(this.daSelectedCells[i].card);
+        }
+        
+        cards.sort(function(a,b) { return a.rank - b.rank });
+        for (var i=0; i<cards.length; i++) {
+            var element = document.getElementById('daHandCard' + i);
+            element.style.background = cards[i].image;
+        }
+        for (var i=cards.length; i<6; i++) {
+            var element = document.getElementById('daHandCard' + i);
+            element.style.background = "black";
+        }
+        
+        var optimalButton = document.getElementById('daOptimalCell');
+        var allPlaysButton = document.getElementById('daAllPlaysCell');
+        var prompt = document.getElementById('daPrompt');
+        if (this.daSelectedCells.length == 6) {
+            var optimalStats = game.FindOptimalCribDiscards(cards, this.discardAnalyzerIsPlayersCrib);
+            this.currentOptimalDAHandCards = [];
+            for (var i=0; i<cards.length; i++) {
+                if (cards[i] !== optimalStats[0][0] && cards[i] !== optimalStats[0][1]) {
+                    this.currentOptimalDAHandCards.push(cards[i]);
+                }
+            }
+            this.currentOptimalDACribCards = optimalStats[0];
+            var optimalCardImage1 = document.getElementById('daOptimalCardView1');
+            var optimalCardImage2 = document.getElementById('daOptimalCardView2');
+            optimalCardImage1.style.background = optimalStats[0][0].image;
+            optimalCardImage2.style.background = optimalStats[0][1].image;
+            var optimalScoreText = document.getElementById('daOptimalScoreText');
+            optimalScoreText.innerHTML = "avg score: " + parseFloat(optimalStats[1]).toFixed(1) + " pts"
+    
+            optimalButton.style.transition = "0.3s ease-out";
+            optimalButton.style.transform = "";
+            optimalButton.style.opacity = 1;
+    
+            allPlaysButton.style.transition = "0.3s ease-out";
+            allPlaysButton.style.transform = "";
+            allPlaysButton.style.opacity = 1;
+    
+            prompt.innerHTML = "Find the optimal discards for a hand:";
+        } else {
+            optimalButton.style.transition = "0.3s ease-out";
+            optimalButton.style.transform = "translate(-100%,0%)";
+            optimalButton.style.opacity = 0;
+    
+            allPlaysButton.style.transition = "0.3s ease-out";
+            allPlaysButton.style.transform = "translate(100%,0%)";
+            allPlaysButton.style.opacity = 0;
+    
+            var cardsLeftToClick = 6 - this.daSelectedCells.length;
+            if (cardsLeftToClick == 1) {
+                prompt.innerHTML = "Click on 1 more card to find the optimal discards:";	
+            } else if (cardsLeftToClick == 6) {
+                prompt.innerHTML = "Click on 6 cards to find the optimal discards:";	
+            } else {
+                prompt.innerHTML = "Click on " + cardsLeftToClick + " cards to find the optimal discards:";
+            }
+        }
+    }
+    
+    this.daAllPlaysButtonClick = function() {
+        var cards = [];
+        for (var i=0; i<this.daSelectedCells.length; i++) {
+            cards.push(this.daSelectedCells[i].card);
+        }
+        this.InitializeAllPlays(cards, null, this.discardAnalyzerIsPlayersCrib);
+        var menuName = visibleMenuCards[visibleMenuCards.length-1];
+        MenuCardPressDown(menuName);
+        MenuCardAppear("menu_allplays");
+    }
+    
+    this.ShowAllPlaysForSuboptimalPlayView = function(suboptimalPlayView) {
+        if (suboptimalPlayView.suboptimalPlay == null) {
+            return;
+        }
+        this.ShowAllPlaysForSuboptimalPlay(suboptimalPlayView.suboptimalPlay);
+    }
+    
+    this.ShowAllPlaysForSuboptimalPlay = function(suboptimalPlay) {
+        this.InitializeAllPlays(suboptimalPlay.situationCards, suboptimalPlay.playedCards, suboptimalPlay.isPlayersCrib);
+        var menuName = visibleMenuCards[visibleMenuCards.length-1];
+        MenuCardPressDown(menuName);
+        MenuCardAppear("menu_allplays");
+    }
+    
+    this.InitializeAllPlays = function(cards, playedCards, isCribScorePositive) {
+        var allPlaysListView = document.getElementById('mallplist');
+        allPlaysListView.innerHTML = "";
+    
+        var allPlays = [];
+        for (var i=0; i<cards.length; i++) {
+            for (var j=i+1; j<cards.length; j++) {
+                trialCards = [];
+                cribCards = [];
+                for (var n=0; n<cards.length; n++) {
+                    if (n!=i && n!=j) {
+                        trialCards.push(cards[n]);
+                    } else {
+                        cribCards.push(cards[n]);
+                    }
+                }
+    
+                var scoreStats = game.GetScoreStatsForPossibleDiscards(trialCards, cribCards, isCribScorePositive);
+                var minScore = scoreStats[0];
+                var avgScore = scoreStats[1];
+                var maxScore = scoreStats[2];
+    
+                var play = {};
+                play.isPlayersCrib = isCribScorePositive;
+                play.cribCards = cribCards;
+                play.handCards = trialCards;
+                play.minScore = minScore;
+                play.maxScore = maxScore;
+                play.avgScore = avgScore;
+                allPlays.push(play);
+            }
+        }
+    
+        allPlays.sort(function(a,b) { return b.avgScore - a.avgScore;});
+        for (var i=0; i<allPlays.length; i++) {
+            var playView = document.getElementById('mallpcelltemplate').cloneNode(true);
+            playView.style.display = "block";
+            playView.play = allPlays[i];
+            playView.children[1].style.background = allPlays[i].cribCards[0].image;
+            playView.children[2].style.background = allPlays[i].cribCards[1].image;
+            playView.children[4].style.background = allPlays[i].handCards[0].image;
+            playView.children[5].style.background = allPlays[i].handCards[1].image;
+            playView.children[6].style.background = allPlays[i].handCards[2].image;
+            playView.children[7].style.background = allPlays[i].handCards[3].image;
+            playView.children[9].innerText = allPlays[i].minScore;
+            playView.children[11].innerText = allPlays[i].maxScore;
+            playView.children[12].children[3].innerText = parseFloat(allPlays[i].avgScore).toFixed(2);
+            
+            if (playedCards !== null && 
+                ((playView.play.cribCards[0] === playedCards[0] && playView.play.cribCards[1] === playedCards[1]) || 
+                (playView.play.cribCards[0] === playedCards[0] && playView.play.cribCards[1] === playedCards[1]))) {
+                    playView.style.background = "red";
+                    playView.children[13].style.display = "block";
+            }
+            allPlaysListView.appendChild(playView);
+        }
+        allPlaysListView.scrollTop = 0;
+    }
+    
+    this.mallcellClick = function(playView) {
+        this.InitializeHandAnalysis(playView.play.handCards, playView.play.cribCards, playView.play.isPlayersCrib);
+        var menuName = visibleMenuCards[visibleMenuCards.length-1];
+        MenuCardPressDown(menuName);
+        MenuCardAppear("menu_handAnalysis");
+    }
+    
+    this.daOptimalButtonClick = function() {
+        this.InitializeHandAnalysis(this.currentOptimalDAHandCards, this.currentOptimalDACribCards, this.discardAnalyzerIsPlayersCrib);
+        var menuName = visibleMenuCards[visibleMenuCards.length-1];
+        MenuCardPressDown(menuName);
+        MenuCardAppear("menu_handAnalysis");
+    }
+    
+    this.topCardsScrollView = null;
+    this.topCards = [];
+    this.histogramBars = [];
+    this.currentHighlightedBar = null;
+    
+    this.InitializeHandAnalysis = function(handCards, cribCards, isCribScorePositive) {
+        handCards.sort(function(a,b) { return a.rank -b.rank;});
+        for (var i=0; i<handCards.length; i++) {
+            document.getElementById('mhacard' + i).style.background = handCards[i].image;
+        }
+        cribCards.sort(function(a,b) {return a.rank - b.rank;});
+        document.getElementById('mhacard4').style.background = cribCards[0].image;
+        document.getElementById('mhacard5').style.background = cribCards[1].image;
+    
+        this.currentHighlightedBar = null;
+    
+        var scoreStats = game.GetScoreStatsForPossibleDiscards(handCards, cribCards, isCribScorePositive);
+        var minScore = scoreStats[0];
+        var maxScore = scoreStats[2];
+        document.getElementById('mhaMin').innerHTML = scoreStats[0];
+        document.getElementById('mhaAvg').innerHTML = parseFloat(scoreStats[1]).toFixed(2);
+        document.getElementById('mhaMax').innerHTML = scoreStats[2];
+    
+        document.getElementById('mhacribtitle').innerHTML = isCribScorePositive ? "Your crib" : "Opp. crib";
+    
+        this.topCards = [];
+        var deck = game.GetCards();
+        for (var i=0; i<deck.length; i++) {
+            var topCard = deck[i];
+            if (handCards.indexOf(topCard) === -1 && cribCards.indexOf(topCard) === -1) {
+                var allHandCards = handCards.concat(topCard);
+                var allCribCards = cribCards.concat(topCard);
+                var handPoints = game.GetScoreForCards(allHandCards, topCard, false);
+                var cribPoints = game.GetScoreForCards(allCribCards, topCard, false);
+                topCard.handPoints = handPoints;
+                topCard.cribPoints = isCribScorePositive ? cribPoints : -cribPoints;
+                topCard.totalPoints = handPoints + topCard.cribPoints;
+                this.topCards.push(topCard);
+            }
+        }
+        this.topCards.sort(function(a,b) {
+            if (a.totalPoints == b.totalPoints) {
+                return a.rank - b.rank;
+            }  else {
+                return a.totalPoints - b.totalPoints; 
+            }
+        });
+        var topCardsContainer = document.getElementById('mhatopcardsContainer');
+        topCardsContainer.innerHTML = "";
+        var edgeWidth = 220 - 21;
+        var fullWidth = 966 + edgeWidth + edgeWidth;
+        topCardsContainer.style.width = fullWidth + "px";
+        var curLeftIndex = 0;
+        var curScore = this.topCards[0].totalPoints;
+        var skip = false;
+        var histogramCounts = [];
+        var curHistogramCount = 0;
+        var maxHistogramCount = 0;
+        for (var i=0; i<this.topCards.length; i++) {
+            curHistogramCount = curHistogramCount + 1;
+            if (this.topCards[i].totalPoints != curScore) {
+                if (!skip) {
+                    var backgroundDiv = document.createElement("div");
+                    backgroundDiv.style.position = "absolute";
+                    backgroundDiv.style.top = "0px";
+                    backgroundDiv.style.left = edgeWidth + curLeftIndex*21 + "px";
+                    backgroundDiv.style.height = "80px";
+                    backgroundDiv.style.background = "blue";
+                    backgroundDiv.style.width = (i-curLeftIndex)*21 + "px";
+                    topCardsContainer.appendChild(backgroundDiv);
+                }
+    
+                histogramCounts[curScore] = curHistogramCount;
+                if (curHistogramCount > maxHistogramCount) {
+                    maxHistogramCount = curHistogramCount;
+                }
+                curHistogramCount = 0;
+                curLeftIndex = i;
+                curScore = this.topCards[i].totalPoints;
+                skip = !skip;
+            }
+        }
+        if (!skip) {
+            var backgroundDiv = document.createElement("div");
+            backgroundDiv.style.position = "absolute";
+            backgroundDiv.style.top = "0px";
+            backgroundDiv.style.left = edgeWidth + curLeftIndex*21 + "px";
+            backgroundDiv.style.height = "80px";
+            backgroundDiv.style.background = "blue";
+            backgroundDiv.style.width = (this.topCards.length-curLeftIndex)*21 + "px";
+            topCardsContainer.appendChild(backgroundDiv);
+        }
+        histogramCounts[curScore] = curHistogramCount;		
+    
+        // Draw the historgram bars
+        var histogramView = document.getElementById('mhaHistorgram');
+        histogramView.innerHTML = "";
+        var histWidth = 400;
+        var histHeight = 127;
+        var histPadding = [30, 3, 5, 30]; //left, top, right, bottom
+        var histBarWidth = (histWidth - histPadding[0] - histPadding[2])/(maxScore - minScore + 1);
+        
+        var xAxisLabel = document.createElement("div");
+        xAxisLabel.className = "histLabel";
+        xAxisLabel.innerHTML = "Score";
+        xAxisLabel.style.fontSize = "10pt";
+        xAxisLabel.style.width = histWidth + "px";
+        xAxisLabel.style.left = "0px";
+        xAxisLabel.style.top = histHeight - 17 + "px";
+        histogramView.appendChild(xAxisLabel);
+    
+        var yAxisLabel = document.createElement("div");
+        yAxisLabel.className = "histLabel";
+        yAxisLabel.innerHTML = "Probability";
+        yAxisLabel.style.fontSize = "10pt";
+        yAxisLabel.style.width = histHeight + "px";
+        yAxisLabel.style.left = "-50px";
+        yAxisLabel.style.top = "50px";
+        yAxisLabel.style.transform = "rotate(-90deg)";
+        histogramView.appendChild(yAxisLabel);
+    
+        this.histogramBars = [];
+        var curLeft = histPadding[0];
+        for (var i=minScore; i<=maxScore; i++) {
+            if (histogramCounts[i] === undefined) {
+                var barDiv = document.createElement("div");
+                barDiv.className = "histBar";
+                barDiv.style.left = curLeft + "px";
+                barDiv.style.width = histBarWidth - 1 + "px";
+                barDiv.style.height = "0px";
+                barDiv.style.top = histHeight - histPadding[3] + "px";
+                histogramView.appendChild(barDiv);
+            } else {
+                var barDiv = document.createElement("div");
+                barDiv.className = "histBar";
+                barDiv.style.left = curLeft + "px";
+                barDiv.style.width = histBarWidth - 1 + "px";
+                var curHeightPercent = histogramCounts[i]/maxHistogramCount;
+                var curHeight = curHeightPercent*(histHeight - histPadding[1] - histPadding[3]);
+                if (curHeight < 1) {
+                    barDiv.style.height = "1px";
+                    barDiv.style.top = histPadding[1] + (histHeight - histPadding[1] - histPadding[3]) - 1 + "px";
+                } else {
+                    barDiv.style.height = curHeight + "px";
+                    barDiv.style.top = histPadding[1] + (1-curHeightPercent)*(histHeight - histPadding[1] - histPadding[3]) + "px";	
+                }
+                this.histogramBars[i] = barDiv;
+                histogramView.appendChild(barDiv);
+            }
+            var xLabel = document.createElement("div");
+            xLabel.className = "histLabel";
+            xLabel.innerHTML = i;
+            xLabel.style.width = histBarWidth + "px";
+            xLabel.style.left = curLeft + "px";
+            xLabel.style.top = histHeight - histPadding[3] + "px";
+            histogramView.appendChild(xLabel);
+    
+            curLeft = curLeft + histBarWidth;
+        }
+    
+        var curLeft = edgeWidth;
+        for (var i=0; i<this.topCards.length; i++) {
+            var topCardView = document.createElement("div");
+            topCardView.className = "tinytopcard";
+            topCardView.style.background = this.topCards[i].image;
+            topCardView.style.left = curLeft + "px";
+            topCardsContainer.appendChild(topCardView);
+            curLeft = curLeft + 21;
+        }
+        this.topCardsScrollView = document.getElementById('mhatopcards');
+        this.topCardsScrollView.scrollLeft = 23*21;
+        this.OnTopCardScroll();
+    }
+    
+    this.OnTopCardScroll = function() {
+        if (this.topCardsScrollView != null) {
+            var cardIndex = Math.round(this.topCardsScrollView.scrollLeft/21);
+            var topCard = this.topCards[cardIndex];
+            var totalPoints = topCard.totalPoints;
+            document.getElementById('mhatotalScore').innerHTML = "= " + totalPoints + " points";
+            if (topCard.cribPoints == 0) {
+                document.getElementById('mhacribpoints').innerHTML = "";
+            } else if (topCard.cribPoints > 0) {
+                document.getElementById('mhacribpoints').innerHTML = "+" + topCard.cribPoints + " pts";
+            } else {
+                document.getElementById('mhacribpoints').innerHTML = topCard.cribPoints + " pts";
+            }
+    
+            if (this.currentHighlightedBar !== null) {
+                this.currentHighlightedBar.style.background = "#2196F3";
+            }
+            this.currentHighlightedBar = this.histogramBars[totalPoints]
+            this.currentHighlightedBar.style.background = "white";
+        }
+    }
+    
+    this.curTutorialIndex = 0;
+    
+    this.ShowTutorialMenu = function() {
+        var scrollView = document.getElementById('mtContainer');
+        scrollView.scrollLeft = 0;
+        this.curTutorialIndex = 0;
+        document.getElementById('mtDecButton').style.visibility = 'hidden';
+        var menuName = visibleMenuCards[visibleMenuCards.length-1];
+        MenuCardPressDown(menuName);
+        MenuCardAppear("menu_tutorial");
+    }
+    
+    this.IncrementTutorial = function() {
+        if (this.curTutorialIndex < 6) {
+            this.curTutorialIndex++;
+            var scrollView = document.getElementById('mtContainer');
+            scrollView.scrollLeft = this.curTutorialIndex*400;
+            document.getElementById('mtDecButton').style.visibility = 'visible';
+            if (this.curTutorialIndex === 6) {
+                document.getElementById('mtIncButton').style.visibility = 'hidden';
+            }
+        }
+    }
+    
+    this.DecrementTutorial = function() {
+        if (this.curTutorialIndex > 0) {
+            this.curTutorialIndex--;
+            var scrollView = document.getElementById('mtContainer');
+            scrollView.scrollLeft = this.curTutorialIndex*400;
+            document.getElementById('mtIncButton').style.visibility = 'visible';
+            if (this.curTutorialIndex === 0) {
+                document.getElementById('mtDecButton').style.visibility = 'hidden';
+            }
+        }
+    }
+    
+    this.GameOverClosedClick = function() {
+        game.ReturnAllCardsToDeck();
+        visibleMenuCards.pop();
+        var elem = document.getElementById('GameOverView');
+        with(elem.style) {
+            WebkitTransition = MozTransition = OTransition = msTransition = "0.4s ease-in";
+            top = "0%";
+            opacity = 0;
+        }
+        setTimeout(function() {
+            elem.style.visibility = 'hidden';
+    
+            // Show the close button
+            var el = document.getElementById('menu_main_close_button');
+            with(el.style) {
+                display = 'none';
+            }
+            ShowMainMenu();
+        }, 500);
     }
 }
