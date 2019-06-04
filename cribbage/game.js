@@ -5175,7 +5175,7 @@ var CribbageGame = function () {
         this.InitializeStatisticsView();
     }
     
-    this.ShowSuboptimalHistoryButtonClic = function() {
+    this.ShowSuboptimalHistoryButtonClick = function() {
         this.InitializeSubOptimalHistoryView();
         var menuName = visibleMenuCards[visibleMenuCards.length-1];
         MenuCardPressDown(menuName);
