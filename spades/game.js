@@ -561,7 +561,7 @@ var SpadesGame = function () {
                 if (currentDraggedCardView.offsetTop < autoPlayBoundaryY) {
                     game.DropCardInTrickPile();
                 } else {
-                    AnimatePlayerHandCardsIntoPosition('South', "0.3s");
+                    AnimatePlayerHandCardsIntoPosition('South', "0.3s", true);
                 }
             }
         }
@@ -603,7 +603,7 @@ var SpadesGame = function () {
 
     var isIE = detectIE();
 
-    function flipUpCard(cardView) {
+    function flipUpCard(cardView, animate) {
         if (cardView.isFlippedUp) {
             return;
         }
@@ -614,7 +614,7 @@ var SpadesGame = function () {
         var cardShadow = flipContainer.children[0];
         var cardBack = flipContainer.children[1];
         var cardFront = flipContainer.children[2];
-        var ease = "0.7s ease-out";
+        var ease = animate ? "0.7s ease-out" : "none";
         flipContainer.style.transition = ease;
         cardShadow.style.transition = ease;
         cardBack.style.transition = ease;
@@ -622,21 +622,36 @@ var SpadesGame = function () {
         raiseContainer.style.transition = ease;
         raiseContainer.style.transform = "scale(1.15)";
         
-        if (isIE) {
-            cardFront.style.transform = "translate3d(0px,0px,1px) perspective(500px) rotateY(0deg)";
-            cardBack.style.transform = "translate3d(0px,0px,1px) perspective(500px) rotateY(-180deg)";
-            cardShadow.style.transform = "translate3d(20px,20px,0px) perspective(500px) rotateY(0deg)";
-            setTimeout(function () {
+        if (animate) {
+            if (isIE) {
+                cardFront.style.transform = "translate3d(0px,0px,1px) perspective(500px) rotateY(0deg)";
+                cardBack.style.transform = "translate3d(0px,0px,1px) perspective(500px) rotateY(-180deg)";
+                cardShadow.style.transform = "translate3d(20px,20px,0px) perspective(500px) rotateY(0deg)";
+                setTimeout(function () {
+                    raiseContainer.style.transform = "scale(1)";
+                    cardShadow.style.transform = "translate3d(0px,0px,0px) perspective(500px) rotateY(0deg)";
+                }, 400);
+            } else {
+                flipContainer.style.transform = "perspective(500px) rotateY(180deg)";
+                cardShadow.style.transform = "translate3d(-20px,20px,0px)";
+                setTimeout(function () {
+                    raiseContainer.style.transform = "scale(1)";
+                    cardShadow.style.transform = "translate3d(0px,0px,0px)";
+                }, 400);
+            }
+        } else {
+            if (isIE) {
+                cardFront.style.transform = "translate3d(0px,0px,1px) perspective(500px) rotateY(0deg)";
+                cardBack.style.transform = "translate3d(0px,0px,1px) perspective(500px) rotateY(-180deg)";
+                cardShadow.style.transform = "translate3d(20px,20px,0px) perspective(500px) rotateY(0deg)";
                 raiseContainer.style.transform = "scale(1)";
                 cardShadow.style.transform = "translate3d(0px,0px,0px) perspective(500px) rotateY(0deg)";
-            }, 400);
-        } else {
-            flipContainer.style.transform = "perspective(500px) rotateY(180deg)";
-            cardShadow.style.transform = "translate3d(-20px,20px,0px)";
-            setTimeout(function () {
+            } else {
+                flipContainer.style.transform = "perspective(500px) rotateY(180deg)";
+                cardShadow.style.transform = "translate3d(-20px,20px,0px)";
                 raiseContainer.style.transform = "scale(1)";
                 cardShadow.style.transform = "translate3d(0px,0px,0px)";
-            }, 400);
+            }
         }
     }
 
@@ -789,6 +804,24 @@ var SpadesGame = function () {
         cardView.classList.add('shake');
     }
 
+    function IndicateCustomDecisionCard(cardView) {
+        var raiseContainer = cardView.firstChild;
+        var flipContainer = raiseContainer.firstChild;
+        var cardFront = flipContainer.children[2];
+        var flashHighlight = cardFront.children[1];
+        flashHighlight.classList.add('highlightCard');
+        cardView.classList.add('slideUp');
+    }
+
+    function RemoveCustomDecisionIndicator(cardView) {
+        var raiseContainer = cardView.firstChild;
+        var flipContainer = raiseContainer.firstChild;
+        var cardFront = flipContainer.children[2];
+        var flashHighlight = cardFront.children[1];
+        flashHighlight.classList.remove('highlightCard');
+        cardView.classList.remove('slideUp');
+    }
+
     function GetHandCardLocation(position, index, cardCount) {
         var cardWidthHalf = 115*0.5;
         var cardHeightHalf = 162*0.5;
@@ -811,8 +844,8 @@ var SpadesGame = function () {
                 curLeft = (firstLeft + lastLeft)*0.5;
                 return [curLeft-cardWidthHalf, curTop-cardHeightHalf, 90];
             case 'North':
-                var firstLeft = gameContainer.innerWidth*0.5 - 120;
-                var lastLeft = gameContainer.innerWidth*0.5 + 120;
+                var firstLeft = gameContainer.innerWidth*0.5 - 50;
+                var lastLeft = gameContainer.innerWidth*0.5 + 70;
                 var firstTop = -40;
                 var lastTop = -40;
                 var handWidth = lastLeft - firstLeft;
@@ -883,7 +916,7 @@ var SpadesGame = function () {
 
         this.players = [];
         var player = new SpadesPlayer();
-        player.Initialize('You', true, 'Pro', 'South');
+        player.Initialize('You', true, 'Custom', 'South');
         this.players.push(player);
         switch(difficulty)
         {
@@ -972,7 +1005,6 @@ var SpadesGame = function () {
         setTimeout(function () {
             for (var i=0; i<4; i++) {
                 var playerName = document.getElementById('player_name_' + game.players[i].playerPosition);
-                playerName.style.transition = "1s linear";
                 playerName.style.visibility = "visible";
                 playerName.style.opacity = 1;
                 var playerScore = document.getElementById('player_score_' + game.players[i].playerPosition);
@@ -1013,7 +1045,7 @@ var SpadesGame = function () {
             case 'West':
                 return [40,250];
             case 'North':
-                return [gameContainer.innerWidth*0.5 + 160,30];
+                return [gameContainer.innerWidth*0.5 + 150,30];
             default:
                 return [gameContainer.innerWidth-140,250];
         }
@@ -1042,7 +1074,7 @@ var SpadesGame = function () {
         }
     }
 
-    function AnimatePlayerHandCardsIntoPosition(playerPosition, duration) {
+    function AnimatePlayerHandCardsIntoPosition(playerPosition, duration, animateCardFlip) {
         var player;
         var flipUp = false;
         switch (playerPosition) {
@@ -1064,9 +1096,9 @@ var SpadesGame = function () {
         for (var i=0; i<player.cards.length; i++) {
             var cardView = player.cards[i].cardView;
             if (flipUp) {
-                flipUpCard(cardView);
+                flipUpCard(cardView, animateCardFlip);
             } else {
-                flipDownCard(cardView, true);
+                flipDownCard(cardView, animateCardFlip);
             }
             cardView.positionIndex = i;
             cardView.positionFunction = "GetHandCardLocation('" + playerPosition + "', " + i + ", " + player.cards.length + ")";
@@ -1078,6 +1110,8 @@ var SpadesGame = function () {
                 left = aposition[0] + "px";
                 top = aposition[1] + "px";
                 transform = 'rotate(' + aposition[2] + 'deg)';
+                visibility = "visible";
+                opacity = 1;
             }
         }
     }
@@ -1137,6 +1171,7 @@ var SpadesGame = function () {
                 top = startTop + "px";
                 zIndex = i + 1;
                 visibility = "visible";
+                opacity = 1;
             }
             cardView.positionFunction = "GetHandCardLocation('West', " + i + ", " + player.cards.length + ")";
             cardView.style.zIndex = i + 100;
@@ -1174,6 +1209,7 @@ var SpadesGame = function () {
                 top = startTop + "px";
                 zIndex = i + 1;
                 visibility = "visible";
+                opacity = 1;
             }
             cardView.positionFunction = "GetHandCardLocation('North', " + i + ", " + player.cards.length + ")";
             cardView.style.zIndex = i + 100;
@@ -1211,6 +1247,7 @@ var SpadesGame = function () {
                 top = startTop + "px";
                 zIndex = i + 1;
                 visibility = "visible";
+                opacity = 1;
             }
             cardView.positionFunction = "GetHandCardLocation('East', " + i + ", " + player.cards.length + ")";
             cardView.style.zIndex = i + 100;
@@ -1248,6 +1285,7 @@ var SpadesGame = function () {
                 top = startTop + "px";
                 zIndex = i + 1;
                 visibility = "visible";
+                opacity = 1;
             }
             cardView.positionFunction = "GetHandCardLocation('South', " + i + ", " + player.cards.length + ")";
             cardView.style.zIndex = i + 100;
@@ -1262,7 +1300,7 @@ var SpadesGame = function () {
                 cardView.style.left = position[0] + "px";
                 cardView.style.top = position[1] + "px";
                 cardView.style.transform = 'rotate(' + position[2] + 'deg)';
-                setTimeout(flipUpCard, i * 80, cardView);
+                setTimeout(flipUpCard, i * 80, cardView, true);
             }
             game.currentMoveStage = "ChoosingBids";
         }, 50);
@@ -1295,6 +1333,15 @@ var SpadesGame = function () {
         }
     }
 
+    var HideChooseBidView = function() {
+        var el = document.getElementById('choose_bid_view');
+        with(el.style) {
+            WebkitTransition = MozTransition = OTransition = msTransition = "0.4s ease-in";
+            opacity = 0;
+            pointerEvents = "none";
+        }
+    }
+
     this.OnChooseBidButtonPressed = function(bid) {
         var player = game.players[0];
         player.currentRoundBid = bid;
@@ -1303,12 +1350,7 @@ var SpadesGame = function () {
 
     this.OnPlayerFinishedChoosingBid = function(player) {
         if (player.isHuman) {
-            var el = document.getElementById('choose_bid_view');
-            with(el.style) {
-                WebkitTransition = MozTransition = OTransition = msTransition = "0.4s ease-in";
-                opacity = 0;
-                pointerEvents = "none";
-            }
+            HideChooseBidView();
         }
 
         bidsReceived = bidsReceived + 1;
@@ -1392,7 +1434,7 @@ var SpadesGame = function () {
         var optimalCards = [];
         if (this.currentMoveStage === 'ChoosingBids') {
             var player = this.players[0];
-            var bid = player.FindBestBid(game);
+            var bid = player.FindBestBid(game, 'Pro');
             var button = document.getElementById('choose_bid_button_' + bid);
             
             with (button.style) {
@@ -1408,7 +1450,7 @@ var SpadesGame = function () {
             
         } else if (this.currentMoveStage === 'ChoosingTrickCard') {
             var player = this.players[0];
-            var bestCard = player.FindBestPlayingCard(game, true);
+            var bestCard = player.FindBestPlayingCard(game, 'Pro');
             optimalCards.push(bestCard);
         }
 
@@ -1465,6 +1507,14 @@ var SpadesGame = function () {
         this.currentMoveStage = "ChoosingTrickCard";
     }
 
+    var HidePlayerPrompt = function() {
+        var playerPrompt = document.getElementById('spades_player_play_prompt');
+        with (playerPrompt.style) {
+            transition = "0.1s linear";
+            opacity = 0;
+        }
+    } 
+
     function GetTrickPlayPromptLocation() {
         return [gameContainer.innerWidth*0.5, 350]; 
     }
@@ -1520,11 +1570,7 @@ var SpadesGame = function () {
 
     this.OnPlayerChosePlayCard = function(card) {
         this.currentMoveStage = 'None';
-        var playerPrompt = document.getElementById('spades_player_play_prompt');
-        with (playerPrompt.style) {
-            transition = "0.1s linear";
-            opacity = 0;
-        }
+        HidePlayerPrompt();
 
         var player = this.players[this.turnIndex%4];
         this.PlayCard(card);
@@ -1532,7 +1578,7 @@ var SpadesGame = function () {
         var cardView = card.cardView;
         cardView.positionFunction = "GetTrickDiscardLocation('" + player.playerPosition + "')";
         var loc = eval(cardView.positionFunction);
-        flipUpCard(cardView);
+        flipUpCard(cardView, true);
         with (cardView.style) {
             transition = "0.3s ease-out";
             transitionDelay = "0s";
@@ -1549,7 +1595,7 @@ var SpadesGame = function () {
                 cardView.isClickable = false;
             }
         }
-        AnimatePlayerHandCardsIntoPosition(player.playerPosition, "0.3s");
+        AnimatePlayerHandCardsIntoPosition(player.playerPosition, "0.3s", true);
 
         if (this.trickCards.length !== 4) {
             var nextPlayer = this.players[this.turnIndex%4];
@@ -2143,9 +2189,6 @@ var SpadesGame = function () {
     }
 
     this.OnResizeWindow = function OnResizeWindow() {
-
-        gameContainer.innerWidth = window.innerWidth - codeContainerGutterRightPosition - 20;
-        gameContainer.style.width = gameContainer.innerWidth + 'px';
         
         var ease = "0.4s ease-out";
 
@@ -2356,6 +2399,216 @@ var SpadesGame = function () {
         var menuName = visibleMenuCards[visibleMenuCards.length-1];
         MenuCardPressDown(menuName);
         MenuCardAppear("menu_tutorial");
+    }
+
+    this.GetCurrentComputerPlayerDecisions = function() {
+        var selectedIndex = 0;
+        switch (game.currentMoveStage) {
+            case 'ChoosingBids':
+                selectedIndex = 0;
+            case 'ChoosingTrickCard':
+                selectedIndex = 1;
+            break;
+            default:
+                selectedIndex = 1;
+                this.LoadDecisionScenario(selectedIndex);
+                break;
+        }
+        return {
+            displayNames: ["Choose<br>Bid", "Choose Trick Card"],
+            selectedIndex: selectedIndex
+        }
+    }
+
+    this.LoadDecisionScenario = function(decisionIndex) {
+        
+        // Create a random game scenario for the current decisionIndex
+        game.InitializeGame('Standard');
+        game.roundNumber = game.roundNumber + 1;
+        game.trickCards = [];
+        for (var i=0; i<game.players.length; i++) {
+            var player = this.players[i];
+            player.cards = [];
+            player.currentRoundBid = -1;
+            player.currentRoundTricksTaken = -1;
+            player.isShownVoidInSuit = [false,false,false,false];
+        }
+
+        scoreboard.Initialize();
+        game.CreatePlayerInfoViews(0);
+        game.ResetPlayerRoundScores();
+        HidePlayerPrompt();
+        HideChooseBidView();
+        
+        // Deal cards for round
+        game.isSpadesBroken = false;
+        game.cardsPlayedThisRound = [];
+        shuffle(cards);
+        deckTopIndex = cards.length-1;
+        for (var i=0; i<13; i++) {
+            for (var j=0; j<4; j++) {
+                var card = cards[deckTopIndex];
+                UnshadeCard(card.cardView);
+                game.players[j].cards.push(card);
+                deckTopIndex = deckTopIndex-1;
+            }
+        }
+
+        switch (decisionIndex) {
+            case 0:
+                // Choose bid
+                game.currentMoveStage = 'ChoosingBids';
+                bidsReceived = 0;
+                game.dealerIndex = Math.floor(Math.random()*4);
+                for (var i=game.dealerIndex+1; i<4; i++) {
+                    game.players[i].currentRoundBid = Math.floor(Math.random() * 4) + 1;
+                    bidsReceived++;
+                    UpdatePlayerRoundScore(game.players[i]);
+                }
+                currentBiddingPlayerIndex = 0;
+
+                // Sort the players hand
+                game.players[0].cards.sort(function(a,b) {
+                    if (a.suit != b.suit) {
+                        return a.suitInt - b.suitInt;
+                    } else {
+                        return a.value - b.value;
+                    }
+                });
+
+                for (var i=0; i<4; i++) {
+                    AnimatePlayerHandCardsIntoPosition(game.players[i].playerPosition, '0.2s', false);
+                }
+
+                game.PromptPlayerToChooseBid();
+
+            break;
+            case 1:
+                // Choose trick card
+                
+                game.dealerIndex = 0;
+                game.leadIndex = game.dealerIndex+1;
+                game.turnIndex = game.leadIndex;
+
+                // Make a random bid for each player
+                for (var i=0; i<4; i++) {
+                    game.players[i].currentRoundBid = Math.floor(Math.random() * 4) + 1;
+                    game.players[i].currentRoundTricksTaken = 0;
+                }
+
+                var randomTricksPlayed = Math.floor(Math.random()*game.players[0].cards.length-2)+1;
+                while (randomTricksPlayed > 0) {
+                    game.trickCards = [];
+                    for (var i=0; i<4; i++) {
+                        var nextPlayer = game.players[game.turnIndex%4];
+                        
+                        // For generating scenario, all players make standard moves
+                        var nextPlayerSkillLevel = nextPlayer.skillLevel;
+                        var card = nextPlayer.FindBestPlayingCard(game, "Standard");
+                        
+                        card.cardView.style.transition = "none";
+                        card.cardView.style.transitionDelay = "none";
+                        card.cardView.style.visibility = "hidden";
+                        card.cardView.style.opacity = 0;
+                        game.PlayCard(card);
+                    }
+
+                    var trickResult = game.GetTrickResult();
+                    trickResult.trickTaker.currentRoundTricksTaken += 1;
+                    game.leadIndex = trickResult.trickTaker.playerPositionInt;
+                    game.turnIndex = game.leadIndex;
+                    
+                    randomTricksPlayed = randomTricksPlayed-1;
+                }
+
+                // Play out the trick until it is the player's turn
+                game.trickCards = [];
+                while (game.turnIndex%4 != 0) {
+                    var nextPlayer = game.players[game.turnIndex%4];
+                    
+                    // For generating scenario, all players make standard moves
+                    var nextPlayerSkillLevel = nextPlayer.skillLevel;
+                    var nextCard = nextPlayer.FindBestPlayingCard(game, "Standard");
+                    
+                    game.PlayCard(nextCard);
+
+                    var cardView = nextCard.cardView;
+                    cardView.positionFunction = "GetTrickDiscardLocation('" + nextPlayer.playerPosition + "')";
+                    var loc = eval(cardView.positionFunction);
+                    flipUpCard(cardView, false);
+                    with (cardView.style) {
+                        transition = "none";
+                        transitionDelay = "0s";
+                        left = loc[0] + 'px';
+                        top = loc[1] + 'px';
+                        transform = 'none';
+                        zIndex = 0;
+                        visibility = "visible";
+                        opacity = 1;
+                    }
+                }
+                
+                // Sort the players hand
+                game.players[0].cards.sort(function(a,b) {
+                    if (a.suit != b.suit) {
+                        return a.suitInt - b.suitInt;
+                    } else {
+                        return a.value - b.value;
+                    }
+                });
+
+                for (var i=0; i<4; i++) {
+                    AnimatePlayerHandCardsIntoPosition(game.players[i].playerPosition, '0.2s', false);
+                    UpdatePlayerRoundScore(game.players[i]);
+                }
+
+                game.PromptPlayerToPlayCard();
+
+            break;
+        }
+    }
+
+    this.GetCustomPlayerMethod = function(decisionIndex) {
+        return game.players[0].GetDecisionMethod(decisionIndex);
+    }
+
+    this.SaveCurrentDecisionMethod = function(decisionIndex, code) {
+        var decisionMethodName = "spades_decision_method_Custom_" + decisionIndex;
+        window.localStorage.setItem(decisionMethodName, code);
+    }
+
+    this.TryCurrentDecisionMethod = function(decisionIndex) {
+        try {
+            var optimalCards = [];
+            if (this.currentMoveStage === 'ChoosingBids') {
+                var player = this.players[0];
+                var bid = player.FindBestBid(game, player.skillLevel);
+                // TODO: indicate the current custom decision bid output
+                console.log("Custom Bid: " + bid);
+                
+            } else if (this.currentMoveStage === 'ChoosingTrickCard') {
+                var player = this.players[0];
+                var bestCard = player.FindBestPlayingCard(game, player.skillLevel, true);
+                optimalCards.push(bestCard);
+            }
+
+            for (var i=0; i<optimalCards.length; i++) {
+                var cardView = optimalCards[i].cardView;
+                IndicateCustomDecisionCard(cardView);
+            }
+
+            IndicateCodeError("");
+        }
+        catch (err) {
+            IndicateCodeError(err);
+            this.ClearAllCustomDecisionIndicators();
+        }
+    }
+
+    this.ClearAllCustomDecisionIndicators = function() {
+        for (var i=0; i<cards.length; i++) {
+            RemoveCustomDecisionIndicator(cards[i].cardView);
+        }
     }
 }
 
@@ -2587,189 +2840,6 @@ var SpadesFindPossiblePlayProbabilities = function(aGame) {
     }
 
     return probabilities;
-}
-
-var SpadesFindBidForPlayer = function(aGame, currentPlayer) {
-    
-    // Create a game state copy that can be manipulated and restored to simulate outcomes
-    var simGame = {};
-    simGame.skillLevel = 'Standard';
-    simGame.isSpadesBroken = aGame.isSpadesBroken;
-    simGame.winningScore = aGame.winningScore;
-    simGame.cardsPlayedThisRound = [];
-    simGame.trickCards = [];
-    simGame.leadIndex = aGame.leadIndex;
-    simGame.dealerIndex = aGame.dealerIndex;
-    simGame.turnIndex = aGame.turnIndex;
-    simGame.players = [];
-    var player = new SpadesPlayer();
-    player.Initialize('You', true, 'Standard', 'South');
-    simGame.players.push(player);
-    player = new SpadesPlayer();
-    player.Initialize('Catalina', false, 'Standard', 'West');
-    simGame.players.push(player);
-    player = new SpadesPlayer();
-    player.Initialize('Amelia', false, 'Standard', 'North');
-    simGame.players.push(player);
-    player = new SpadesPlayer();
-    player.Initialize('Seward', false, 'Standard', 'East');
-    simGame.players.push(player);
-
-    var currentSimPlayer = simGame.players[currentPlayer.playerPositionInt];
-    
-    // Create the list of cards remaining in the deck
-    var gameCards = aGame.GetCards();
-    var cardsRemaining = [];
-    for (var i=0; i<gameCards.length; i++) {
-        var isAlreadyPlayed = false;
-        for (var j=0; j<currentPlayer.cards.length; j++) {
-            if (currentPlayer.cards[j].id === gameCards[i].id) {
-                isAlreadyPlayed = true;
-                break;
-            }
-        }
-        if (isAlreadyPlayed) {
-            continue;
-        }
-        
-        cardsRemaining.push(gameCards[i]);
-    }
-
-    var recommendedBid = 1;
-    // Loop through possible bids to see how the player fares
-    for (var trialBid = 1; trialBid<14; trialBid++) {
-        
-        var totalTricksTaken = 0;
-        var simsCount = 250;
-        for (var simIndex = 0; simIndex < simsCount; simIndex++) {
-            
-            // Reset the sim game state
-            for (var k=0; k<4; k++) {
-                var player = aGame.players[k];
-                var simPlayer = simGame.players[k];
-                simPlayer.skillLevel = 'Standard';
-                simPlayer.currentRoundBid = player.currentRoundBid;
-                simPlayer.currentRoundTricksTaken = 0;
-                simPlayer.cards = [];
-                simPlayer.isShownVoidInSuit = [false, false, false, false];
-            }
-            simGame.cardsPlayedThisRound = [];
-            simGame.trickCards = [];
-            simGame.roundNumber = aGame.roundNumber;
-            simGame.dealerIndex = aGame.dealerIndex;
-            simGame.leadIndex = aGame.leadIndex;
-            simGame.turnIndex = aGame.turnIndex;
-            simGame.isSpadesBroken = false;
-
-            // Shuffle the deck
-            var deckIdx = 0;
-            for (var k = cardsRemaining.length - 1; k > 0; k--) {
-                var randIdx = Math.floor(Math.random() * (k + 1));
-                x = cardsRemaining[k];
-                cardsRemaining[k] = cardsRemaining[randIdx];
-                cardsRemaining[randIdx] = x;
-            }
-
-            for (var n=0; n<currentPlayer.cards.length; n++) {
-                currentSimPlayer.cards.push(currentPlayer.cards[n]);
-            }
-
-            // Guess the bids for the unbid players
-            currentSimPlayer.currentRoundBid = trialBid;
-            var bidsSoFarSum = 0;
-            var unBidCount = 0;
-            for (var i=0; i<4; i++) {
-                var p = simGame.players[i];
-                if (p.currentRoundBid >= 0) {
-                    bidsSoFarSum += p.currentRoundBid;
-                } else {
-                    unBidCount++;
-                }
-            }
-            if (unBidCount > 0) {
-                var remainder = 13 - bidsSoFarSum;
-                var guessBid = Math.ceil(remainder / unBidCount);
-                if (guessBid < 2) {
-                    guessBid = 2;
-                }
-                if (guessBid > 5) {
-                    guessBid = 5;
-                }
-                for (var i=0; i<4; i++) {
-                    var p = simGame.players[i];
-                    if (p.currentRoundBid == -1) {
-                        p.currentRoundBid = guessBid;
-                    }
-                }
-            }
-
-            // Deal the remaining cards to the rest of the players
-            var idx = aGame.turnIndex;
-            for (var deckIdx = 0; deckIdx<cardsRemaining.length; deckIdx++) {
-                idx++;
-                var simPlayer = simGame.players[idx%4];
-                if (simPlayer === currentSimPlayer) {
-                    deckIdx--;
-                    continue;
-                }
-                simPlayer.cards.push(cardsRemaining[deckIdx]);
-            }
-
-            // Simulate out the whole round with the player being a pro and the rest being standard
-            while (currentSimPlayer.cards.length > 0) {
-                
-                // Finish the trick
-                while (simGame.trickCards.length < 4) {
-                    var nextPlayer = simGame.players[simGame.turnIndex%4];
-                    var legalPlays = SpadesGetLegalCardsForCurrentPlayerTurnInSimulator(simGame);
-                    var nextCard = nextPlayer.FindStandardPlayingCard(simGame, legalPlays);
-                    // Play the Card
-                    if (nextCard.suit === 'S') {
-                        simGame.isSpadesBroken = true;
-                    }
-                    if (simGame.trickCards.length !== 0) {
-                        var leadCard = simGame.trickCards[0];
-                        if (nextCard.suit !== leadCard.suit) {
-                            nextPlayer.isShownVoidInSuit[leadCard.suitInt] = true;
-                        }
-                    }
-
-                    nextPlayer.cards.splice(nextPlayer.cards.indexOf(nextCard), 1);
-                    simGame.trickCards.push(nextCard);
-                    simGame.turnIndex = simGame.turnIndex + 1;
-                }
-                
-                // Get the trick result
-                var trickResult = {};
-                trickResult.highestCard = simGame.trickCards[0];
-                trickResult.trickTaker = simGame.players[simGame.leadIndex];
-                for (var n=1; n<simGame.trickCards.length; n++) {
-                    var card = simGame.trickCards[n];
-                    if ((card.suit === trickResult.highestCard.suit && card.value > trickResult.highestCard.value) ||
-                        (card.suit === 'S' && trickResult.highestCard.suit !== 'S')) {
-                        trickResult.highestCard = card;
-                        trickResult.trickTaker = simGame.players[(simGame.leadIndex + n)%4];
-                    }
-                }
-                trickResult.trickTaker.currentRoundTricksTaken++;
-                simGame.leadIndex = trickResult.trickTaker.playerPositionInt;
-                simGame.turnIndex = simGame.leadIndex;
-                simGame.trickCards = [];
-            }
-            
-            totalTricksTaken += currentSimPlayer.currentRoundTricksTaken;
-        }
-
-        var avgTricksTaken = totalTricksTaken/simsCount;
-        //console.log("Bid: " + currentSimPlayer.currentRoundBid + "   Taken: " + avgTricksTaken);
-        
-        if (avgTricksTaken < trialBid) {
-            recommendedBid = trialBid-1;
-            break;
-        }
-        recommendedBid++;
-    }
-    return recommendedBid;
 }
 
 var SpadesFindOptimalPlayForCurrentPlayer = function(aGame) {

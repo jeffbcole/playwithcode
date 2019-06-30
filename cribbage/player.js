@@ -1,5 +1,7 @@
 var CribbagePlayer = function() {
 
+    this.skillLevel = 'Standard';
+
     this.SelectTwoCardsToDiscardInCrib = function(skillLevel, isComputersCrib, computersHand) {
         switch (skillLevel) {
             case "Easy":
@@ -464,5 +466,50 @@ var CribbagePlayer = function() {
         }
 
         return points;
+    }
+
+    this.GetDecisionMethod = function(decisionIndex) {
+        switch (decisionIndex) {
+            case 0:
+            {
+                switch (this.skillLevel) {
+                    case 'Easy':
+                    {
+                        return "Easy Discard";
+                    }
+                    break;
+                    case 'Standard':
+                    {
+                        return "Standard Discard";
+                    }
+                    break;
+                    case 'Pro':
+                    {
+                        return "Pro Discard";
+                    }
+                }
+            }
+            break;
+            case 1:
+            {
+                switch (this.skillLevel) {
+                    case 'Easy':
+                    {
+                        return "Easy Pegging";
+                    }
+                    break;
+                    case 'Standard':
+                    {
+                        return "Standard Pegging";
+                    }
+                    break;
+                    case 'Pro':
+                    {
+                        return "Pro Pegging";
+                    }
+                }
+            }
+            break;
+        }
     }
 }

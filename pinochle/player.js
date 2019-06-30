@@ -165,15 +165,15 @@ var PinochlePlayer = function() {
         if (this.isHuman) {
             game.PromptPlayerToChoosePassingCards();
         } else {
-            var bestCards = this.FindBestPassingCards(passingCardsCount, game);
+            var bestCards = this.FindBestPassingCards(passingCardsCount, this.skillLevel, game);
             this.passingCards = bestCards;
             this.cards = this.cards.filter((el) => !bestCards.includes(el));
             game.PlayerChosePassingCards(this);
         }
     }
 
-    this.FindBestPassingCards = function(passingCardsCount, aGame) {
-        switch (this.skillLevel) {
+    this.FindBestPassingCards = function(passingCardsCount, aSkillLevel, aGame) {
+        switch (aSkillLevel) {
             case 'Easy':
             {
                 var cardsToPass = [];
@@ -414,7 +414,6 @@ var PinochlePlayer = function() {
                             continue;
                         }
                         if (card.rank == 13 && card.suit != aGame.trumpSuit) {
-                            card.hintText = "Possible<br>Marriage";
                             cardsToPass.push(card);
                             nonMeldCards.splice(nonMeldCards.indexOf(card),1);
                             i--;
@@ -434,7 +433,6 @@ var PinochlePlayer = function() {
                             continue;
                         }
                         if (card.rank == 12 && card.suit != aGame.trumpSuit) {
-                            card.hintText = "Possible<br>Marriage";
                             cardsToPass.push(card);
                             nonMeldCards.splice(nonMeldCards.indexOf(card),1);
 
@@ -454,7 +452,6 @@ var PinochlePlayer = function() {
                                 continue;
                             }
                             if (card.rank == 11 && card.suit == 'D') {
-                                card.hintText = "Possible<br>Pinochle";
                                 cardsToPass.push(card);
                                 nonMeldCards.splice(nonMeldCards.indexOf(card),1);
                                 i--;
@@ -481,11 +478,6 @@ var PinochlePlayer = function() {
                     });
                     for (var i=0; i<nonMeldCards.length; i++) {
                         var card = nonMeldCards[i];
-                        if (card.suit == aGame.trumpSuit) {
-                            card.hintText = "Not Trump<br>No Meld Value";
-                        } else {
-                            card.hintText = "No Meld<br>Value";
-                        }
                         cardsToPass.push(card);
                         // Stop if we have enough
                         if (cardsToPass.length == passingCardsCount) {
@@ -514,7 +506,6 @@ var PinochlePlayer = function() {
                     });
                     for (var i=0; i<meldCards.length; i++) {
                         var card = meldCards[i];
-                        card.hintText = "Least Meld<br>Reduction";
                         cardsToPass.push(card);
                         // Stop if we have enough
                         if (cardsToPass.length == passingCardsCount) {
@@ -555,39 +546,46 @@ var PinochlePlayer = function() {
                         }
                     }
 
-                    var hintText = "";
+                    // Helper function
+                    var TryToGetCard = function(rank, suit, aCards, aPassingCards) {
+                        for (var i=0; i<aCards.length; i++) {
+                            var card = aCards[i];
+                            if (card.suit == suit && card.rank == rank) {
+                                aPassingCards.push(card);
+                                aCards.splice(aCards.indexOf(card),1);
+                                return;
+                            }
+                        }
+                    }
+
                     var timesToLoop = aGame.isDoubleDeck ? 4 : 2;
                     for (var ctr=0; ctr<timesToLoop; ctr++) {
                         // ATrump, 10Trump, KTrump, QTrump, JTrump
-                        hintText = "Trump";
-                        this.TryToGetCard(1,aGame.trumpSuit,nonMeldCards,cardsToPass,hintText);
+                        TryToGetCard(1,aGame.trumpSuit,nonMeldCards,cardsToPass);
                         if (cardsToPass.length == passingCardsCount) { return cardsToPass; }
-                        this.TryToGetCard(10,aGame.trumpSuit,nonMeldCards,cardsToPass,hintText);
+                        TryToGetCard(10,aGame.trumpSuit,nonMeldCards,cardsToPass);
                         if (cardsToPass.length == passingCardsCount) { return cardsToPass; }
-                        this.TryToGetCard(13,aGame.trumpSuit,nonMeldCards,cardsToPass,hintText);
+                        TryToGetCard(13,aGame.trumpSuit,nonMeldCards,cardsToPass);
                         if (cardsToPass.length == passingCardsCount) { return cardsToPass; }
-                        this.TryToGetCard(12,aGame.trumpSuit,nonMeldCards,cardsToPass,hintText);
+                        TryToGetCard(12,aGame.trumpSuit,nonMeldCards,cardsToPass);
                         if (cardsToPass.length == passingCardsCount) { return cardsToPass; }
-                        this.TryToGetCard(11,aGame.trumpSuit,nonMeldCards,cardsToPass,hintText);
+                        TryToGetCard(11,aGame.trumpSuit,nonMeldCards,cardsToPass);
                         if (cardsToPass.length == passingCardsCount) { return cardsToPass; }
                         
                         // AH, AS, AD, AC
-                        hintText = "Trick Taker";
                         var suits = ['S','H','C','D'];
                         for (var i=0; i<suits.length; i++) {
                             if (aGame.trumpSuit != suits[i]) {
-                                this.TryToGetCard(1,suits[i],nonMeldCards,cardsToPass,hintText);
+                                TryToGetCard(1,suits[i],nonMeldCards,cardsToPass);
                                 if (cardsToPass.length == passingCardsCount) { return cardsToPass; }
                             }
                         }
                     }
                     
                     // Any trump left
-                    hintText = "Trump";
                     for (var i=0; i<nonMeldCards.length; i++) {
                         var card = nonMeldCards[i];
                         if (card.suit == aGame.trumpSuit) {
-                            card.hintText = hintText;
                             cardsToPass.push(card);
                             if (cardsToPass.length == passingCardsCount) { return cardsToPass; }
                             nonMeldCards.splice(nonMeldCards.indexOf(card),1);
@@ -596,18 +594,15 @@ var PinochlePlayer = function() {
                     }
 
                     // QS, JD
-                    hintText = "Possible Pinochle";
-                    this.TryToGetCard(12,'S',nonMeldCards,cardsToPass,hintText);
+                    TryToGetCard(12,'S',nonMeldCards,cardsToPass);
                     if (cardsToPass.length == passingCardsCount) { return cardsToPass; }
-                    this.TryToGetCard(11,'D',nonMeldCards,cardsToPass,hintText);
+                    TryToGetCard(11,'D',nonMeldCards,cardsToPass);
                     if (cardsToPass.length == passingCardsCount) { return cardsToPass; }
                     
                     // Jacks
-                    hintText = "No Meld Value";
                     for (var i=0; i<nonMeldCards.length; i++) {
                         var card = nonMeldCards[i];
                         if (card.rank == 11) {
-                            card.hintText = hintText;
                             cardsToPass.push(card);
                             if (cardsToPass.length == passingCardsCount) { return cardsToPass; }
                             nonMeldCards.splice(nonMeldCards.indexOf(card),1);
@@ -619,7 +614,6 @@ var PinochlePlayer = function() {
                     for (var i=0; i<nonMeldCards.length; i++) {
                         var card = nonMeldCards[i];
                         if (card.rank == 9) {
-                            card.hintText = hintText;
                             cardsToPass.push(card);
                             if (cardsToPass.length == passingCardsCount) { return cardsToPass; }
                             nonMeldCards.splice(nonMeldCards.indexOf(card),1);
@@ -649,7 +643,6 @@ var PinochlePlayer = function() {
                     });
                     for (var i=0; i<meldCards.length; i++) {
                         var card = meldCards[i];
-                        card.hintText = "Least Meld<br>Reduction";
                         cardsToPass.push(card);
                         // Stop if we have enough
                         if (cardsToPass.length == passingCardsCount) {
@@ -658,11 +651,9 @@ var PinochlePlayer = function() {
                     }
 
                     // Kings
-                    hintText = "Possible Marriage";
                     for (var i=0; i<nonMeldCards.length; i++) {
                         var card = nonMeldCards[i];
                         if (card.rank == 13) {
-                            card.hintText = hintText;
                             cardsToPass.push(card);
                             if (cardsToPass.length == passingCardsCount) { return cardsToPass; }
                             nonMeldCards.splice(nonMeldCards.indexOf(card),1);
@@ -671,11 +662,9 @@ var PinochlePlayer = function() {
                     }
 
                     // 10s
-                    hintText = "?";
                     for (var i=0; i<nonMeldCards.length; i++) {
                         var card = nonMeldCards[i];
                         if (card.rank == 10) {
-                            card.hintText = hintText;
                             cardsToPass.push(card);
                             if (cardsToPass.length == passingCardsCount) { return cardsToPass; }
                             nonMeldCards.splice(nonMeldCards.indexOf(card),1);
@@ -691,21 +680,75 @@ var PinochlePlayer = function() {
                 }
                 return cardsToPass;
             }
-        }
-    }
 
-    this.TryToGetCard = function(rank, suit, aCards, aPassingCards, hintText) {
-        for (var i=0; i<aCards.length; i++) {
-            var card = aCards[i];
-            if (card.suit == suit && card.rank == rank) {
-                aPassingCards.push(card);
-                aCards.splice(aCards.indexOf(card),1);
-                card.hintText = hintText;
-                return;
+            case 'Custom':
+            {
+                try {
+                    // Include any cards that might already be in the passing spots
+                    var handCards = this.cards.concat(this.passingCards);
+                    if (game.settings.GetSetting('setting_sort_left_to_right')) {
+                        handCards.sort(function(a,b) {
+                            if (a.suit != b.suit) {
+                                return a.suitInt - b.suitInt;
+                            } else if (a.value == b.value) {
+                                return a.deckID - b.deckID;
+                            } else {
+                                return b.value - a.value;
+                            }
+                        });
+                    } else {
+                        handCards.sort(function(a,b) {
+                            if (a.suit != b.suit) {
+                                return a.suitInt - b.suitInt;
+                            } else if (a.value == b.value) {
+                                return a.deckID - b.deckID;
+                            } else {
+                                return a.value - b.value;
+                            }
+                        });
+                    }
+
+                    var fullHandCardCount = aGame.isDoubleDeck ? 20 : 12;
+                    var customMethod = "";
+                    if (handCards.length > fullHandCardCount) {
+                        // Pass back
+                        customMethod = this.GetDecisionMethod(2);
+                        // Remove the first and last line of the code
+                        customMethod = customMethod.substring(customMethod.indexOf("{") + 1);
+                        customMethod = customMethod.substring(customMethod.lastIndexOf("}"), -1);
+
+                        this.CalculateMelds(handCards, game.trumpSuit, game.isDoubleDeck, true);
+                        
+                        var f = new Function('handCards', 'receivedCards', 'melds', 'trumpSuit', 'isDoubleDeck', 'passingCardsCount', customMethod);
+                        var bestCards = f(handCards, this.receivedCards, this.melds, game.trumpSuit, game.isDoubleDeck, passingCardsCount);
+                        if (bestCards == undefined) {
+                            throw "Custom decision failed.";
+                        }
+                        return bestCards;
+                    } else {
+                        // Pass to bid winner
+                        customMethod = this.GetDecisionMethod(1);
+                        // Remove the first and last line of the code
+                        customMethod = customMethod.substring(customMethod.indexOf("{") + 1);
+                        customMethod = customMethod.substring(customMethod.lastIndexOf("}"), -1);
+
+                        this.CalculateMelds(handCards, game.trumpSuit, game.isDoubleDeck, true);
+                        
+                        var f = new Function('handCards', 'melds', 'trumpSuit', 'isDoubleDeck', 'passingCardsCount', customMethod);
+                        var bestCards = f(handCards, this.melds, game.trumpSuit, game.isDoubleDeck, passingCardsCount);
+                        if (bestCards == undefined) {
+                            throw "Custom decision failed.";
+                        }
+                        return bestCards;
+                    }
+                    
+                } catch (err) {
+                    throw err;
+                }
             }
+            break;
         }
     }
-
 
     this.ChoosePlayCard = function() {
         if (this.isHuman) {
@@ -1486,6 +1529,343 @@ var PinochlePlayer = function() {
             }
         }
         this.melds.push(meld);
+    }
+
+    this.GetDecisionMethod = function(decisionIndex) {
+        var decisionMethodName = "pinochle_decision_method_Custom_" + decisionIndex;
+        var decisionMethod = window.localStorage.getItem(decisionMethodName);
+        if (decisionMethod == null) {
+            // Load a default method
+            switch (decisionIndex) {
+                case 0:
+                {
+                    decisionMethod = "var ChoosePassingCards = function(cards, game) { TODO";
+                }
+                break;
+
+                case 1:
+                {
+                    decisionMethod = "var ChoosePassCardsToBidWinner = function(\n\
+            handCards,      // Array of cards in your hand\n\
+            melds,          // Array of meld points for the cards in your hand\n\
+            trumpSuit,      // The trump suit\n\
+            isDoubleDeck,   // Boolean indicating if a double deck is used\n\
+            passingCardsCount   // Number of passing cards\n\
+            ) {\n\
+\n\
+    // Find the first set of cards in this order:\n\
+    // ATrump, 10Trump, KTrump, QTrump, JTrump\n\
+    // AH, AS, AD, AC\n\
+    // ATrump, 10Trump, KTrump, QTrump, JTrump\n\
+    // AH, AS, AD, AC\n\
+    // 9Trump\n\
+    // QS, JD\n\
+    // Js\n\
+    // 9s\n\
+    // lowest contributing meld cards\n\
+    // Ks\n\
+    // 10s\n\
+\n\
+    var cardsToPass = [];\n\
+\n\
+    // Remove melding cards\n\
+    var nonMeldCards = [].concat(handCards);\n\
+    for (var i=0; i<melds.length; i++) {\n\
+        if (melds[i].meldType == 'RoyalMarriage') {\n\
+            continue;\n\
+        }\n\
+        for (var j=0; j<melds[i].cards.length; j++) {\n\
+            var index = nonMeldCards.indexOf(melds[i].cards[j]);\n\
+            if (index != -1) {\n\
+                nonMeldCards.splice(index, 1);\n\
+            }\n\
+        }\n\
+    }\n\
+\n\
+    // Helper function\n\
+    var TryToGetCard = function(rank, suit, aCards, aPassingCards) {\n\
+        for (var i=0; i<aCards.length; i++) {\n\
+            var card = aCards[i];\n\
+            if (card.suit == suit && card.rank == rank) {\n\
+                aPassingCards.push(card);\n\
+                aCards.splice(aCards.indexOf(card),1);\n\
+                return;\n\
+            }\n\
+        }\n\
+    }\n\
+\n\
+    var timesToLoop = isDoubleDeck ? 4 : 2;\n\
+    for (var ctr=0; ctr<timesToLoop; ctr++) {\n\
+        // ATrump, 10Trump, KTrump, QTrump, JTrump\n\
+        TryToGetCard(1,trumpSuit,nonMeldCards,cardsToPass);\n\
+        if (cardsToPass.length == passingCardsCount) { return cardsToPass; }\n\
+        TryToGetCard(10,trumpSuit,nonMeldCards,cardsToPass);\n\
+        if (cardsToPass.length == passingCardsCount) { return cardsToPass; }\n\
+        TryToGetCard(13,trumpSuit,nonMeldCards,cardsToPass);\n\
+        if (cardsToPass.length == passingCardsCount) { return cardsToPass; }\n\
+        TryToGetCard(12,trumpSuit,nonMeldCards,cardsToPass);\n\
+        if (cardsToPass.length == passingCardsCount) { return cardsToPass; }\n\
+        TryToGetCard(11,trumpSuit,nonMeldCards,cardsToPass);\n\
+        if (cardsToPass.length == passingCardsCount) { return cardsToPass; }\n\
+\n\
+        // AH, AS, AD, AC\n\
+        var suits = ['S','H','C','D'];\n\
+        for (var i=0; i<suits.length; i++) {\n\
+            if (trumpSuit != suits[i]) {\n\
+                TryToGetCard(1,suits[i],nonMeldCards,cardsToPass);\n\
+                if (cardsToPass.length == passingCardsCount) { return cardsToPass; }\n\
+            }\n\
+        }\n\
+    }\n\
+\n\
+    // Any trump left\n\
+    for (var i=0; i<nonMeldCards.length; i++) {\n\
+        var card = nonMeldCards[i];\n\
+        if (card.suit == trumpSuit) {\n\
+            cardsToPass.push(card);\n\
+            if (cardsToPass.length == passingCardsCount) { return cardsToPass; }\n\
+            nonMeldCards.splice(nonMeldCards.indexOf(card),1);\n\
+            i--;\n\
+        }\n\
+    }\n\
+    \n\
+    // QS, JD\n\
+    TryToGetCard(12,'S',nonMeldCards,cardsToPass);\n\
+    if (cardsToPass.length == passingCardsCount) { return cardsToPass; }\n\
+    TryToGetCard(11,'D',nonMeldCards,cardsToPass);\n\
+    if (cardsToPass.length == passingCardsCount) { return cardsToPass; }\n\
+    \n\
+    // Jacks\n\
+    for (var i=0; i<nonMeldCards.length; i++) {\n\
+        var card = nonMeldCards[i];\n\
+        if (card.rank == 11) {\n\
+            cardsToPass.push(card);\n\
+            if (cardsToPass.length == passingCardsCount) { return cardsToPass; }\n\
+            nonMeldCards.splice(nonMeldCards.indexOf(card),1);\n\
+            i--;\n\
+        }\n\
+    }\n\
+\n\
+    // 9s\n\
+    for (var i=0; i<nonMeldCards.length; i++) {\n\
+        var card = nonMeldCards[i];\n\
+        if (card.rank == 9) {\n\
+            cardsToPass.push(card);\n\
+            if (cardsToPass.length == passingCardsCount) { return cardsToPass; }\n\
+            nonMeldCards.splice(nonMeldCards.indexOf(card),1);\n\
+            i--;\n\
+        }\n\
+    }\n\
+\n\
+    // Lowest meld cards\n\
+    // We will have to break up meld scores so find the amount of meld score that each card is responsible for\n\
+    var meldCards = [];\n\
+    for (var i=0; i<melds.length; i++) {\n\
+        for (var j=0; j<melds[i].cards.length; j++) {\n\
+            var card = melds[i].cards[j];\n\
+            if (!meldCards.includes(card)) {\n\
+                card.meldScoreIncrease = 0;\n\
+                meldCards.push(card);\n\
+            }\n\
+        }\n\
+    }\n\
+    for (var i=0; i<melds.length; i++) {\n\
+        for (var j=0; j<melds[i].cards.length; j++) {\n\
+            melds[i].cards[j].meldScoreIncrease += melds[i].score;\n\
+        }\n\
+    }\n\
+    meldCards.sort(function(a,b){\n\
+        return a.meldScoreIncrease - b.meldScoreIncrease;\n\
+    });\n\
+    for (var i=0; i<meldCards.length; i++) {\n\
+        var card = meldCards[i];\n\
+        cardsToPass.push(card);\n\
+        // Stop if we have enough\n\
+        if (cardsToPass.length == passingCardsCount) {\n\
+            return cardsToPass;\n\
+        }\n\
+    }\n\
+    \n\
+    // Kings\n\
+    for (var i=0; i<nonMeldCards.length; i++) {\n\
+        var card = nonMeldCards[i];\n\
+        if (card.rank == 13) {\n\
+            cardsToPass.push(card);\n\
+            if (cardsToPass.length == passingCardsCount) { return cardsToPass; }\n\
+            nonMeldCards.splice(nonMeldCards.indexOf(card),1);\n\
+            i--;\n\
+        }\n\
+    }\n\
+    \n\
+    // 10s\n\
+    for (var i=0; i<nonMeldCards.length; i++) {\n\
+        var card = nonMeldCards[i];\n\
+        if (card.rank == 10) {\n\
+            cardsToPass.push(card);\n\
+            if (cardsToPass.length == passingCardsCount) { return cardsToPass; }\n\
+            nonMeldCards.splice(nonMeldCards.indexOf(card),1);\n\
+            i--;\n\
+        }\n\
+    }\n\
+    \n\
+    // Safety\n\
+    cardsToPass = [];\n\
+    for (var i=0; i<passingCardsCount; i++) {\n\
+        cardsToPass.push(handCards[i]);\n\
+    }\n\
+    return cardsToPass;\n\
+};";
+                }
+                break;
+
+                case 2:
+                {
+                    decisionMethod = "var ChoosePassCardsAsBidWinner = function(\n\
+            handCards,      // Array of cards in your hand\n\
+            receivedCards,  // Array of cards passed to you by your partner\n\
+            melds,          // Array of meld points for your current hand\n\
+            trumpSuit,      // The trump suit\n\
+            passingCardsCount   // Number of cards to pass\n\
+            ) {\n\
+\n\
+    var cardsToPass = [];\n\
+\n\
+    // Remove melding cards\n\
+    var nonMeldCards = [].concat(handCards);\n\
+    for (var i=0; i<melds.length; i++) {\n\
+        for (var j=0; j<melds[i].cards.length; j++) {\n\
+            var index = nonMeldCards.indexOf(melds[i].cards[j]);\n\
+            if (index != -1) {\n\
+                nonMeldCards.splice(index, 1);\n\
+            }\n\
+        }\n\
+    }\n\
+    \n\
+    // Reason: Potential marriage\n\
+    // add nontrump kings (but not if they were received because they are thus not a potential marriage)\n\
+    for (var i=0; i<nonMeldCards.length; i++) {\n\
+        var card = nonMeldCards[i];\n\
+        if (receivedCards.includes(card)) {\n\
+            continue;\n\
+        }\n\
+        if (card.rank == 13 && card.suit != trumpSuit) {\n\
+            cardsToPass.push(card);\n\
+            nonMeldCards.splice(nonMeldCards.indexOf(card),1);\n\
+            i--;\n\
+            \n\
+            // Stop if we have enough\n\
+            if (cardsToPass.length == passingCardsCount) {\n\
+                return cardsToPass;\n\
+            }\n\
+        }\n\
+    }\n\
+    \n\
+    // Reason: Potential marriage\n\
+    // add nontrump queens (but not if they were received because they are thus not a potential marriage)\n\
+    for (var i=0; i<nonMeldCards.length; i++) {\n\
+        var card = nonMeldCards[i];\n\
+        if (receivedCards.includes(card)) {\n\
+            continue;\n\
+        }\n\
+        if (card.rank == 12 && card.suit != trumpSuit) {\n\
+            cardsToPass.push(card);\n\
+            nonMeldCards.splice(nonMeldCards.indexOf(card),1);\n\
+            \n\
+            // Stop if we have enough\n\
+            if (cardsToPass.length == passingCardsCount) {\n\
+                return cardsToPass;\n\
+            }\n\
+        }\n\
+    }\n\
+    \n\
+    // Reason: Potential marriage\n\
+    // Jack of Diamonds (but not if they were received because they are thus not a potential marriage and not if trump is Diamonds)\n\
+    if (trumpSuit != 'D') {\n\
+        for (var i=0; i<nonMeldCards.length; i++) {\n\
+            var card = nonMeldCards[i];\n\
+            if (receivedCards.includes(card)) {\n\
+                continue;\n\
+            }\n\
+            if (card.rank == 11 && card.suit == 'D') {\n\
+                cardsToPass.push(card);\n\
+                nonMeldCards.splice(nonMeldCards.indexOf(card),1);\n\
+                i--;\n\
+                \n\
+                // Stop if we have enough\n\
+                if (cardsToPass.length == passingCardsCount) {\n\
+                    return cardsToPass;\n\
+                }\n\
+            }\n\
+        }\n\
+    }\n\
+    \n\
+    // Add the rest of the non trump cards (prefer low non trumps)\n\
+    nonMeldCards.sort(function(a,b){\n\
+        if (a.suit == trumpSuit && b.suit == trumpSuit) {\n\
+            return a.value - b.value;\n\
+        } else if (a.suit == trumpSuit) {\n\
+            return 1;\n\
+        } else if (b.suit == trumpSuit) {\n\
+            return -1;\n\
+        } else {\n\
+            return a.value - b.value;\n\
+        }\n\
+    });\n\
+    for (var i=0; i<nonMeldCards.length; i++) {\n\
+        var card = nonMeldCards[i];\n\
+        cardsToPass.push(card);\n\
+        // Stop if we have enough\n\
+        if (cardsToPass.length == passingCardsCount) {\n\
+            return cardsToPass;\n\
+        }\n\
+    }\n\
+    \n\
+    // We will have to break up meld scores so find the amount of meld score that each card is responsible for\n\
+    var meldCards = [];\n\
+    for (var i=0; i<melds.length; i++) {\n\
+        for (var j=0; j<melds[i].cards.length; j++) {\n\
+            var card = melds[i].cards[j];\n\
+            if (!meldCards.includes(card)) {\n\
+                card.meldScoreIncrease = 0;\n\
+                meldCards.push(card);\n\
+            }\n\
+        }\n\
+    }\n\
+    for (var i=0; i<melds.length; i++) {\n\
+        for (var j=0; j<melds[i].cards.length; j++) {\n\
+            melds[i].cards[j].meldScoreIncrease += melds[i].score;\n\
+        }\n\
+    }\n\
+    meldCards.sort(function(a,b){\n\
+        return a.meldScoreIncrease - b.meldScoreIncrease;\n\
+    });\n\
+    for (var i=0; i<meldCards.length; i++) {\n\
+        var card = meldCards[i];\n\
+        cardsToPass.push(card);\n\
+        // Stop if we have enough\n\
+        if (cardsToPass.length == passingCardsCount) {\n\
+            return cardsToPass;\n\
+        }\n\
+    }\n\
+    \n\
+    // Safety\n\
+    cardsToPass = [];\n\
+    for (var i=0; i<passingCardsCount; i++) {\n\
+        cardsToPass.push(handCards[i]);\n\
+    }\n\
+    return cardsToPass;\n\
+};";
+                }
+                break;
+
+                case 3:
+                {
+                    decisionMethod = "TODO";
+                }
+                break;
+            }
+        }
+        return decisionMethod;
     }
 }
 

@@ -35,9 +35,9 @@ var HeartsPlayer = function() {
         }
     }
 
-    this.ChoosePassingCards = function() {
+    this.SelectPassingCards = function() {
         if (!this.isHuman) {
-            var bestCards = this.FindBestPassingCards();
+            var bestCards = this.FindBestPassingCards(this.skillLevel);
             for (var i=0; i<bestCards.length; i++) {
                 this.passingCards.push(bestCards[i]);
                 var indexOfBestCard = this.cards.indexOf(bestCards[i]);
@@ -46,11 +46,12 @@ var HeartsPlayer = function() {
         }
     }
 
-    this.FindBestPassingCards = function() {
-        switch (this.skillLevel) {
+    this.FindBestPassingCards = function(aSkillLevel) {
+        switch (aSkillLevel) {
             case "Easy":
                 return [this.cards[0], this.cards[1], this.cards[2]];
-            default:
+            case "Standard":
+            case "Pro":
                 var bestCards = [];
                 bestCards = bestCards.concat(this.cards);
                 bestCards = bestCards.concat(this.passingCards);
@@ -73,6 +74,23 @@ var HeartsPlayer = function() {
                 });
 
                 return [bestCards[0], bestCards[1], bestCards[2]];
+
+            case 'Custom':
+                try {
+                    var customMethod = this.GetDecisionMethod(0);
+                    // Remove the first and last line of the code
+                    customMethod = customMethod.substring(customMethod.indexOf("{") + 1);
+                    customMethod = customMethod.substring(customMethod.lastIndexOf("}"), -1);
+                    var f = new Function('cards', 'game', customMethod);
+                    var allCards = this.cards.concat(this.passingCards);
+                    var bestCards = f(allCards, game);
+                    if (bestCards == undefined) {
+                        throw "Custom decision failed.";
+                    }
+                    return bestCards;
+                } catch (err) {
+                    throw err;
+                }
         }
     }
 
@@ -80,14 +98,14 @@ var HeartsPlayer = function() {
         if (this.isHuman) {
             game.PromptPlayerToPlayCard();
         } else {
-            var card = this.FindBestPlayingCard(game, false);
+            var card = this.FindBestPlayingCard(game, this.skillLevel, false);
             game.OnPlayerChosePlayCard(card);
         }
     }
 
-    this.FindBestPlayingCard = function(aGame, isForHint) {
+    this.FindBestPlayingCard = function(aGame, aSkillLevel, isForHint) {
         var possiblePlays = aGame.GetLegalCardsForCurrentPlayerTurn();
-        switch (this.skillLevel) {
+        switch (aSkillLevel) {
             case 'Easy':
                 return possiblePlays[0];
             case 'Standard':
@@ -210,8 +228,196 @@ var HeartsPlayer = function() {
                     }
                 }
             case 'Pro':
-                var optimalPlayResult = HeartsFindOptimalPlayForCurrentPlayer(aGame, isForHint, false);
+                var optimalPlayResult = HeartsFindOptimalPlayForCurrentPlayer(aGame, isForHint);
                 return optimalPlayResult.optimalCard;
+
+            case 'Custom':
+                try {
+                    var customMethod = this.GetDecisionMethod(1);
+                    // Remove the first and last line of the code
+                    customMethod = customMethod.substring(customMethod.indexOf("{") + 1);
+                    customMethod = customMethod.substring(customMethod.lastIndexOf("}"), -1);
+                    var f = new Function('cards', 'game', customMethod);
+                    var bestCard = f(this.cards, game);
+                    if (bestCard == undefined) {
+                        throw "Custom decision failed.";
+                    }
+                    return bestCard;
+                } catch (err) {
+                    throw err;
+                }
         }
+    }
+
+    this.GetDecisionMethod = function(decisionIndex) {
+
+        var decisionMethodName = "hearts_decision_method_Custom_" + decisionIndex;
+        var decisionMethod = window.localStorage.getItem(decisionMethodName);
+        if (decisionMethod == null) {
+            // Load a default method
+            switch (decisionIndex) {
+                case 0:
+                {
+                    decisionMethod = "var ChoosePassingCards = function(cards, game) {\n\n\
+\tvar passingCards = [];\n\
+\n\
+\tvar bestCards = [];\n\
+\tbestCards = bestCards.concat(cards);\n\
+\tbestCards.sort(function(a,b) {\n\
+\t\tif (a.value === b.value) {\n\
+\t\t\tif (a.value >= 12) {\n\
+\t\t\t\tif (a.suit === 'S') {\n\
+\t\t\t\t\treturn -1;\n\
+\t\t\t\t} else if (b.suit == 'S') {\n\
+\t\t\t\t\treturn 1;\n\
+\t\t\t\t} else {\n\
+\t\t\t\t\treturn b.suitInt - a.suitInt;\n\
+\t\t\t\t}\n\
+\t\t\t} else {\n\
+\t\t\t\treturn b.suitInt - a.suitInt;\n\
+\t\t\t}\n\
+\t\t} else {\n\
+\t\t\treturn b.value - a.value;\n\
+\t\t}\n\
+\t});\n\
+\n\
+\tfor (var i=0; i<3; i++) {\n\
+\t\tpassingCards.push(bestCards[i]);\n\
+\t}\n\
+\n\
+\treturn passingCards;\n\
+};";
+                }
+                break;
+
+                case 1:
+                {
+                    decisionMethod = "var ChooseTrickCard = function(cards, game) {\n\n\
+\tvar possiblePlays = game.GetLegalCardsForCurrentPlayerTurn();\n\
+\n\
+\tif (game.trickCards.length === 0) {\n\
+\t\t// Lead with the lowest card value possible\n\
+\t\tvar play = possiblePlays[0];\n\
+\t\tfor (var i=1; i<possiblePlays.length; i++) {\n\
+\t\t\tvar possiblePlay = possiblePlays[i];\n\
+\t\t\tif (possiblePlay.value < play.value) {\n\
+\t\t\t\tplay = possiblePlay;\n\
+\t\t\t}\n\
+\t\t}\n\
+\t\treturn play;\n\
+\t} else {\n\
+\t\tvar leadCard = game.trickCards[0];\n\
+\t\tvar play = possiblePlays[0];\n\
+\t\tif (play.suit === leadCard.suit) {\n\
+\t\t\t// Must play the same suit\n\
+\t\t\tpossiblePlays.sort(function(a,b) {\n\
+\t\t\t\treturn a.value - b.value;\n\
+\t\t\t});\n\
+\n\
+\t\t\tvar highestCardInTrick = leadCard;\n\
+\t\t\tfor (var i=1; i<game.trickCards.length; i++) {\n\
+\t\t\t\tvar playedCard = game.trickCards[i];\n\
+\t\t\t\tif (playedCard.suit === leadCard.suit && playedCard.value > highestCardInTrick.value) {\n\
+\t\t\t\t\thighestCardInTrick = playedCard;\n\
+\t\t\t\t}\n\
+\t\t\t}\n\
+\n\
+\t\t\tvar currentPlayer = game.players[game.turnIndex%4];\n\
+\t\t\tif (currentPlayer.cards.length === 13) {\n\
+\t\t\t\t// First play of the round so there is no chance of taking a point\n\
+\t\t\t\t// Play the highest card possible\n\
+\t\t\t\treturn possiblePlays[possiblePlays.length-1];\n\
+\t\t\t} else if (game.trickCards.length<3) {\n\
+\t\t\t\t// Play the highest card that will not take the hand\n\
+\t\t\t\tvar curPlay = possiblePlays[0];\n\
+\t\t\t\tif (curPlay.value > highestCardInTrick) {\n\
+\t\t\t\t\t// We have to play our lowest card and hope the next person is higher\n\
+\t\t\t\t\treturn curPlay;\n\
+\t\t\t\t} else {\n\
+\t\t\t\t\t// Play the highest value that is less than the current highest card in the trick\n\
+\t\t\t\t\tfor (var i=1; i<possiblePlays.length; i++) {\n\
+\t\t\t\t\t\tvar possibleCard = possiblePlays[i];\n\
+\t\t\t\t\t\tif (possibleCard.value < highestCardInTrick.value) {\n\
+\t\t\t\t\t\t\tcurPlay = possibleCard;\n\
+\t\t\t\t\t\t}\n\
+\t\t\t\t\t}\n\
+\t\t\t\t\treturn curPlay;\n\
+\t\t\t\t}\n\
+\t\t\t} else {\n\
+\t\t\t\tvar curTrickPoints = 0;\n\
+\t\t\t\tfor (var i=0; i<game.trickCards.length; i++) {\n\
+\t\t\t\t\tvar card = game.trickCards[i];\n\
+\t\t\t\t\tif (card.suit === 'H') {\n\
+\t\t\t\t\t\tcurTrickPoints = curTrickPoints + 1;\n\
+\t\t\t\t\t} else if (card.id === 'QS') {\n\
+\t\t\t\t\t\tcurTrickPoints = curTrickPoints + 13;\n\
+\t\t\t\t\t}\n\
+\t\t\t\t}\n\
+\n\
+\t\t\t\tif (curTrickPoints === 0) {\n\
+\t\t\t\t\t// No points so we can play the highest card of suit\n\
+\t\t\t\t\tvar highestCard = possiblePlays[possiblePlays.length-1];\n\
+\t\t\t\t\tif (highestCard.id === 'QS' && possiblePlays.length > 1) {\n\
+\t\t\t\t\t\thighestCard = possiblePlays[possiblePlays.length-2];\n\
+\t\t\t\t\t}\n\
+\t\t\t\t\treturn highestCard;\n\
+\t\t\t\t} else {\n\
+\t\t\t\t\t// Try to not take the trick but if we must, then play the highest card\n\
+\t\t\t\t\tvar curPlay = possiblePlays[0];\n\
+\t\t\t\t\tif (curPlay.value > highestCardInTrick.value) {\n\
+\t\t\t\t\t\t// play our highest card\n\
+\t\t\t\t\t\tvar highestCard = possiblePlays[possiblePlays.length-1];\n\
+\t\t\t\t\t\tif (highestCard.id === 'QS' && possiblePlays.length > 1) {\n\
+\t\t\t\t\t\t\thighestCard = possiblePlays[possiblePlays.length-2];\n\
+\t\t\t\t\t\t}\n\
+\t\t\t\t\t\treturn highestCard;\n\
+\t\t\t\t\t} else {\n\
+\t\t\t\t\t\t// Play the highest value that is less than the current highest card in the trick\n\
+\t\t\t\t\t\tfor (var i=1; i<possiblePlays.length; i++) {\n\
+\t\t\t\t\t\t\tvar possibleCard = possiblePlays[i];\n\
+\t\t\t\t\t\t\tif (possibleCard.value < highestCardInTrick.value) {\n\
+\t\t\t\t\t\t\t\tcurPlay = possibleCard;\n\
+\t\t\t\t\t\t\t}\n\
+\t\t\t\t\t\t}\n\
+\t\t\t\t\t\treturn curPlay;\n\
+\t\t\t\t\t}\n\
+\t\t\t\t}\n\
+\t\t\t}\n\
+\t\t} else {\n\
+\t\t\t// Play the highest valued card we have\n\
+\t\t\tpossiblePlays.sort(function(a,b) {\n\
+\t\t\t\t// Queen of spades is highest\n\
+\t\t\t\tif (a.id === 'QS') {\n\
+\t\t\t\t\treturn -1;\n\
+\t\t\t\t} else if (b.id === 'QS') {\n\
+\t\t\t\t\treturn 1;\n\
+\t\t\t\t}\n\
+\t\t\t\t// Otherwise prefer AS and KS over hearts\n\
+\t\t\t\tif (a.value === b.value) {\n\
+\t\t\t\t\tif (a.value >= 12) {\n\
+\t\t\t\t\t\tif (a.suit === 'S') {\n\
+\t\t\t\t\t\t\treturn -1;\n\
+\t\t\t\t\t\t} else if (b.suit === 'S') {\n\
+\t\t\t\t\t\t\treturn 1;\n\
+\t\t\t\t\t\t} else {\n\
+\t\t\t\t\t\t\treturn b.suitInt - a.suitInt;\n\
+\t\t\t\t\t\t}\n\
+\t\t\t\t\t} else {\n\
+\t\t\t\t\t\treturn b.suitInt - a.suitInt;\n\
+\t\t\t\t\t}\n\
+\t\t\t\t} else {\n\
+\t\t\t\t\treturn b.value - a.value;\n\
+\t\t\t\t}\n\
+\t\t\t});\n\
+\t\t\treturn possiblePlays[0];\n\
+\t\t}\n\
+\t}\n\
+};";
+                }
+                break;
+            }
+        }
+
+        return decisionMethod;
     }
 }

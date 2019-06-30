@@ -42,7 +42,6 @@
 	<script type="text/javascript" src="cribbage/player.js"></script>
 	<script type="text/javascript" src="cribbage/settings.js"></script>
 	<script type="text/javascript" src="cribbage/scoreboard.js"></script>
-	
 
     <script>
         //
@@ -57,11 +56,11 @@
 <body>
 	<div id="menu_bar">
 		<div id="menu_bar_play_as_human_container">
-			<button id="menu_bar_play_as_human_button">Play As A Human</button>
+			<button id="menu_bar_play_as_human_button" onclick="switchToPlayAsHumanButtonPressed()">Play As A Human</button>
 			<i id="menu_bar_left_arrow"></i>
 		</div>
 		<div id="menu_bar_play_as_computer_container">
-			<button id="menu_bar_play_as_computer_button">Play As A Computer</button>
+			<button id="menu_bar_play_as_computer_button" onclick="switchToPlayAsComputerButtonPressed()">Play As A Computer</button>
 			<i id="menu_bar_right_arrow"></i>
 		</div>
 		<center>
@@ -88,7 +87,7 @@
 				<div id="humansvscomputerstitle">Humans vs Computers</div>
 				<div>
 					<select id="select_game_large" class="select_game" onchange="selectGameLargeChanged()">
-						<option value="0">Select A Game...</option>
+						<option value="0" selected>Select A Game...</option>
 						<option value="1">Hearts</option>
 						<option value="2">Spades</option>
 						<option value="3">Pinochle</option>
@@ -123,7 +122,15 @@
 		</div>
 	</div>
 	<div id="code_container_gutter"></div>
-	<div id="code_container"></div>
+	<div id="code_container">
+		<div id="code_computer_player_info"></div>
+		<div id="code_decisions_bar"></div>
+		<div id="code_editor"></div>
+		<div id="code_console"></div>
+	</div>
+
+	<script src="ace-src/ace.js" type="text/javascript" charset="utf-8"></script>
+
 </body>
 
 </html>

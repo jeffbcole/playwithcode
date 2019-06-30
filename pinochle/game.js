@@ -277,9 +277,9 @@ var PinochleGame = function () {
         <div id="menu_start_a_game" class="menu_view">\
             <div id="menu_start_a_game_title" class="menu_card_title">Choose opponent skill:</div>\
             <button id="menu_start_a_game_close_button" class="close_button" onclick="menu_card_close_click()">X</button>\
-            <button id="easy_game_button" class="menu_button" onclick="menu_start_game_click(\'Easy\')">Easy</button>\
-            <button id="standard_game_button" class="menu_button" onclick="menu_start_game_click(\'Standard\')">Standard</button>\
-            <button id="pro_game_button" class="menu_button" onclick="menu_start_game_click(\'Pro\')">Pro</button>\
+            <button id="easy_game_button" class="menu_button" onclick="game.menu_start_game_click(\'Easy\')">Easy</button>\
+            <button id="standard_game_button" class="menu_button" onclick="game.menu_start_game_click(\'Standard\')">Standard</button>\
+            <button id="pro_game_button" class="menu_button" onclick="game.menu_start_game_click(\'Pro\')">Pro</button>\
             <div style="text-align:center;font-size:12pt; pointer-events: none;">Cards are dealt randomly for all difficulty levels.</div>\
             <a id="menu_start_a_game_difficulties_link" onclick="game.ShowDifficultiesExplainedMenu()" href="#">Click here to learn how difficulties work</a>\
         </div>\
@@ -1127,11 +1127,11 @@ var PinochleGame = function () {
                 if (tapped || (currentDraggedCardView.offsetTop < autoPlayBoundaryY)) {
                     DropCurrentDraggedCardViewIntoPassingSlot();
                 } else {
-                    AnimatePlayerHandCardsIntoPosition('South', "0.3s");
+                    AnimatePlayerHandCardsIntoPosition('South', "0.3s", true);
                 }
             } else {
                 if (tapped || currentDraggedCardView.offsetTop > autoPlayBoundaryY) {
-                    AnimatePlayerHandCardsIntoPosition('South', "0.3s");
+                    AnimatePlayerHandCardsIntoPosition('South', "0.3s", true);
                 } else {
                     DropCurrentDraggedCardViewIntoPassingSlot();
                 }
@@ -1143,7 +1143,7 @@ var PinochleGame = function () {
                 if (currentDraggedCardView.offsetTop < autoPlayBoundaryY) {
                     game.DropCardInTrickPile();
                 } else {
-                    AnimatePlayerHandCardsIntoPosition('South', "0.3s");
+                    AnimatePlayerHandCardsIntoPosition('South', "0.3s", true);
                 }
             }
         }
@@ -1180,7 +1180,7 @@ var PinochleGame = function () {
             }
             
             if (closestOpenPassingIndex < 0) {
-                AnimatePlayerHandCardsIntoPosition('South', "0.3s");
+                AnimatePlayerHandCardsIntoPosition('South', "0.3s", true);
                 return;
             } else {
                 currentPassingCardViews[closestOpenPassingIndex] = currentDraggedCardView;
@@ -1202,7 +1202,7 @@ var PinochleGame = function () {
             }
         }
         
-        AnimatePlayerHandCardsIntoPosition('South', "0.3s");
+        AnimatePlayerHandCardsIntoPosition('South', "0.3s", true);
     }
 
     function ShowPassCardsButton() {
@@ -1469,6 +1469,24 @@ var PinochleGame = function () {
         cardView.classList.add('shake');
     }
 
+    function IndicateCustomDecisionCard(cardView) {
+        var raiseContainer = cardView.firstChild;
+        var flipContainer = raiseContainer.firstChild;
+        var cardFront = flipContainer.children[2];
+        var flashHighlight = cardFront.children[1];
+        flashHighlight.classList.add('highlightCard');
+        cardView.classList.add('slideUp');
+    }
+
+    function RemoveCustomDecisionIndicator(cardView) {
+        var raiseContainer = cardView.firstChild;
+        var flipContainer = raiseContainer.firstChild;
+        var cardFront = flipContainer.children[2];
+        var flashHighlight = cardFront.children[1];
+        flashHighlight.classList.remove('highlightCard');
+        cardView.classList.remove('slideUp');
+    }
+
     function GetHandCardLocation(position, index, cardCount) {
         var cardWidthHalf = 115*0.5;
         var cardHeightHalf = 162*0.5;
@@ -1491,8 +1509,8 @@ var PinochleGame = function () {
                 curLeft = (firstLeft + lastLeft)*0.5;
                 return [curLeft-cardWidthHalf, curTop-cardHeightHalf, 90];
             case 'North':
-                var firstLeft = gameContainer.innerWidth*0.5 - 120;
-                var lastLeft = gameContainer.innerWidth*0.5 + 120;
+                var firstLeft = gameContainer.innerWidth*0.5 - 50;
+                var lastLeft = gameContainer.innerWidth*0.5 + 70;
                 var firstTop = -40;
                 var lastTop = -40;
                 var handWidth = lastLeft - firstLeft;
@@ -1567,7 +1585,7 @@ var PinochleGame = function () {
 
         this.players = [];
         var player = new PinochlePlayer();
-        player.Initialize('You', true, 'Pro', 'South');
+        player.Initialize('You', true, 'Custom', 'South');
         this.players.push(player);
         switch(difficulty)
         {
@@ -1616,35 +1634,32 @@ var PinochleGame = function () {
         redoGameStates = [];
     }
 
-    var CreateGameStateString = function() {
-        if (game == null) {
-            return null;
-        }
+    this.CreateGameStateString = function() {
         var gameStateString = "";
-        gameStateString += game.skillLevel;
-        gameStateString += "," + game.winningScore;
-        gameStateString += "," + game.currentMoveStage;
-        gameStateString += "," + game.roundNumber;
-        gameStateString += "," + game.dealerIndex;
-        gameStateString += "," + game.leadIndex;
-        gameStateString += "," + game.turnIndex;
-        gameStateString += "," + game.trumpSuit;
-        gameStateString += "," + game.bidWinner;
-        gameStateString += "," + game.isDoubleDeck;
+        gameStateString += this.skillLevel;
+        gameStateString += "," + this.winningScore;
+        gameStateString += "," + this.currentMoveStage;
+        gameStateString += "," + this.roundNumber;
+        gameStateString += "," + this.dealerIndex;
+        gameStateString += "," + this.leadIndex;
+        gameStateString += "," + this.turnIndex;
+        gameStateString += "," + this.trumpSuit;
+        gameStateString += "," + this.bidWinner;
+        gameStateString += "," + this.isDoubleDeck;
         gameStateString += "\n";
         
-        for (var i=0; i<game.cardsPlayedThisRound.length; i++) {
-            gameStateString += game.cardsPlayedThisRound[i].id + ".";
+        for (var i=0; i<this.cardsPlayedThisRound.length; i++) {
+            gameStateString += this.cardsPlayedThisRound[i].id + ".";
         }
         gameStateString += "\n";
 
-        for (var i=0; i<game.trickCards.length; i++) {
-            gameStateString += game.trickCards[i].id + ".";
+        for (var i=0; i<this.trickCards.length; i++) {
+            gameStateString += this.trickCards[i].id + ".";
         }
         gameStateString += "\n";
 
         for (var i=0; i<4; i++) {
-            var player = game.players[i];
+            var player = this.players[i];
             gameStateString += player.name + "," + player.isHuman + "," + player.skillLevel + "," + player.playerPosition + "," + player.currentRoundBid + "," + player.currentRoundMaximumBid + "," + player.currentRoundWinningBidTrump + "," + player.currentRoundBidIsPass + "," + player.currentRoundMeldScore + "," + player.currentRoundCountersTaken + "," + player.gameScore + ",";
             for (var j=0; j<player.cards.length; j++) {
                 var card = player.cards[j];
@@ -1657,30 +1672,30 @@ var PinochleGame = function () {
             gameStateString += "\n";
         }
 
-        for (var i=0; i<game.roundContracts.length; i++) {
-            gameStateString += game.roundContracts[i][0] + "." + game.roundContracts[i][1] + ",";
+        for (var i=0; i<this.roundContracts.length; i++) {
+            gameStateString += this.roundContracts[i][0] + "." + this.roundContracts[i][1] + ",";
         }
         gameStateString += "\n";
 
-        for (var i=0; i<game.roundMelds.length; i++) {
-            gameStateString += game.roundMelds[i][0] + "." + game.roundMelds[i][1] + ",";
+        for (var i=0; i<this.roundMelds.length; i++) {
+            gameStateString += this.roundMelds[i][0] + "." + this.roundMelds[i][1] + ",";
         }
         gameStateString += "\n";
 
-        for (var i=0; i<game.roundCountersTaken.length; i++) {
-            gameStateString += game.roundCountersTaken[i][0] + "." + game.roundCountersTaken[i][1] + ",";
+        for (var i=0; i<this.roundCountersTaken.length; i++) {
+            gameStateString += this.roundCountersTaken[i][0] + "." + this.roundCountersTaken[i][1] + ",";
         }
         gameStateString += "\n";
 
-        for (var i=0; i<game.roundScores.length; i++) {
-            gameStateString += game.roundScores[i][0] + "." + game.roundScores[i][1] + ",";
+        for (var i=0; i<this.roundScores.length; i++) {
+            gameStateString += this.roundScores[i][0] + "." + this.roundScores[i][1] + ",";
         }
         gameStateString += "\n";
 
         return gameStateString;
     }
 
-    function LoadGameState(gameState) {
+    this.LoadGameState = function(gameState) {
         var lines = gameState.split("\n");
         var gameStateComps = lines[0].split(",");
         game.skillLevel = gameStateComps[0];
@@ -1826,9 +1841,10 @@ var PinochleGame = function () {
 
         scoreboard.Initialize();
         scoreboard.SlideDown();
-        game.CreatePlayerInfoViews();
+        game.CreatePlayerInfoViews(0);
 
         if (game.currentMoveStage == 'ChoosingBids') {
+            HidePlayerPrompt();
             HideTrumpIndicator();
             HideSelectTrumpView();
             HidePassCardsViews();
@@ -1837,7 +1853,7 @@ var PinochleGame = function () {
             RepositionUndoButtons();
 
             for (var i=0; i<4; i++) {
-                AnimatePlayerHandCardsIntoPosition(game.players[i].playerPosition, '0.5s');
+                AnimatePlayerHandCardsIntoPosition(game.players[i].playerPosition, '0.2s', false);
             }
 
             // Bidding
@@ -1885,6 +1901,7 @@ var PinochleGame = function () {
             game.PromptPlayerToChooseBid();
 
         } else if (game.currentMoveStage == 'ChoosingTrumpSuit') {
+            HidePlayerPrompt();
             HideTrumpIndicator();
             HideChoooseBidView();
             HidePassCardsViews();
@@ -1893,7 +1910,7 @@ var PinochleGame = function () {
             game.UpdateShowHintButton();
 
             for (var i=0; i<4; i++) {
-                AnimatePlayerHandCardsIntoPosition(game.players[i].playerPosition, '0.5s');
+                AnimatePlayerHandCardsIntoPosition(game.players[i].playerPosition, '0.5s', true);
             }
 
             game.currentHighestBidder = game.players[game.bidWinner];
@@ -1910,6 +1927,7 @@ var PinochleGame = function () {
             PromptPlayerToChooseTrumpSuit();
 
         } else if (game.currentMoveStage == 'ChoosingPassCards') {
+            HidePlayerPrompt();
             HideSelectTrumpView();
             HideChoooseBidView();
             RepositionUndoButtons();
@@ -1919,7 +1937,7 @@ var PinochleGame = function () {
             document.getElementById('pinochle_trick_score_bubble').style.visibility = 'hidden';
 
             for (var i=0; i<4; i++) {
-                AnimatePlayerHandCardsIntoPosition(game.players[i].playerPosition, '0.5s');
+                AnimatePlayerHandCardsIntoPosition(game.players[i].playerPosition, '0.2s', false);
             }
 
             if (game.currentHighestBidder.playerPositionInt == 0) {
@@ -1932,22 +1950,25 @@ var PinochleGame = function () {
                 var bidView = document.getElementById('bid_view_South');
                 bidView.style.opacity = 1;
                 bidView.style.visibility = 'visible';
-                BumpSouthBidView();
-                
-            } else {  // North must have won the bid
+
+            } else {  
+                // North must have won the bid
                 HideBidView('West');
                 HideBidView('East');
+                HideBidView('South');
+                UpdateBidViewBid('North', game.players[2].currentRoundBid, false);
+                UpdateBidviewBrightness('North', true);
                 var bidView = document.getElementById('bid_view_North');
                 bidView.style.opacity = 1;
                 bidView.style.visibility = 'visible';
                 UpdateBidViewIsContract(game.currentHighestBidder.playerPosition);
-                ShowContractOnBidView(game.currentHighestBidder.playerPosition);
             }
     
             scoreboard.UpdateScores(true, false, false);
             game.PromptPlayerToChoosePassingCards();
             
         } else if (game.currentMoveStage == 'AcceptingMelds') {
+            HidePlayerPrompt();
             HideChoooseBidView();
             HidePassCardsViews();
             HideRoundResultView();
@@ -1957,29 +1978,33 @@ var PinochleGame = function () {
             document.getElementById('pinochle_trick_score_bubble').style.visibility = 'hidden';
             HideSelectTrumpView();
             IndicateTrumpSuit(null);
-            var playerPrompt = document.getElementById('pinochle_player_play_prompt');
-            with (playerPrompt.style) {
-                transition = "0.1s linear";
-                opacity = 0;
-            }
+            HidePlayerPrompt();
             CountMeldsForRound(false);
 
         } else if (game.currentMoveStage == 'ChoosingTrickCard') {
+            HidePlayerPrompt();
             IndicateTrumpSuit(null);
             RepositionUndoButtons();
             HideAcceptMeldView();
             HideAcceptTrickButton();
+            HideChoooseBidView();
+            HidePassCardsViews();
+            HideBidView('West');
+            HideBidView('East');
+            HideBidView('South');
+            HideBidView('North');
             document.getElementById('pinochle_trick_score_bubble').style.visibility = 'hidden';
             UpdatePlayerRoundScore(true);
             UpdatePlayerRoundScore(false);
 
             for (var i = 0; i < allCards.length; i++) {
                 var cardView = allCards[i].cardView;
+                UnshadeCard(cardView);
                 cardView.needsToBeHidden = true;
             }
 
             for (var i=0; i<4; i++) {
-                AnimatePlayerHandCardsIntoPosition(game.players[i].playerPosition, '0.5s');
+                AnimatePlayerHandCardsIntoPosition(game.players[i].playerPosition, '0.2s', false);
             }
 
             var ctr = 0;
@@ -2021,6 +2046,7 @@ var PinochleGame = function () {
             game.PromptPlayerToPlayCard();
 
         } else if (game.currentMoveStage == 'AcceptingRoundScores') {
+            HidePlayerPrompt();
             HideChoooseBidView();
             HideAcceptMeldView();
             HideAcceptTrickButton();
@@ -2028,11 +2054,7 @@ var PinochleGame = function () {
             HideBidView('North');
             HideBidView('East');
             HideBidView('South');
-            var playerPrompt = document.getElementById('pinochle_player_play_prompt');
-            with (playerPrompt.style) {
-                transition = "0.1s linear";
-                opacity = 0;
-            }
+            HidePlayerPrompt();
 
             for (var i = 0; i < allCards.length; i++) {
                 var cardView = allCards[i].cardView;
@@ -2070,12 +2092,12 @@ var PinochleGame = function () {
         scoreboard.Initialize();
         scoreboard.SlideDown();
 
-        this.CreatePlayerInfoViews();
+        this.CreatePlayerInfoViews(1000);
         
         this.AnimateDealCardsForRound();
     }
 
-    this.CreatePlayerInfoViews = function() {
+    this.CreatePlayerInfoViews = function(delay) {
         for (var i=0; i<4; i++) {
             var playerName = document.getElementById('player_name_' + this.players[i].playerPosition);
             playerName.positionFunction = "GetPlayerNamePosition('" + this.players[i].playerPosition + "')";
@@ -2109,7 +2131,6 @@ var PinochleGame = function () {
         setTimeout(function () {
             for (var i=0; i<4; i++) {
                 var playerName = document.getElementById('player_name_' + game.players[i].playerPosition);
-                playerName.style.transition = "1s linear";
                 playerName.style.visibility = "visible";
                 playerName.style.opacity = 1;
                 var playerScore = document.getElementById('player_score_' + game.players[i].playerPosition);
@@ -2117,7 +2138,7 @@ var PinochleGame = function () {
                 playerScore.style.visibility = "visible";
                 playerScore.style.opacity = 1;
             }
-        }, 1000);
+        }, delay);
     }
 
     this.ResetPlayerRoundScores = function() {
@@ -2163,7 +2184,7 @@ var PinochleGame = function () {
                 }
             }
             case 'North':
-                return [gameContainer.innerWidth*0.5 + 180,30];
+                return [gameContainer.innerWidth*0.5 + 110,30];
             default:
             {
                 if (game.currentMoveStage == 'AcceptingMelds') {
@@ -2185,7 +2206,7 @@ var PinochleGame = function () {
             case 'West':
                 return [40+12,280];
             case 'North':
-                return [gameContainer.innerWidth*0.5 + 180+12,60];
+                return [gameContainer.innerWidth*0.5 + 110+12,60];
             default:
                 return [gameContainer.innerWidth-140+12,280];
         }
@@ -2239,6 +2260,7 @@ var PinochleGame = function () {
         var j, x, i;
         for (i=0; i<allCards.length; i++) {
             var card = allCards[i];
+            UnshadeCard(card.cardView);
             if (alreadyPlayedCards.includes(card)) {
                 continue;
             }
@@ -2304,10 +2326,10 @@ var PinochleGame = function () {
     }
 
     this.UpdateSortLeftToRight = function() {
-        AnimatePlayerHandCardsIntoPosition('South', "0.3s");
+        AnimatePlayerHandCardsIntoPosition('South', "0.3s", true);
     }
 
-    function AnimatePlayerHandCardsIntoPosition(playerPosition, duration) {
+    function AnimatePlayerHandCardsIntoPosition(playerPosition, duration, animateCardFlip) {
         var player;
         var flipUp = false;
         switch (playerPosition) {
@@ -2347,9 +2369,9 @@ var PinochleGame = function () {
             var cardView = player.cards[i].cardView;
             cardView.needsToBeHidden = false;
             if (flipUp) {
-                flipUpCard(cardView, true);
+                flipUpCard(cardView, animateCardFlip);
             } else {
-                flipDownCard(cardView, true);
+                flipDownCard(cardView, animateCardFlip);
             }
             cardView.positionIndex = i;
             cardView.positionFunction = "GetHandCardLocation('" + playerPosition + "', " + i + ", " + player.cards.length + ")";
@@ -3184,8 +3206,8 @@ var PinochleGame = function () {
                 delay = 0;
             }
             setTimeout(function() {
-                AnimatePlayerHandCardsIntoPosition(player.playerPosition, '1s');
-                AnimatePlayerHandCardsIntoPosition(receivingPlayer.playerPosition, '1s');
+                AnimatePlayerHandCardsIntoPosition(player.playerPosition, '1s', true);
+                AnimatePlayerHandCardsIntoPosition(receivingPlayer.playerPosition, '1s', true);
                 
                 if (receivingPlayer.playerPosition == 'South') {
                     setTimeout(function() {
@@ -3286,8 +3308,8 @@ var PinochleGame = function () {
                         }
                     }
                     setTimeout(function() {
-                        AnimatePlayerHandCardsIntoPosition(player.playerPosition, '1s');
-                        AnimatePlayerHandCardsIntoPosition(receivingPlayer.playerPosition, '1s');
+                        AnimatePlayerHandCardsIntoPosition(player.playerPosition, '1s', true);
+                        AnimatePlayerHandCardsIntoPosition(receivingPlayer.playerPosition, '1s', true);
                         setTimeout(function() {
                             game.currentMoveStage = 'AcceptingMelds';
                             RememberLatestGameState();
@@ -3298,8 +3320,8 @@ var PinochleGame = function () {
 
             } else {
                 setTimeout(function() {
-                    AnimatePlayerHandCardsIntoPosition(player.playerPosition, '1s');
-                    AnimatePlayerHandCardsIntoPosition(receivingPlayer.playerPosition, '1s');
+                    AnimatePlayerHandCardsIntoPosition(player.playerPosition, '1s', true);
+                    AnimatePlayerHandCardsIntoPosition(receivingPlayer.playerPosition, '1s', true);
                     setTimeout(function() {
                         game.currentMoveStage = 'AcceptingMelds';
                         RememberLatestGameState();
@@ -3728,10 +3750,10 @@ var PinochleGame = function () {
             }
         }
 
-        AnimatePlayerHandCardsIntoPosition('West', '1s');
-        AnimatePlayerHandCardsIntoPosition('North', '1s');
-        AnimatePlayerHandCardsIntoPosition('East', '1s');
-        AnimatePlayerHandCardsIntoPosition('South','1s');
+        AnimatePlayerHandCardsIntoPosition('West', '1s', true);
+        AnimatePlayerHandCardsIntoPosition('North', '1s', true);
+        AnimatePlayerHandCardsIntoPosition('East', '1s', true);
+        AnimatePlayerHandCardsIntoPosition('South','1s', true);
 
         if (game.bidWinner == 0 || game.bidWinner == 2) {
             game.players[0].currentRoundCountersTaken = -1;
@@ -3789,10 +3811,10 @@ var PinochleGame = function () {
         
         
         setTimeout(function() {
-            AnimatePlayerHandCardsIntoPosition('West', '1s');
-            AnimatePlayerHandCardsIntoPosition('North', '1s');
-            AnimatePlayerHandCardsIntoPosition('East', '1s');
-            AnimatePlayerHandCardsIntoPosition('South','1s');   
+            AnimatePlayerHandCardsIntoPosition('West', '1s', true);
+            AnimatePlayerHandCardsIntoPosition('North', '1s', true);
+            AnimatePlayerHandCardsIntoPosition('East', '1s', true);
+            AnimatePlayerHandCardsIntoPosition('South','1s', true);   
 
             setTimeout(function() {
                 scoreboard.UpdateScores(true, true, true);
@@ -3921,7 +3943,7 @@ var PinochleGame = function () {
             {
                 var player = this.players[0];
                 var passingCardsCount = this.settings.GetSetting('setting_passing_cards_count');
-                var optimalCards = player.FindBestPassingCards(passingCardsCount, game);
+                var optimalCards = player.FindBestPassingCards(passingCardsCount, 'Pro', game);
                 BumpCards(optimalCards, 0);
             }
             break;
@@ -3933,22 +3955,6 @@ var PinochleGame = function () {
             }
             break;
         }
-    }
-
-    this.BumpHintCards = function() {
-        var optimalCards = [];
-        if (this.currentMoveStage == 'ChoosingPassCards') {
-            var player = this.players[0];
-            var passingCardsCount = this.settings.GetSetting('setting_passing_cards_count');
-            optimalCards = player.FindBestPassingCards(passingCardsCount, game);
-
-        } else if (this.currentMoveStage === 'ChoosingTrickCard') {
-            var player = this.players[0];
-            var bestCard = player.FindBestPlayingCard(game, true);
-            optimalCards.push(bestCard);
-        }
-
-        BumpCards(optimalCards, 0);
     }
 
     this.StartTrickTaking = function() {
@@ -4007,6 +4013,14 @@ var PinochleGame = function () {
         this.currentMoveStage = "ChoosingTrickCard";
     }
 
+    var HidePlayerPrompt = function() {
+        var playerPrompt = document.getElementById('pinochle_player_play_prompt');
+        with (playerPrompt.style) {
+            transition = "0.1s linear";
+            opacity = 0;
+        }
+    }
+
     function GetTrickPlayPromptLocation() {
         var pos = GetTrickDiscardLocation('South');
         return [pos[0] + cardLoweredWidth*0.5, [pos[1] + cardLoweredHeight*0.5 + 80]]; 
@@ -4027,11 +4041,7 @@ var PinochleGame = function () {
 
     this.OnPlayerChosePlayCard = function(card) {
         this.currentMoveStage = 'None';
-        var playerPrompt = document.getElementById('pinochle_player_play_prompt');
-        with (playerPrompt.style) {
-            transition = "0.1s linear";
-            opacity = 0;
-        }
+        HidePlayerPrompt();
 
         var player = this.players[this.turnIndex%4];
         PlayCard(this,card);
@@ -4062,7 +4072,7 @@ var PinochleGame = function () {
                 cardView.isClickable = false;
             }
         }
-        AnimatePlayerHandCardsIntoPosition(player.playerPosition, "0.3s");
+        AnimatePlayerHandCardsIntoPosition(player.playerPosition, "0.3s", true);
 
         if (this.trickCards.length !== 4) {
             var nextPlayer = this.players[this.turnIndex%4];
@@ -4859,7 +4869,7 @@ var PinochleGame = function () {
     var redoGameStates = [];
 
     var RememberLatestGameState = function() {
-        var gameState = CreateGameStateString();
+        var gameState = game.CreateGameStateString();
         undoGameStates.push(gameState);
         var delay = 0;
         if (game.gameState == 'AcceptingRoundScores') {
@@ -4961,7 +4971,7 @@ var PinochleGame = function () {
             var undoState = undoGameStates.pop();            
             redoGameStates.push(undoState);
             var curState = undoGameStates[undoGameStates.length-1];
-            LoadGameState(curState);
+            this.LoadGameState(curState);
             ShowRedoButton();
             if (undoGameStates.length == 1) {
                 HideUndoButton();
@@ -4997,7 +5007,7 @@ var PinochleGame = function () {
         if (redoGameStates.length>0) {
             var redoState = redoGameStates.pop();
             undoGameStates.push(redoState);
-            LoadGameState(redoState);
+            this.LoadGameState(redoState);
             if (redoGameStates.length == 0) {
                 HideRedoButton();
             }
@@ -5051,9 +5061,6 @@ var PinochleGame = function () {
     }
 
     this.OnResizeWindow = function() {
-
-        gameContainer.innerWidth = window.innerWidth - codeContainerGutterRightPosition - 20;
-        gameContainer.style.width = gameContainer.innerWidth + 'px';
         
         var ease = "0.4s ease-out";
 
@@ -5937,6 +5944,341 @@ var PinochleGame = function () {
             transition = '0.3s linear';
             transform = 'translate(-50%, -' + gameContainer.innerHeight + 'px) scale(1)';
             visibility = 'hidden';
+        }
+    }
+
+    this.GetCurrentComputerPlayerDecisions = function() {
+        var selectedIndex = 0;
+        switch (game.currentMoveStage) {
+            case 'ChoosingBids':
+                selectedIndex = 0;
+                break;
+            case 'ChoosingPassCards':
+                if (game.currentHighestBidder = game.players[2]) {
+                    selectedIndex = 1;
+                } else {
+                    selectedIndex = 2;
+                }
+                break;
+            case 'ChoosingTrickCard':
+                selectedIndex = 3;
+                break;
+            default:
+                selectedIndex = 2;
+                this.LoadDecisionScenario(selectedIndex);
+                break;
+        }
+        return {
+            displayNames: ["Choose Bid/Trump", "Pass To Bid Winner", "Pass<br>Back", "Choose Trick Card"],
+            selectedIndex: selectedIndex
+        }
+    }
+
+    this.LoadDecisionScenario = function(decisionIndex) {
+        
+        // Create a random game scenario for the current decisionIndex
+        game.InitializeGame('Standard');
+        game.roundNumber = this.roundNumber + 1;
+        game.currentHighestBidder = null;
+        game.trickCards = [];
+        game.dealerIndex = 0;
+        for (var i=0; i<game.players.length; i++) {
+            var player = game.players[i];
+            player.cards = [];
+            player.currentRoundMeldScore = 0;
+            player.currentRoundCountersTaken = 0;
+            player.currentRoundBid = -1;
+            player.currentRoundMaximumBid = -1;
+            player.currentRoundBidIsPass = false;
+            player.isShownVoidInSuit = [false,false,false,false];
+        }
+
+        // Deal cards for round
+        game.cardsPlayedThisRound = [];
+        var isDoubleDeck = this.settings.GetSetting('setting_deck_count')==1;
+        InitializeCardDeck(isDoubleDeck);
+        var cardsPerHand = isDoubleDeck ? 20 : 12;
+        for (var i=0; i<cardsPerHand; i++) {
+            for (var j=0; j<4; j++) {
+                var card = cards[deckTopIndex];
+                card.wasShown = false;
+                game.players[j].cards.push(card);
+                deckTopIndex = deckTopIndex-1;
+            }
+        }
+
+        switch (decisionIndex) {
+            case 0:
+                // ChoosingBids
+                game.currentMoveStage = 'ChoosingBids';
+                var currentBid = Number(game.settings.GetSetting('setting_minimum_bid'));
+                for (var i=1; i<4; i++) {
+                    game.players[i].currentRoundMaximumBid = 10000; // Just assign a large value so that we dont run costly analysis
+                    game.players[i].currentRoundBid = currentBid;
+                    currentBid++;
+                }
+                game.currentHighestBidder = game.players[3];   
+            break; 
+            case 1:
+                // Pass to bid winner
+                game.currentMoveStage = 'ChoosingPassCards';
+                game.bidWinner = 2;
+                game.currentHighestBidder = game.players[game.bidWinner];
+
+                // Choose a random bid and a reasonable trump suit
+                var bidAndSuit = [0, ''];
+                if (game.isDoubleDeck) {
+                    bidAndSuit[0] = Math.floor(Math.random() * 25) + 50
+                } else {
+                    bidAndSuit[0] = Math.floor(Math.random() * 10) + 20
+                }
+                var suitStrength = [];
+                for (var i=0; i<4; i++) {
+                    suitStrength[i] = 0;
+                }
+                for (var i=0; i<game.currentHighestBidder.cards.length; i++) {
+                    suitStrength[game.currentHighestBidder.cards[i].suitInt] += game.currentHighestBidder.cards[i].value;
+                }
+                var bestStrength = 0;
+                var suits = ['S','H','C','D'];
+                for (var i=0; i<4; i++) {
+                    if (suitStrength[i] >= bestStrength) {
+                        bestStrength = suitStrength[i];
+                        bidAndSuit[1] = suits[i];
+                    }
+                }
+                game.currentHighestBidder.currentRoundBid = bidAndSuit[0];
+                game.currentHighestBidder.currentRoundMaximumBid = game.currentHighestBidder.currentRoundBid;
+                game.trumpSuit = bidAndSuit[1];
+                break;
+            case 2:
+                // Pass as bid winner
+                game.currentMoveStage = 'ChoosingPassCards';
+                game.bidWinner = 0;
+                game.currentHighestBidder = game.players[game.bidWinner];
+
+                // Choose a random bid and a reasonable trump suit
+                var bidAndSuit = [0, ''];
+                if (game.isDoubleDeck) {
+                    bidAndSuit[0] = Math.floor(Math.random() * 25) + 50
+                } else {
+                    bidAndSuit[0] = Math.floor(Math.random() * 10) + 20
+                }
+                var suitStrength = [];
+                for (var i=0; i<4; i++) {
+                    suitStrength[i] = 0;
+                }
+                for (var i=0; i<game.currentHighestBidder.cards.length; i++) {
+                    suitStrength[game.currentHighestBidder.cards[i].suitInt] += game.currentHighestBidder.cards[i].value;
+                }
+                var bestStrength = 0;
+                var suits = ['S','H','C','D'];
+                for (var i=0; i<4; i++) {
+                    if (suitStrength[i] >= bestStrength) {
+                        bestStrength = suitStrength[i];
+                        bidAndSuit[1] = suits[i];
+                    }
+                }
+                game.currentHighestBidder.currentRoundBid = bidAndSuit[0];
+                game.trumpSuit = bidAndSuit[1];
+
+                // Pass cards to bid winner
+                var passingCardsCount = Number(game.settings.GetSetting('setting_passing_cards_count'));
+                var passingPlayer = game.players[2];
+                var bestCards = passingPlayer.FindBestPassingCards(passingCardsCount, passingPlayer.skillLevel, game);
+                passingPlayer.passingCards = bestCards;
+                passingPlayer.cards = game.players[2].cards.filter((el) => !bestCards.includes(el));
+                var receivingPlayer = game.players[0];
+                receivingPlayer.receivedCards = [];
+                for (var i=0; i<passingPlayer.passingCards.length; i++) {
+                    passingPlayer.passingCards[i].wasPassed = true;
+                    receivingPlayer.receivedCards.push(passingPlayer.passingCards[i]);
+                    receivingPlayer.cards.push(passingPlayer.passingCards[i]);
+                }
+
+                break;
+            case 3:
+                // Trick Taking
+                game.currentMoveStage = 'ChoosingTrickCard';
+                game.bidWinner = Math.floor(Math.random()*4);
+                game.currentHighestBidder = game.players[game.bidWinner];
+                
+                // Choose a random bid and a reasonable trump suit
+                var bidAndSuit = [0, ''];
+                if (game.isDoubleDeck) {
+                    bidAndSuit[0] = Math.floor(Math.random() * 25) + 50
+                } else {
+                    bidAndSuit[0] = Math.floor(Math.random() * 10) + 20
+                }
+                var suitStrength = [];
+                for (var i=0; i<4; i++) {
+                    suitStrength[i] = 0;
+                }
+                for (var i=0; i<game.currentHighestBidder.cards.length; i++) {
+                    suitStrength[game.currentHighestBidder.cards[i].suitInt] += game.currentHighestBidder.cards[i].value;
+                }
+                var bestStrength = 0;
+                var suits = ['S','H','C','D'];
+                for (var i=0; i<4; i++) {
+                    if (suitStrength[i] >= bestStrength) {
+                        bestStrength = suitStrength[i];
+                        bidAndSuit[1] = suits[i];
+                    }
+                }
+                game.currentHighestBidder.currentRoundBid = bidAndSuit[0];
+                game.trumpSuit = bidAndSuit[1];
+
+                // Pass cards to bid winner
+                var passingCardsCount = Number(game.settings.GetSetting('setting_passing_cards_count'));
+                var passingPlayer = game.players[(game.currentHighestBidder.playerPositionInt+2)%4];
+                var bestCards = passingPlayer.FindBestPassingCards(passingCardsCount, passingPlayer.skillLevel, game);
+                passingPlayer.passingCards = bestCards;
+                passingPlayer.cards = passingPlayer.cards.filter((el) => !bestCards.includes(el));
+                var receivingPlayer = game.players[game.currentHighestBidder.playerPositionInt];
+                receivingPlayer.receivedCards = [];
+                for (var i=0; i<passingPlayer.passingCards.length; i++) {
+                    passingPlayer.passingCards[i].wasPassed = true;
+                    receivingPlayer.receivedCards.push(passingPlayer.passingCards[i]);
+                    receivingPlayer.cards.push(passingPlayer.passingCards[i]);
+                }
+
+                // Pass cards back
+                receivingPlayer = passingPlayer;
+                passingPlayer = game.currentHighestBidder;
+                bestCards = passingPlayer.FindBestPassingCards(passingCardsCount, passingPlayer.skillLevel, game);
+                passingPlayer.passingCards = bestCards;
+                passingPlayer.cards = passingPlayer.cards.filter((el) => !bestCards.includes(el));
+                receivingPlayer.receivedCards = [];
+                for (var i=0; i<passingPlayer.passingCards.length; i++) {
+                    passingPlayer.passingCards[i].wasPassed = true;
+                    receivingPlayer.receivedCards.push(passingPlayer.passingCards[i]);
+                    receivingPlayer.cards.push(passingPlayer.passingCards[i]);
+                }
+
+                // Count Melds
+                for (var i=0; i<4; i++) {
+                    var player = game.players[i];
+                    player.passingCards = [];
+                    player.CalculateMelds(player.cards, game.trumpSuit, game.isDoubleDeck, false);
+                    for (var n=0; n<player.melds.length; n++) {
+                        var meld = player.melds[n];
+                        for (var k=0; k<meld.cards.length; k++) {
+                            var card = meld.cards[k];
+                            card.wasShown = true;
+                        }
+                    }
+                }
+
+                game.leadIndex = game.currentHighestBidder.playerPositionInt;
+                game.turnIndex = game.leadIndex;
+
+                // Play out trick taking for a random number of tricks
+                var randomTricksPlayed = Math.floor(Math.random()*game.currentHighestBidder.cards.length-2);
+                while (randomTricksPlayed>0) {
+                    game.trickCards = [];
+                    while (game.trickCards.length < 4) {
+                        var nextPlayer = game.players[game.turnIndex%4];
+                        var nextCard = nextPlayer.FindBestPlayingCard(game);
+                        PlayCard(game,nextCard);
+                    }
+
+                    var trickResult = GetTrickResult(game);
+                    trickResult.trickTaker.currentRoundCountersTaken += trickResult.countersTaken;
+                    game.leadIndex = trickResult.trickTaker.playerPositionInt;
+                    game.turnIndex = game.leadIndex;
+
+                    randomTricksPlayed = randomTricksPlayed-1;
+                }
+                
+                // Play out the trick until it is the player's turn
+                game.trickCards = [];
+                while (game.turnIndex%4 != 0) {
+                    var nextPlayer = game.players[game.turnIndex%4];
+                    var nextCard = nextPlayer.FindBestPlayingCard(game);
+                    PlayCard(game,nextCard);
+                }
+
+                break;
+        }
+
+        game.LoadGameState(game.CreateGameStateString());
+
+    }
+
+    this.GetCustomPlayerMethod = function(decisionIndex) {
+        return game.players[0].GetDecisionMethod(decisionIndex);
+    }
+
+    this.SaveCurrentDecisionMethod = function(decisionIndex, code) {
+        var decisionMethodName = "pinochle_decision_method_Custom_" + decisionIndex;
+        window.localStorage.setItem(decisionMethodName, code);
+    }
+
+    this.TryCurrentDecisionMethod = function(decisionIndex) {
+        try {
+            var optimalCards = [];
+            switch (decisionIndex) {
+                case 0: // Choose Bid
+                {
+                    // TODO:
+                    var player = this.players[0];
+                    //var bid = player.FindBestBid(game, player.skillLevel);
+                    // TODO: indicate the current custom decision bid output
+                    //console.log("Custom Bid: " + bid);
+                }
+                break;
+
+                case 1: // Pass to bid winner
+                {
+                    var player = this.players[0];
+                    var passingCardsCount = Number(this.settings.GetSetting('setting_passing_cards_count'));
+                    //player.CalculateMelds(player.cards, game.trumpSuit, game.isDoubleDeck, true);
+                    //var bestCards = player.ChoosePassCardsToBidWinner(player.cards, player.melds, game.trumpSuit, game.isDoubleDeck, passingCardsCount);
+                    var bestCards = player.FindBestPassingCards(passingCardsCount, player.skillLevel, game);
+                    for (var i=0; i<bestCards.length; i++) {
+                        optimalCards.push(bestCards[i]);
+                    }
+                }
+                break;
+
+                case 2: // Pass as bid winner
+                {
+                    var player = this.players[0];
+                    var passingCardsCount = Number(this.settings.GetSetting('setting_passing_cards_count'));
+                    //player.CalculateMelds(player.cards, game.trumpSuit, game.isDoubleDeck, true);
+                    //var bestCards = player.ChoosePassCardsAsBidWinner(player.cards, player.receivedCards, player.melds, game.trumpSuit, passingCardsCount);
+                    var bestCards = player.FindBestPassingCards(passingCardsCount, player.skillLevel, game);
+                    for (var i=0; i<bestCards.length; i++) {
+                        optimalCards.push(bestCards[i]);
+                    }
+                }
+                break;
+
+                case 3: // Choose trick card
+                {
+                    var player = this.players[0];
+                    var bestCard = player.FindBestPlayingCard(game, player.skillLevel, true);
+                    optimalCards.push(bestCard);
+                }
+                break;
+            }
+
+            for (var i=0; i<optimalCards.length; i++) {
+                var cardView = optimalCards[i].cardView;
+                IndicateCustomDecisionCard(cardView);
+            }
+
+            IndicateCodeError("");
+        }
+        catch (err) {
+            IndicateCodeError(err);
+            this.ClearAllCustomDecisionIndicators();
+        }
+    }
+
+    this.ClearAllCustomDecisionIndicators = function() {
+        for (var i=0; i<cards.length; i++) {
+            RemoveCustomDecisionIndicator(cards[i].cardView);
         }
     }
 }

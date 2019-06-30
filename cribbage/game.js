@@ -43,6 +43,7 @@ var CribbageGame = function () {
     var currentPlayerHandCardSpacing = 0;
     var autoPlayBoundaryY = 0;
 
+    this.humanPlayer = new CribbagePlayer();
     var computerPlayer = new CribbagePlayer();
 
     var computerPeggingPointsTotal = 0;
@@ -1519,13 +1520,13 @@ var CribbageGame = function () {
         }, 310);
     }
 
-    function flipUpCard(cardView) {
+    function flipUpCard(cardView, animate) {
         var raiseContainer = cardView.firstChild;
         var flipContainer = raiseContainer.firstChild;
         var cardShadow = flipContainer.children[0];
         var cardBack = flipContainer.children[1];
         var cardFront = flipContainer.children[2];
-        var ease = "0.7s ease-out";
+        var ease = animate ? "0.7s ease-out" : "none";
         flipContainer.style.transition = ease;
         cardShadow.style.transition = ease;
         cardBack.style.transition = ease;
@@ -1533,31 +1534,47 @@ var CribbageGame = function () {
         raiseContainer.style.transition = ease;
         raiseContainer.style.transform = "scale(1.15)";
         
-        if (isIE) {
-            cardFront.style.transform = "translate3d(0px,0px,1px) perspective(500px) rotateY(0deg)";
-            cardBack.style.transform = "translate3d(0px,0px,1px) perspective(500px) rotateY(-180deg)";
-            cardShadow.style.transform = "translate3d(20px,20px,0px) perspective(500px) rotateY(0deg)";
-            setTimeout(function () {
+        if (animate) {
+            if (isIE) {
+                cardFront.style.transform = "translate3d(0px,0px,1px) perspective(500px) rotateY(0deg)";
+                cardBack.style.transform = "translate3d(0px,0px,1px) perspective(500px) rotateY(-180deg)";
+                cardShadow.style.transform = "translate3d(20px,20px,0px) perspective(500px) rotateY(0deg)";
+                setTimeout(function () {
+                    raiseContainer.style.transform = "scale(1)";
+                    cardShadow.style.transform = "translate3d(0px,0px,0px) perspective(500px) rotateY(0deg)";
+                }, 400);
+            } else {
+                flipContainer.style.transform = "perspective(500px) rotateY(180deg)";
+                cardShadow.style.transform = "translate3d(-20px,20px,0px)";
+                setTimeout(function () {
+                    raiseContainer.style.transform = "scale(1)";
+                    cardShadow.style.transform = "translate3d(0px,0px,0px)";
+                }, 400);
+            }
+        } else {
+            if (isIE) {
+                cardFront.style.transform = "translate3d(0px,0px,1px) perspective(500px) rotateY(0deg)";
+                cardBack.style.transform = "translate3d(0px,0px,1px) perspective(500px) rotateY(-180deg)";
+                cardShadow.style.transform = "translate3d(20px,20px,0px) perspective(500px) rotateY(0deg)";
                 raiseContainer.style.transform = "scale(1)";
                 cardShadow.style.transform = "translate3d(0px,0px,0px) perspective(500px) rotateY(0deg)";
-            }, 400);
-        } else {
-            flipContainer.style.transform = "perspective(500px) rotateY(180deg)";
-            cardShadow.style.transform = "translate3d(-20px,20px,0px)";
-            setTimeout(function () {
+            } else {
+                flipContainer.style.transform = "perspective(500px) rotateY(180deg)";
+                cardShadow.style.transform = "translate3d(-20px,20px,0px)";
                 raiseContainer.style.transform = "scale(1)";
                 cardShadow.style.transform = "translate3d(0px,0px,0px)";
-            }, 400);
+            }
         }
     }
 
-    function flipDownCard(cardView) {
+    function flipDownCard(cardView, animate) {
+        
         var raiseContainer = cardView.firstChild;
         var flipContainer = raiseContainer.firstChild;
         var cardShadow = flipContainer.children[0];
         var cardBack = flipContainer.children[1];
         var cardFront = flipContainer.children[2];
-        var ease = "0.7s ease-out";
+        var ease = animate ? "0.7s ease-out" : "none";
         flipContainer.style.transition = ease;
         cardShadow.style.transition = ease;
         cardBack.style.transition = ease;
@@ -1565,23 +1582,37 @@ var CribbageGame = function () {
         raiseContainer.style.transition = ease;
         raiseContainer.style.transform = "scale(1.15)";
         
-        if (isIE) {
-            cardFront.style.transform = "translate3d(0px,0px,1px) perspective(500px) rotateY(180deg)";
-            cardBack.style.transform = "translate3d(0px,0px,1px) perspective(500px) rotateY(0deg)";
-            cardShadow.style.transform = "translate3d(20px,20px,0px) perspective(500px) rotateY(180deg)";
-            setTimeout(function () {
+        if (animate) {
+            if (isIE) {
+                cardFront.style.transform = "translate3d(0px,0px,1px) perspective(500px) rotateY(180deg)";
+                cardBack.style.transform = "translate3d(0px,0px,1px) perspective(500px) rotateY(0deg)";
+                cardShadow.style.transform = "translate3d(20px,20px,0px) perspective(500px) rotateY(180deg)";
+                setTimeout(function () {
+                    raiseContainer.style.transform = "scale(1)";
+                    cardShadow.style.transform = "translate3d(0px,0px,0px) perspective(500px) rotateY(180deg)";
+                }, 400);
+            } else {
+                flipContainer.style.transform = "perspective(500px) rotateY(0deg)";
+                cardShadow.style.transform = "translate3d(-20px,20px,0px)";
+                setTimeout(function () {
+                    raiseContainer.style.transform = "scale(1)";
+                    cardShadow.style.transform = "translate3d(0px,0px,0px)";
+                }, 400);
+            }
+        } else {
+            if (isIE) {
+                cardFront.style.transform = "translate3d(0px,0px,1px) perspective(500px) rotateY(180deg)";
+                cardBack.style.transform = "translate3d(0px,0px,1px) perspective(500px) rotateY(0deg)";
+                cardShadow.style.transform = "translate3d(20px,20px,0px) perspective(500px) rotateY(180deg)";
                 raiseContainer.style.transform = "scale(1)";
                 cardShadow.style.transform = "translate3d(0px,0px,0px) perspective(500px) rotateY(180deg)";
-            }, 400);
-        } else {
-            flipContainer.style.transform = "perspective(500px) rotateY(0deg)";
-            cardShadow.style.transform = "translate3d(-20px,20px,0px)";
-            setTimeout(function () {
+            } else {
+                flipContainer.style.transform = "perspective(500px) rotateY(0deg)";
+                cardShadow.style.transform = "translate3d(-20px,20px,0px)";
                 raiseContainer.style.transform = "scale(1)";
                 cardShadow.style.transform = "translate3d(0px,0px,0px)";
-            }, 400);
+            }         
         }
-        
     }
 
     function flipDownAndLowerCard(cardView, lowerDelay) {
@@ -2586,7 +2617,7 @@ var CribbageGame = function () {
                     left = eval(cardView.positionLeftFunction);
                     top = eval(cardView.positionTopFunction);
                 };
-                setTimeout(flipUpCard, i * 60 + 800, cardView);
+                setTimeout(flipUpCard, i * 60 + 800, cardView, true);
             }
         }, 50)
 
@@ -2987,8 +3018,8 @@ var CribbageGame = function () {
         // Flip over the cards
         crib[0].cardView.isClickable = false;
         crib[1].cardView.isClickable = false;
-        flipDownCard(crib[0].cardView);
-        flipDownCard(crib[1].cardView);
+        flipDownCard(crib[0].cardView, true);
+        flipDownCard(crib[1].cardView, true);
 
         // Play the computer cards
         var computerDiscards = computerPlayer.SelectTwoCardsToDiscardInCrib(skillLevel, !isPlayersCrib, computersHand);
@@ -3094,7 +3125,7 @@ var CribbageGame = function () {
         // Flip the top card on the deck
         topCard = cards[deckTopIndex];
         topCard.cardView.style.zIndex = 60;
-        flipUpCard(topCard.cardView);
+        flipUpCard(topCard.cardView, true);
         topCard.cardView.positionLeftFunction = "GetDeckCardPosition()[0] + 10 + 'px'";
         topCard.cardView.positionTopFunction = "GetDeckCardPosition()[1] + 'px'";
         with (topCard.cardView.style) {
@@ -3619,7 +3650,7 @@ var CribbageGame = function () {
         setTimeout(function () {
             cardView.style.zIndex = currentPeggingCards.length;
             if (!isPlayersCard) {
-                flipUpCard(cardView);
+                flipUpCard(cardView, true);
             }
         }, 30);
 
@@ -4445,8 +4476,8 @@ var CribbageGame = function () {
     function CollectHandCardsToPrepareCribCount() {
         topCard.cardView.style.zIndex = 100;
         for (var i = 0; i < playersHand.length; i++) {
-            flipDownCard(playersHand[i].cardView);
-            flipDownCard(computersHand[i].cardView);
+            flipDownCard(playersHand[i].cardView, true);
+            flipDownCard(computersHand[i].cardView, true);
             playersHand[i].cardView.style.zIndex = i;
             computersHand[i].cardView.style.zIndex = i;
 
@@ -4497,7 +4528,7 @@ var CribbageGame = function () {
                 setTimeout(function () {
                     for (var i = 0; i < crib.length; i++) {
                         var cribCardView = crib[i].cardView;
-                        flipUpCard(cribCardView);
+                        flipUpCard(cribCardView, true);
                     }
 
                     setTimeout(function () {
@@ -4579,7 +4610,7 @@ var CribbageGame = function () {
     }
 
     function AnimateCompletionOfCribCounting() {
-        flipDownCard(topCard.cardView);
+        flipDownCard(topCard.cardView, true);
         topCard.cardView.style.transition = "0.3s ease-out";
         topCard.cardView.positionLeftFunction = "GetDeckCardPosition()[0] + 'px'";
         topCard.cardView.positionTopFunction = "GetDeckCardPosition()[1] + 'px'";
@@ -4588,7 +4619,7 @@ var CribbageGame = function () {
 
         for (var i = 0; i < crib.length; i++) {
             var cardView = crib[i].cardView;
-            flipDownCard(cardView);
+            flipDownCard(cardView, true);
             cardView.style.transition = "0.5s ease-out";
             cardView.style.transitionDelay = 300 + i * 100 + "ms";
             cardView.positionLeftFunction = "GetDeckCardPosition()[0] + 'px'";
@@ -4932,9 +4963,6 @@ var CribbageGame = function () {
     }
 
     this.OnResizeWindow = function OnResizeWindow() {
-
-        gameContainer.innerWidth = window.innerWidth - codeContainerGutterRightPosition - 20;
-        gameContainer.style.width = gameContainer.innerWidth + 'px';
         
         var ease = "0.6s ease-out";
 
@@ -5811,5 +5839,265 @@ var CribbageGame = function () {
             }
             ShowMainMenu();
         }, 500);
+    }
+
+    this.InitializeGame = function(difficulty) {
+        // Game properties
+        this.humanPlayer.skillLevel = "Pro"; // TODO: make this custom
+        this.skillLevel = difficulty;
+        this.playerScore = 0;
+        this.computerScore = 0;
+        this.isPlayersCrib = false;
+        this.playersHand = [];
+        this.computersHand = [];
+        this.crib = [];
+
+        // Game stats
+        this.computerPeggingPointsTotal = 0;
+        this.playerPeggingPointsTotal = 0;
+        this.computerHandPointsTotal = 0;
+        this.playerHandPointsTotal = 0;
+        this.computerCribPointsTotal = 0;
+        this.playerCribPointsTotal = 0;
+        this.suboptimalPlays = [];
+    }
+
+    this.GetCurrentComputerPlayerDecisions = function() {
+        var selectedIndex = 0;
+        switch (currentMoveStage) {
+            case 'WaitingForUserToDiscardToCrib':
+                selectedIndex = 0;
+                break;
+            case 'WaitingForUserToPlayPeggingCard':
+                selectedIndex = 1;
+                break;
+            default:
+                selectedIndex = 0;
+                this.LoadDecisionScenario(selectedIndex);
+                break;
+        }
+        return {
+            displayNames: ["Choose Crib Discards", "Choose Pegging Card"],
+            selectedIndex: selectedIndex
+        }
+    }
+
+    this.LoadDecisionScenario = function(decisionIndex) {
+        
+        game.InitializeGame("Standard");
+
+        scoreboard.SetOpponentName(game.difficulty);
+        scoreboard.InitializeScore();
+
+        // Choose a random first dealer
+        isPlayersCrib = Math.random() >= 0.5;
+
+        scoreboard.SetCribIndicator(isPlayersCrib);
+        scoreboard.Show();
+
+        // Deal cards
+        shuffle(cards);
+        deckTopIndex = cards.length - 1;
+        playersHand = [];
+        computersHand = [];
+        crib = [];
+        for (var i = 0; i < 6; i++) {
+            playersHand.push(cards[deckTopIndex]);
+            deckTopIndex = deckTopIndex - 1;
+            computersHand.push(cards[deckTopIndex]);
+            deckTopIndex = deckTopIndex - 1;
+        }
+
+        // Make all cards visible
+        for (var i = 0; i < cards.length; i++) {
+            var pos = GetDeckCardPosition();
+            var cardView = cards[i].cardView;
+            cardView.positionLeftFunction = "GetDeckCardPosition()[0] + 'px'";
+            cardView.positionTopFunction = "GetDeckCardPosition()[1] + 'px'";
+            cardView.style.transition = "none";
+            cardView.style.left = eval(cardView.positionLeftFunction);
+            cardView.style.top = eval(cardView.positionTopFunction);
+            cardView.positionIndex = i;
+            cardView.isClickable = false;
+            with (cardView.style) {
+                zIndex = i + 1;
+                visibility = "visible";
+            }
+            flipDownCard(cardView, false);
+        }
+
+        cardsAreVisible = true;
+
+        // Sort the players hand
+        playersHand.sort(function (a, b) { return a.rank - b.rank; });
+
+        // Deal the player cards
+        mostRecentHandCards = [];
+        mostRecentIsPlayersCrib = isPlayersCrib;
+        for (var i = 0; i < 6; i++) {
+            var cardView = playersHand[i].cardView;
+            cardView.style.zIndex = i + 100;
+            mostRecentHandCards.push(playersHand[i]);
+        }
+        
+        for (var i = 0; i < 6; i++) {
+            var cardView = playersHand[i].cardView;
+            cardView.positionLeftFunction = "GetHandCardPosition(true, true, " + i + ")[0] + 'px'";
+            cardView.positionTopFunction = "GetHandCardPosition(true, true, " + i + ")[1] + 'px'";
+            cardView.positionIndex = i;
+            cardView.isClickable = true;
+            cardView.style.zIndex = i + 100;
+            with (cardView.style) {
+                transition = "none";
+                transitionDelay = 'none';
+                left = eval(cardView.positionLeftFunction);
+                top = eval(cardView.positionTopFunction);
+            };
+            flipUpCard(cardView, false);
+        }
+
+        // Deal the computer cards
+        for (var i = 0; i < 6; i++) {
+            var cardView = computersHand[i].cardView;
+            cardView.positionLeftFunction = "GetHandCardPosition(false, true, " + i + ")[0] + 'px'";
+            cardView.positionTopFunction = "GetHandCardPosition(false, true, " + i + ")[1] + 'px'";
+            cardView.positionIndex = i;
+            with (cardView.style) {
+                transition = "none";
+                transitionDelay = "none";
+                left = eval(cardView.positionLeftFunction);
+                top = eval(cardView.positionTopFunction);
+                zIndex = i;
+            };
+            flipDownCard(cardView, false);
+        }
+
+        switch (decisionIndex) {
+            case 0:
+                // Discarding
+
+                // Hide crib region overlay
+                var cribOverlay = document.getElementById('crib_indicator_card_overlap');
+                cribOverlay.style.transition = 'none';
+                cribOverlay.style.transitionDelay = 'none';
+                cribOverlay.style.visibility = 'hidden';
+                
+                // Show the crib discard region
+                var discardRegion = document.getElementById('crib_region');
+                discardRegion.style.transition = "none";
+                discardRegion.positionLeftFunction = "GetDiscardRegionPosition()[0] + 'px'";
+                discardRegion.positionTopFunction = "GetDiscardRegionPosition()[1] + 'px'";
+                discardRegion.style.left = eval(discardRegion.positionLeftFunction);
+                discardRegion.style.top = eval(discardRegion.positionTopFunction);
+                var discardText = document.getElementById('crib_region_center_text');
+                discardText.innerText = isPlayersCrib ? "Your Crib" : "Opponent's Crib";
+                setTimeout(function () {
+                    var discardRegion = document.getElementById('crib_region');
+                    discardRegion.style.transition = "1s linear";
+                    discardRegion.style.visibility = "visible";
+                    discardRegion.style.opacity = 1;
+                }, 10);
+
+                if (skillLevel === 'Easy' || game.settings.GetSetting('setting_hints')) {
+                    setTimeout(function () {
+                        ShowHintButton();
+                    }, 10);
+                }
+
+                currentMoveStage = 'WaitingForUserToDiscardToCrib';
+            break;
+            case 1:
+                // Pegging
+
+                // Hide the crib region
+                var view = document.getElementById('crib_region');
+                view.style.transition = "none";
+                view.style.transitionDelay = "none";
+                view.style.opacity = 0;
+                
+                // Choose discards
+                var computerDiscards = computerPlayer.SelectTwoCardsToDiscardInCrib('Pro', !isPlayersCrib, computersHand);
+                var index = computersHand.indexOf(computerDiscards[0]);
+                computersHand.splice(index, 1);
+                index = computersHand.indexOf(computerDiscards[1]);
+                computersHand.splice(index, 1);
+                for (var i = 0; i < computerDiscards.length; i++) {
+                    crib.push(computerDiscards[i]);
+                }
+                var playerDiscards = computerPlayer.SelectTwoCardsToDiscardInCrib('Pro', isPlayersCrib, playersHand);
+                index = playersHand.indexOf(playerDiscards[0]);
+                playersHand.splice(index, 1);
+                index = playersHand.indexOf(playerDiscards[1]);
+                playersHand.splice(index, 1);
+                for (var i = 0; i < playerDiscards.length; i++) {
+                    crib.push(playerDiscards[i]);
+                }
+
+                var waitingPosition = GetCribWaitingPosition();
+                for (var i = 0; i < crib.length; i++) {
+                    crib[i].cardView.positionLeftFunction = "GetCribWaitingPosition()[0] + 'px'";
+                    crib[i].cardView.positionTopFunction = "GetCribWaitingPosition()[1] + 'px'";
+                    with (crib[i].cardView.style) {
+                        transition = "none";
+                        transitionDelay = "none";
+                        left = waitingPosition[0] + "px";
+                        top = waitingPosition[1] + "px";
+                    }
+                    flipDownCard(crib[i].cardView, false);
+                }
+                
+                // Reposition the players hand cards
+                for (var i = 0; i < playersHand.length; i++) {
+                    var cardView = playersHand[i].cardView;
+                    cardView.positionLeftFunction = "GetHandCardPosition(true, false, " + i + ")[0] + 'px'";
+                    cardView.positionTopFunction = "GetHandCardPosition(true, false, " + i + ")[1] + 'px'";
+                    cardView.positionIndex = i;
+                    with (cardView.style) {
+                        transition = "none";
+                        transitionDelay = "none";
+                        left = eval(cardView.positionLeftFunction);
+                        top = eval(cardView.positionTopFunction);
+                        zIndex = i + 100;
+                    };
+                }
+
+                // Reposition the computers hand cards
+                for (var i = 0; i < computersHand.length; i++) {
+                    var cardView = computersHand[i].cardView;
+                    cardView.positionLeftFunction = "GetHandCardPosition(false, false, " + i + ")[0] + 'px'";
+                    cardView.positionTopFunction = "GetHandCardPosition(false, false, " + i + ")[1] + 'px'";
+                    cardView.positionIndex = i;
+                    with (cardView.style) {
+                        transition = "none";
+                        transitionDelay = "none";
+                        left = eval(cardView.positionLeftFunction);
+                        top = eval(cardView.positionTopFunction);
+                        zIndex = i + 100;
+                    };
+                }
+
+                // Put the crib region indicator overlay on the crib cards
+                var cribOverlayText = document.getElementById('crib_indicator_card_overlap_text');
+                cribOverlayText.innerHTML = isPlayersCrib ? "Your" : "Opponent's";
+                var cribOverlay = document.getElementById('crib_indicator_card_overlap');
+                cribOverlay.style.zIndex = 107;
+                cribOverlay.positionLeftFunction = "GetCribWaitingPosition()[0] + 'px'";
+                cribOverlay.positionTopFunction = "GetCribWaitingPosition()[1] + 'px'";
+                cribOverlay.style.visibility = "visible";
+                cribOverlay.style.transition = "none";
+                cribOverlay.style.left = eval(cribOverlay.positionLeftFunction);
+                cribOverlay.style.top = eval(cribOverlay.positionTopFunction);
+                with (cribOverlay.style) {
+                    transition = "none";
+                    opacity = 1;
+                }
+                
+                currentMoveStage = 'WaitingForUserToPlayPeggingCard';
+            break;
+        }
+    }
+
+    this.GetCustomPlayerMethod = function(decisionIndex) {
+        return this.humanPlayer.GetDecisionMethod(decisionIndex);
     }
 }

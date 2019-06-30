@@ -282,7 +282,7 @@ var CribbageScoreboard = function () {
     this.RedrawView = function() {
         var width = gameContainer.innerWidth;
         var height = gameContainer.innerHeight;
-
+        
         var leftColumn = document.getElementById('scoreboard_leftColumn');
         var topRow = document.getElementById('scoreboard_topRow');
         var rightColumn = document.getElementById('scoreboard_rightColumn');
@@ -294,6 +294,7 @@ var CribbageScoreboard = function () {
         this.pegHolePositionsBlue = [];
         this.pegHolePositionsRed = [];
 
+        var topRowMargin = 40;
         var sideMargin = 58;
         var topMargin = 57;
         var bottomMarginRightSide = 32 + 80;
@@ -301,24 +302,34 @@ var CribbageScoreboard = function () {
         var pegHoleSegmentLength = 76;
         var pegHoleSegmentSpacing = 10;
 
-        var topPegGroupCount = Math.floor((topRow.clientWidth - sideMargin*2 - pegHoleSegmentSpacing)/(pegHoleSegmentLength + pegHoleSegmentSpacing));
+        var topPegGroupCount = Math.floor((width - 2*topRowMargin - sideMargin*2 - pegHoleSegmentSpacing)/(pegHoleSegmentLength + pegHoleSegmentSpacing));
         if (topPegGroupCount > 22) {
             topPegGroupCount = 22;
         }
-        topPegHoleSegmentSpacing = (topRow.clientWidth - sideMargin*2 - topPegGroupCount*pegHoleSegmentLength)/(topPegGroupCount + 1);
+        topPegHoleSegmentSpacing = (width - 2*topRowMargin - sideMargin*2 - topPegGroupCount*pegHoleSegmentLength)/(topPegGroupCount + 1);
         
         var rightPegGroupCount = Math.floor((rightColumn.clientHeight - topMargin - bottomMarginRightSide - pegHoleSegmentSpacing)/(pegHoleSegmentLength + pegHoleSegmentSpacing));
         var leftPegGroupCount = Math.floor((rightColumn.clientHeight - topMargin - bottomMarginLeftSide - pegHoleSegmentSpacing)/(pegHoleSegmentLength + pegHoleSegmentSpacing));
 
         if (topPegGroupCount + rightPegGroupCount + leftPegGroupCount + 2 < 24) {
-            
             // The peg board holes do not fit on the screen so we will not show them
             this.isCompact = true;
             var compactScoreboard = document.getElementById('scoreboard_compact');
             compactScoreboard.style.visibility = "visible";
             var pegsScoreboard = document.getElementById('scoreboard_pegs');
             pegsScoreboard.style.visibility = "hidden";
-            
+
+            if (this.frontPegRed != null && this.backPegRed != null && this.frontPegBlue != null && this.backPegBlue != null) {
+                this.frontPegRed.style.transition = "none";
+                this.backPegRed.style.transition = "none";
+                this.frontPegBlue.style.transition = "none";
+                this.backPegBlue.style.transition = "none";
+                this.frontPegRed.style.opacity = 0;
+                this.backPegRed.style.opacity = 0;
+                this.frontPegBlue.style.opacity = 0;
+                this.backPegBlue.style.opacity = 0; 
+            }
+
         } else {
             
             this.isCompact = false;
@@ -459,6 +470,5 @@ var CribbageScoreboard = function () {
         }
     }
 
-    // TODO: do I need this?
     this.RedrawView();
 }
