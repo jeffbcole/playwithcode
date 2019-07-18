@@ -1,1 +1,1 @@
-# playwithcode
+# strategysimulator

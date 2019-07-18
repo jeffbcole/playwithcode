@@ -43,7 +43,7 @@ var CribbageGame = function () {
     var currentPlayerHandCardSpacing = 0;
     var autoPlayBoundaryY = 0;
 
-    this.humanPlayer = new CribbagePlayer();
+    var humanPlayer = new CribbagePlayer();
     var computerPlayer = new CribbagePlayer();
 
     var computerPeggingPointsTotal = 0;
@@ -1316,6 +1316,9 @@ var CribbageGame = function () {
     var front = document.createElement("div");
     front.className = "cardFront";
     flipContainer.appendChild(front);
+    var cardHighlight = document.createElement("div");
+    cardHighlight.className = "cardFrontHighlight";
+    front.appendChild(cardHighlight);
 
     var cardBackURI = "url('shared/images/card_back_" + GetSetting('setting_card_color') + ".jpg')";
 
@@ -1727,6 +1730,24 @@ var CribbageGame = function () {
             mugginsView.classList.remove('mugshake');
         });
         mugginsView.classList.add('mugshake');    
+    }
+
+    function IndicateCustomDecisionCard(cardView) {
+        var raiseContainer = cardView.firstChild;
+        var flipContainer = raiseContainer.firstChild;
+        var cardFront = flipContainer.children[2];
+        var flashHighlight = cardFront.children[0];
+        flashHighlight.classList.add('highlightCard');
+        slideUpCard(cardView);
+    }
+
+    function RemoveCustomDecisionIndicator(cardView) {
+        var raiseContainer = cardView.firstChild;
+        var flipContainer = raiseContainer.firstChild;
+        var cardFront = flipContainer.children[2];
+        var flashHighlight = cardFront.children[0];
+        flashHighlight.classList.remove('highlightCard');
+        slideDownCard(cardView);
     }
 
     function AnimateScoreBubble(position, points, description, isPlayersPoints, delay) {
@@ -3182,7 +3203,7 @@ var CribbageGame = function () {
                     if (skillLevel === 'Easy' || game.settings.GetSetting('setting_hints')) {
                         ShowHintButton();
                     }
-                    ShowPeggingPrompt("2s");
+                    ShowPeggingPrompt("2s", true);
                     currentMoveStage = 'WaitingForUserToPlayPeggingCard';
                 }, 500);
             }, pointsShowDelay + 700);
@@ -3190,7 +3211,7 @@ var CribbageGame = function () {
             if (skillLevel === 'Easy' || game.settings.GetSetting('setting_hints')) {
                 ShowHintButton();
             }
-            ShowPeggingPrompt("1.7s");
+            ShowPeggingPrompt("1.7s", true);
             currentMoveStage = 'WaitingForUserToPlayPeggingCard';
         }
     }
@@ -3207,7 +3228,7 @@ var CribbageGame = function () {
         }, delay);
     }
 
-    function ShowPeggingPrompt(delay) {
+    function ShowPeggingPrompt(delay, animate) {
         isPlayersTurnToPeg = true;
         var peggingPrompt = document.getElementById('pegging_prompt');
         peggingPrompt.style.transition = "none";
@@ -3215,12 +3236,19 @@ var CribbageGame = function () {
         peggingPrompt.positionTopFunction = "GetPeggingPromptPosition()[1] + 'px'";
         peggingPrompt.style.left = eval(peggingPrompt.positionLeftFunction);
         peggingPrompt.style.top = eval(peggingPrompt.positionTopFunction);
-        setTimeout(function () {
+        if (animate) {
+            setTimeout(function () {
+                peggingPrompt.style.visibility = "visible";
+                peggingPrompt.style.transition = "0.3s";
+                peggingPrompt.style.transitionDelay = delay;
+                peggingPrompt.style.opacity = 1;
+            }, 50);
+        } else {
+            peggingPrompt.style.transition = "none";
             peggingPrompt.style.visibility = "visible";
-            peggingPrompt.style.transition = "0.3s";
-            peggingPrompt.style.transitionDelay = delay;
+            peggingPrompt.style.transitionDelay = "none";
             peggingPrompt.style.opacity = 1;
-        }, 50);
+        }
     }
 
     function HidePeggingPrompt() {
@@ -3356,7 +3384,7 @@ var CribbageGame = function () {
         playersHand[playersHand.indexOf(cardView.card)] = null;
         currentPeggingCards.push(cardView.card);
         playerPlayedPeggingCards.push(cardView.card);
-        AnimateCardViewToPeggingPile(cardView, true);
+        AnimateCardViewToPeggingPile(cardView, true, true);
 
         var cardAnimationDelay = 500;
         var peggingPoints = GetPeggingPointsLastPlay();
@@ -3534,7 +3562,7 @@ var CribbageGame = function () {
                 if (skillLevel === 'Easy' || game.settings.GetSetting('setting_hints')) {
                     ShowHintButton();
                 }
-                ShowPeggingPrompt("2s");
+                ShowPeggingPrompt("2s", true);
                 return;
             }
         }
@@ -3632,13 +3660,13 @@ var CribbageGame = function () {
             computersHand[computersHand.indexOf(computerPlay)] = null;
             currentPeggingCards.push(computerPlay);
             computerPlayedPeggingCards.push(computerPlay);
-            AnimateCardViewToPeggingPile(computerPlay.cardView, false);
+            AnimateCardViewToPeggingPile(computerPlay.cardView, false, true);
             return computerPlay;
         }
     }
 
-    function AnimateCardViewToPeggingPile(cardView, isPlayersCard) {
-        cardView.style.transition = "0.3s ease-out";
+    function AnimateCardViewToPeggingPile(cardView, isPlayersCard, animate) {
+        cardView.style.transition = animate ? "0.3s ease-out" : "none";
         cardView.positionLeftFunction = "GetPeggingFirstCardPosition()[0] + (" + currentPeggingCards.length + ")*peggingCardsOverlap + 'px'";
         if (isPlayersCard) {
             cardView.positionTopFunction = "GetPeggingFirstCardPosition()[1] + " + peggingCardsVerticalOffset + " + 'px'";
@@ -3647,20 +3675,29 @@ var CribbageGame = function () {
         }
         cardView.style.left = eval(cardView.positionLeftFunction);
         cardView.style.top = eval(cardView.positionTopFunction);
-        setTimeout(function () {
+        if (animate) {
+            setTimeout(function () {
+                cardView.style.zIndex = currentPeggingCards.length;
+                if (!isPlayersCard) {
+                    flipUpCard(cardView, true);
+                }
+            }, 30);
+        } else {
             cardView.style.zIndex = currentPeggingCards.length;
             if (!isPlayersCard) {
-                flipUpCard(cardView, true);
+                flipUpCard(cardView, false);
             }
-        }, 30);
+        }
 
         // Update the pegging count
         currentPeggingCount += cardView.card.value;
         var pCount = currentPeggingCount;
-        if (isPlayersCard) {
-            SetPeggingCountAnimated(pCount, 300);
-        } else {
-            SetPeggingCountAnimated(pCount, 600);
+        if (animate) {
+            if (isPlayersCard) {
+                SetPeggingCountAnimated(pCount, 300);
+            } else {
+                SetPeggingCountAnimated(pCount, 600);
+            }
         }
     }
 
@@ -5843,23 +5880,23 @@ var CribbageGame = function () {
 
     this.InitializeGame = function(difficulty) {
         // Game properties
-        this.humanPlayer.skillLevel = "Pro"; // TODO: make this custom
-        this.skillLevel = difficulty;
-        this.playerScore = 0;
-        this.computerScore = 0;
-        this.isPlayersCrib = false;
-        this.playersHand = [];
-        this.computersHand = [];
-        this.crib = [];
+        humanPlayer.skillLevel = "Custom";
+        skillLevel = difficulty;
+        playerScore = 0;
+        computerScore = 0;
+        isPlayersCrib = false;
+        playersHand = [];
+        computersHand = [];
+        crib = [];
 
         // Game stats
-        this.computerPeggingPointsTotal = 0;
-        this.playerPeggingPointsTotal = 0;
-        this.computerHandPointsTotal = 0;
-        this.playerHandPointsTotal = 0;
-        this.computerCribPointsTotal = 0;
-        this.playerCribPointsTotal = 0;
-        this.suboptimalPlays = [];
+        computerPeggingPointsTotal = 0;
+        playerPeggingPointsTotal = 0;
+        computerHandPointsTotal = 0;
+        playerHandPointsTotal = 0;
+        computerCribPointsTotal = 0;
+        playerCribPointsTotal = 0;
+        suboptimalPlays = [];
     }
 
     this.GetCurrentComputerPlayerDecisions = function() {
@@ -5886,6 +5923,12 @@ var CribbageGame = function () {
         
         game.InitializeGame("Standard");
 
+        HidePeggingPrompt();
+        peggingCountIndicator = document.getElementById('PeggingCountIndicator');
+        peggingCountIndicator.style.transition = "none";
+        peggingCountIndicator.style.opacity = 0;
+        peggingCountIndicator.style.visibility = "hidden";
+        
         scoreboard.SetOpponentName(game.difficulty);
         scoreboard.InitializeScore();
 
@@ -5991,13 +6034,11 @@ var CribbageGame = function () {
                 discardRegion.style.top = eval(discardRegion.positionTopFunction);
                 var discardText = document.getElementById('crib_region_center_text');
                 discardText.innerText = isPlayersCrib ? "Your Crib" : "Opponent's Crib";
-                setTimeout(function () {
-                    var discardRegion = document.getElementById('crib_region');
-                    discardRegion.style.transition = "1s linear";
-                    discardRegion.style.visibility = "visible";
-                    discardRegion.style.opacity = 1;
-                }, 10);
-
+                var discardRegion = document.getElementById('crib_region');
+                discardRegion.style.transition = "none";
+                discardRegion.style.visibility = "visible";
+                discardRegion.style.opacity = 1;
+            
                 if (skillLevel === 'Easy' || game.settings.GetSetting('setting_hints')) {
                     setTimeout(function () {
                         ShowHintButton();
@@ -6092,12 +6133,270 @@ var CribbageGame = function () {
                     opacity = 1;
                 }
                 
+                currentPeggingCards = [];
+                deadPeggingCards = [];
+                computerPlayedPeggingCards = [];
+                playerPlayedPeggingCards = [];
+                isPlayersTurnToPeg = false;
+                playerSaysGo = false;
+                computerSaysGo = false;
+                currentPeggingCount = 0;
+        
+                // Flip the top card on the deck
+                topCard = cards[deckTopIndex];
+                topCard.cardView.style.zIndex = 60;
+                flipUpCard(topCard.cardView, false);
+                topCard.cardView.positionLeftFunction = "GetDeckCardPosition()[0] + 10 + 'px'";
+                topCard.cardView.positionTopFunction = "GetDeckCardPosition()[1] + 'px'";
+                with (topCard.cardView.style) {
+                    transition = "none";
+                    left = eval(topCard.cardView.positionLeftFunction);
+                    top = eval(topCard.cardView.positionTopFunction);
+                }
+        
+                var pointsShowDelay = 0;
+                if (topCard.rank == 11) {
+                    // This is a jack, reward the dealer 2 points
+                    if (isPlayersCrib) {
+                        playerScore = playerScore + 2;
+                        scoreboard.SetScorePlayer(playerScore);
+                    } else {
+                        computerScore = computerScore + 2;
+                        scoreboard.SetScoreOpp(computerScore);
+                    }
+                }
+        
+                // Show pegging count indicator
+                peggingCountText = document.getElementById('PeggingCountIndicatorScore');
+                peggingCountText.innerText = 0;
+                peggingCountIndicator = document.getElementById('PeggingCountIndicator');
+                peggingCountIndicator.style.transition = "none";
+                peggingCountIndicator.style.zIndex = 100;
+                peggingCountIndicator.positionLeftFunction = "GetDeckCardPosition()[0] - 115*0.5 + 10 + 'px'";
+                peggingCountIndicator.positionTopFunction = "GetDeckCardPosition()[1] - 75*0.5 + 'px'";
+                peggingCountIndicator.style.top = eval(peggingCountIndicator.positionTopFunction);
+                peggingCountIndicator.style.left = eval(peggingCountIndicator.positionLeftFunction);
+                peggingCountIndicator.style.opacity = 0;
+                peggingCountIndicator.style.visibility = "visible";
+                peggingCountIndicator.style.transition = "none";
+                peggingCountIndicator.style.opacity = 1;
+                
+                // Step through until it is the player's turn and there are N cards left in their hand
+                var randomCardsCount = Math.floor(Math.random()*3);
+                var isPlayersTurn = !isPlayersCrib;
+                var playsMadeByPlayer = 0;
+                while (true) {
+                    if (isPlayersTurn) {
+                        var play = humanPlayer.SelectNextCardForPegging('Pro', playersHand, currentPeggingCount, currentPeggingCards, deadPeggingCards, topCard);
+                        if (play === undefined) {
+                            // This is a go
+                            playerSaysGo = true;
+                            if (computerSaysGo) {
+                                // Give the player a point for last card
+                                playerScore = playerScore + 1;
+                                scoreboard.SetScorePlayer(playerScore);
+                                //OnResetPeggingCount
+                                // Move all the cards to the dead pile
+                                for (var i = 0; i < currentPeggingCards.length; i++) {
+                                    deadPeggingCards.push(currentPeggingCards[i]);
+                                }
+                                currentPeggingCards = [];
+
+                                for (var i = 0; i < deadPeggingCards.length; i++) {
+                                    var deadCard = deadPeggingCards[i];
+                                    deadCard.cardView.positionLeftFunction = "GetPeggingDeadPileFirstCardLeftPosition() + " + i + "*peggingDeadCardsOverlap + 'px'";
+                                    deadCard.cardView.style.transition = "none";
+                                    deadCard.cardView.style.left = eval(deadCard.cardView.positionLeftFunction);
+                                    deadCard.cardView.style.zIndex = i;
+                                }
+
+                                peggingCountText.innerHTML = "0";
+                                currentPeggingCount = 0;
+                                playerSaysGo = false;
+                                computerSaysGo = false;       
+                            }
+                    
+                        } else {
+                            
+                            if (playsMadeByPlayer == randomCardsCount) {
+                                break;
+                            }
+
+                            // Drop card into peg pile
+                            playersHand[playersHand.indexOf(play)] = null;
+                            currentPeggingCards.push(play);
+                            playerPlayedPeggingCards.push(play);
+                            AnimateCardViewToPeggingPile(play.cardView, true, false);
+                            peggingCountText.innerHTML = currentPeggingCount;
+
+                            playsMadeByPlayer = playsMadeByPlayer + 1;
+
+                            var peggingPoints = GetPeggingPointsLastPlay();
+                            var totalPoints = 0;
+                            for (var i = 0; i < peggingPoints.length; i++) {
+                                var scoringPoints = peggingPoints[i];
+                                totalPoints = totalPoints + scoringPoints.points;
+                            }
+
+                            // Update the score
+                            if (totalPoints > 0) {
+                                playerScore = playerScore + totalPoints;
+                                scoreboard.SetScorePlayer(playerScore);
+                            }
+
+                            if (currentPeggingCount == 31) {
+                                //OnResetPeggingCount
+                                // Move all the cards to the dead pile
+                                for (var i = 0; i < currentPeggingCards.length; i++) {
+                                    deadPeggingCards.push(currentPeggingCards[i]);
+                                }
+                                currentPeggingCards = [];
+
+                                for (var i = 0; i < deadPeggingCards.length; i++) {
+                                    var deadCard = deadPeggingCards[i];
+                                    deadCard.cardView.positionLeftFunction = "GetPeggingDeadPileFirstCardLeftPosition() + " + i + "*peggingDeadCardsOverlap + 'px'";
+                                    deadCard.cardView.style.transition = "none";
+                                    deadCard.cardView.style.left = eval(deadCard.cardView.positionLeftFunction);
+                                    deadCard.cardView.style.zIndex = i;
+                                }
+
+                                peggingCountText.innerHTML = "0";
+                                currentPeggingCount = 0;
+                                playerSaysGo = false;
+                                computerSaysGo = false;
+                            }
+                        }
+                    } else {
+                        var computerPlay = computerPlayer.SelectNextCardForPegging('Pro', computersHand, currentPeggingCount, currentPeggingCards, deadPeggingCards, topCard);
+                        if (computerPlay === undefined) {
+                            // This is a go
+                            computerSaysGo = true;
+                            if (playerSaysGo) {
+                                if (currentPeggingCount != 31) {
+                                    // Give the computer a point for last card
+                                    var position = GetPeggingFirstCardPosition();
+                                    var left = position[0] + currentPeggingCards.length * peggingCardsOverlap;
+                                    var top = position[1];
+                                    computerScore = computerScore + 1;
+                                    scoreboard.SetScoreOpp(computerScore);
+                                }
+
+                                //OnResetPeggingCount
+                                // Move all the cards to the dead pile
+                                for (var i = 0; i < currentPeggingCards.length; i++) {
+                                    deadPeggingCards.push(currentPeggingCards[i]);
+                                }
+                                currentPeggingCards = [];
+
+                                for (var i = 0; i < deadPeggingCards.length; i++) {
+                                    var deadCard = deadPeggingCards[i];
+                                    deadCard.cardView.positionLeftFunction = "GetPeggingDeadPileFirstCardLeftPosition() + " + i + "*peggingDeadCardsOverlap + 'px'";
+                                    deadCard.cardView.style.transition = "none";
+                                    deadCard.cardView.style.left = eval(deadCard.cardView.positionLeftFunction);
+                                    deadCard.cardView.style.zIndex = i;
+                                }
+
+                                peggingCountText.innerHTML = "0";
+                                currentPeggingCount = 0;
+                                playerSaysGo = false;
+                                computerSaysGo = false;
+                            }
+                
+                        } else {
+                            computersHand[computersHand.indexOf(computerPlay)] = null;
+                            currentPeggingCards.push(computerPlay);
+                            computerPlayedPeggingCards.push(computerPlay);
+                            AnimateCardViewToPeggingPile(computerPlay.cardView, false, false);
+                            peggingCountText.innerHTML = currentPeggingCount;
+
+                            var peggingPoints = GetPeggingPointsLastPlay();
+                            var totalPoints = 0;
+                            for (var i = 0; i < peggingPoints.length; i++) {
+                                var scoringPoints = peggingPoints[i];
+                                totalPoints = totalPoints + scoringPoints.points;
+                            }
+                            
+                            // Update the score
+                            if (totalPoints > 0) {
+                                computerScore = computerScore + totalPoints;
+                                scoreboard.SetScoreOpp(computerScore);
+                            }
+                        
+                            if (currentPeggingCount == 31) {
+                                //OnResetPeggingCount
+                                // Move all the cards to the dead pile
+                                for (var i = 0; i < currentPeggingCards.length; i++) {
+                                    deadPeggingCards.push(currentPeggingCards[i]);
+                                }
+                                currentPeggingCards = [];
+
+                                for (var i = 0; i < deadPeggingCards.length; i++) {
+                                    var deadCard = deadPeggingCards[i];
+                                    deadCard.cardView.positionLeftFunction = "GetPeggingDeadPileFirstCardLeftPosition() + " + i + "*peggingDeadCardsOverlap + 'px'";
+                                    deadCard.cardView.style.transition = "none";
+                                    deadCard.cardView.style.left = eval(deadCard.cardView.positionLeftFunction);
+                                    deadCard.cardView.style.zIndex = i;
+                                }
+
+                                peggingCountText.innerHTML = "0";
+                                currentPeggingCount = 0;
+                                playerSaysGo = false;
+                                computerSaysGo = false;
+                            }
+                
+                        }
+                        
+                    }
+                    isPlayersTurn = !isPlayersTurn;
+                }
+
+                
+                if (skillLevel === 'Easy' || game.settings.GetSetting('setting_hints')) {
+                    ShowHintButton();
+                }
+                ShowPeggingPrompt("0s", false);
                 currentMoveStage = 'WaitingForUserToPlayPeggingCard';
             break;
         }
     }
 
     this.GetCustomPlayerMethod = function(decisionIndex) {
-        return this.humanPlayer.GetDecisionMethod(decisionIndex);
+        return humanPlayer.GetDecisionMethod(decisionIndex);
+    }
+
+    this.SaveCurrentDecisionMethod = function(decisionIndex, code) {
+        var decisionMethodName = "cribbage_decision_method_Custom_" + decisionIndex;
+        window.localStorage.setItem(decisionMethodName, code);
+    }
+
+    this.TryCurrentDecisionMethod = function(decisionIndex) {
+        try {
+            var optimalCards = [];
+            switch (decisionIndex) {
+                case 0: // Discarding
+                    optimalCards = humanPlayer.SelectTwoCardsToDiscardInCrib(humanPlayer.skillLevel, this.isPlayersCrib, playersHand);
+                break;
+                case 1: // Pegging
+                    var play = humanPlayer.SelectNextCardForPegging(humanPlayer.skillLevel, playersHand, currentPeggingCount, currentPeggingCards, deadPeggingCards, topCard);
+                    optimalCards.push(play);
+                break;
+            }
+            
+            for (var i=0; i<optimalCards.length; i++) {
+                var cardView = optimalCards[i].cardView;
+                IndicateCustomDecisionCard(cardView);
+            }
+
+            IndicateCodeError("");
+        }
+        catch (err) {
+            IndicateCodeError(err);
+        }
+    }
+
+    this.ClearAllCustomDecisionIndicators = function() {
+        for (var i=0; i<cards.length; i++) {
+            RemoveCustomDecisionIndicator(cards[i].cardView);
+        }
     }
 }

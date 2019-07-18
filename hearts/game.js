@@ -3201,7 +3201,6 @@ var HeartsGame = function () {
         }
         catch (err) {
             IndicateCodeError(err);
-            this.ClearAllCustomDecisionIndicators();
         }
     }
 

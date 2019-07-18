@@ -124,6 +124,284 @@ var PinochlePlayer = function() {
         }
     }
 
+    this.FindBestBid = function(aGame, aSkillLevel, passingCardsCount) {
+        switch (aSkillLevel) {
+            case "Easy":
+                var bidAndSuit = [0, ''];
+                if (aGame.isDoubleDeck) {
+                    bidAndSuit[0] = Math.floor(Math.random() * 25) + 50
+                } else {
+                    bidAndSuit[0] = Math.floor(Math.random() * 10) + 20
+                }
+                var suitStrength = [];
+                for (var i=0; i<4; i++) {
+                    suitStrength[i] = 0;
+                }
+                for (var i=0; i<this.cards.length; i++) {
+                    suitStrength[this.cards[i].suitInt] += this.cards[i].value;
+                }
+                var bestStrength = 0;
+                var suits = ['S','H','C','D'];
+                for (var i=0; i<4; i++) {
+                    if (suitStrength[i] >= bestStrength) {
+                        bestStrength = suitStrength[i];
+                        bidAndSuit[1] = suits[i];
+                    }
+                }
+                return bidAndSuit;
+            break;
+
+            case "Standard":
+                return this.FindBidSynchronous(aGame, passingCardsCount, aSkillLevel, this.playerPositionInt, this.cards);
+            break;
+
+            case "Pro":
+                return this.FindBidSynchronous(aGame, passingCardsCount, aSkillLevel, this.playerPositionInt, this.cards);
+            break;
+
+            case "Custom":
+                try {
+                    var customMethod = this.GetDecisionMethod(0);
+                    // Remove the method signature and paramters from the code
+                    customMethod = customMethod.substring(customMethod.indexOf("{") + 1);
+                    customMethod = customMethod.substring(customMethod.lastIndexOf("}"), -1);
+                    var f = new Function('aGame', 'passingCardsCount', 'currentPlayerIndex', 'currentPlayerCards', customMethod);
+                    var bid = f(game,
+                                passingCardsCount,
+                                this.playerPositionInt,
+                                this.cards);
+                    if (bid == undefined) {
+                        throw "Custom decision failed.";
+                    }
+                    return bid;
+                } catch (err) {
+                    throw err;
+                }
+            break;
+        }
+    }
+
+    this.FindBidSynchronous = function(aGame, passingCardsCount, currentPlayerSkill, currentPlayerIndex, currentPlayerCards) {
+        
+        // Create a game state copy that can be manipulated and restored to simulate outcomes
+        var simGame = {};
+        simGame.isDoubleDeck = aGame.isDoubleDeck;
+        simGame.cardsPlayedThisRound = [];
+        simGame.trickCards = [];
+        simGame.leadIndex = aGame.leadIndex;
+        simGame.dealerIndex = aGame.dealerIndex;
+        simGame.turnIndex = aGame.turnIndex;
+        simGame.players = [];
+        var player = new PinochlePlayer();
+        player.Initialize('You', true, 'Standard', 'South');
+        simGame.players.push(player);
+        player = new PinochlePlayer();
+        player.Initialize('Catalina', false, 'Standard', 'West');
+        simGame.players.push(player);
+        player = new PinochlePlayer();
+        player.Initialize('Amelia', false, 'Standard', 'North');
+        simGame.players.push(player);
+        player = new PinochlePlayer();
+        player.Initialize('Seward', false, 'Standard', 'East');
+        simGame.players.push(player);
+    
+        var currentSimPlayer = simGame.players[currentPlayerIndex];
+        simGame.bidWinner = currentPlayerIndex;
+        simGame.currentHighestBidder = currentSimPlayer;
+    
+        // Create the list of cards remaining in the deck
+        var gameCards=aGame.GetAllCards(aGame.isDoubleDeck);
+        var cardsRemaining = [];
+        for (var i=0; i<gameCards.length; i++) {
+            var isAlreadyPlayed = false;
+            for (var j=0; j<currentPlayerCards.length; j++) {
+                if (currentPlayerCards[j].id === gameCards[i].id) {
+                    isAlreadyPlayed = true;
+                    break;
+                }
+            }
+            if (isAlreadyPlayed) {
+                continue;
+            }
+            
+            cardsRemaining.push(gameCards[i]);
+        }
+    
+        // Create a round bid analysis result
+        var roundBidAnalysis = {};
+        roundBidAnalysis.safeBids = [];
+        roundBidAnalysis.standardBids = [];
+        roundBidAnalysis.suggestedBids = [];
+        var suits = ['S','H','C','D'];
+        roundBidAnalysis.histogramsBySuit = [];
+        for (var i=0; i<suits.length; i++) {
+            roundBidAnalysis.histogramsBySuit[suits[i]] = [];
+        }
+    
+        var simulationsPerSuit = 500;
+        var totalSimulations = simulationsPerSuit*4;
+        for (var simIndex = 0; simIndex < totalSimulations; simIndex++) {
+            // Try each suit
+            simGame.trumpSuit = suits[simIndex%4];
+    
+            // Reset the sim game state
+            for (var k=0; k<4; k++) {
+                var simPlayer = simGame.players[k];
+                simPlayer.currentRoundMeldScore = 0;
+                simPlayer.currentRoundCountersTaken = 0;
+                simPlayer.melds = [];
+                simPlayer.cards = [];
+                simPlayer.isShownVoidInSuit = [false, false, false, false];
+            }
+            simGame.cardsPlayedThisRound = [];
+            simGame.trickCards = [];
+            simGame.dealerIndex = aGame.dealerIndex;
+            simGame.leadIndex = currentSimPlayer.playerPositionInt;
+            simGame.turnIndex = currentSimPlayer.playerPositionInt;
+    
+            // Shuffle the deck
+            var deckIdx = 0;
+            for (var k = cardsRemaining.length - 1; k > 0; k--) {
+                var randIdx = Math.floor(Math.random() * (k + 1));
+                x = cardsRemaining[k];
+                cardsRemaining[k] = cardsRemaining[randIdx];
+                cardsRemaining[randIdx] = x;
+            }
+    
+            // Deal the cards to each player
+            for (var n=0; n<currentPlayerCards.length; n++) {
+                var card = currentPlayerCards[n];
+                card.wasPassed = false;
+                card.wasShown = false;
+                currentSimPlayer.cards.push(card);
+            }
+            var deckIdx = 0;
+            for (var n=0; n<4; n++) {
+                var player = simGame.players[n];
+                while (player.cards.length != currentSimPlayer.cards.length) {
+                    player.cards.push(cardsRemaining[deckIdx]);
+                    deckIdx++;
+                }
+            }
+    
+            // Pass cards
+            if (passingCardsCount > 0) {
+                var passingPlayer = simGame.players[(currentSimPlayer.playerPositionInt+2)%4];
+                var receivingPlayer = currentSimPlayer;
+                receivingPlayer.receivedCards = [];
+                var passingCards = passingPlayer.FindBestPassingCards(passingCardsCount, passingPlayer.skillLevel, simGame);
+                for (var n=0; n<passingCards.length; n++) {
+                    var card = passingCards[n];
+                    card.wasPassed = true;
+                    passingPlayer.cards.splice(passingPlayer.cards.indexOf(card),1);
+                    receivingPlayer.cards.push(card);
+                    receivingPlayer.receivedCards.push(card);
+                }
+    
+                passingPlayer = currentSimPlayer;
+                receivingPlayer = simGame.players[(currentSimPlayer.playerPositionInt+2)%4];
+                receivingPlayer.receivedCards = [];
+                var passingCards = passingPlayer.FindBestPassingCards(passingCardsCount, passingPlayer.skillLevel, simGame);
+                for (var n=0; n<passingCards.length; n++) {
+                    var card = passingCards[n];
+                    card.wasPassed = true;
+                    passingPlayer.cards.splice(passingPlayer.cards.indexOf(card),1);
+                    receivingPlayer.cards.push(card);
+                    receivingPlayer.receivedCards.push(card);
+                }
+            }
+    
+            // Count Melds
+            for (var i=0; i<4; i++) {
+                var player = simGame.players[i];
+                player.passingCards = [];
+                player.CalculateMelds(player.cards, simGame.trumpSuit, simGame.isDoubleDeck, false);
+                for (var n=0; n<player.melds.length; n++) {
+                    var meld = player.melds[n];
+                    for (var k=0; k<meld.cards.length; k++) {
+                        var card = meld.cards[k];
+                        card.wasShown = true;
+                    }
+                }
+            }
+    
+            // Play out trick taking
+            while (currentSimPlayer.cards.length>0) {
+                simGame.trickCards = [];
+                while (simGame.trickCards.length < 4) {
+                    var nextPlayer = simGame.players[simGame.turnIndex%4];
+                    var nextCard = nextPlayer.FindBestPlayingCard(simGame, nextPlayer.skillLevel);
+                    PlayCard(simGame,nextCard);
+                }
+    
+                var trickResult = GetTrickResult(simGame);
+                trickResult.trickTaker.currentRoundCountersTaken += trickResult.countersTaken;
+                simGame.leadIndex = trickResult.trickTaker.playerPositionInt;
+                simGame.turnIndex = simGame.leadIndex;
+            }
+    
+            // Count round score
+            var teamMeldScore = simGame.players[(currentSimPlayer.playerPositionInt+2)%4].currentRoundMeldScore + currentSimPlayer.currentRoundMeldScore;
+            var teamCountersScore = simGame.players[(currentSimPlayer.playerPositionInt+2)%4].currentRoundCountersTaken + currentSimPlayer.currentRoundCountersTaken;
+            var teamRoundScore = teamMeldScore + teamCountersScore;
+            var curSuitHistograms = roundBidAnalysis.histogramsBySuit[simGame.trumpSuit];
+            if (curSuitHistograms[teamRoundScore] == null) {
+                curSuitHistograms[teamRoundScore] = 1;
+            } else {
+                curSuitHistograms[teamRoundScore] += 1;
+            }
+        }
+    
+        roundBidAnalysis.simulationsCount = simulationsPerSuit;
+        roundBidAnalysis.suggestedSuit = suits[0];
+        roundBidAnalysis.standardBid = 0;
+        roundBidAnalysis.suggestedBid = 0;
+        for (var i=0; i<4; i++) {
+            var scoresAchievedCount = 0;
+            var safeScoresAchievedThresh = roundBidAnalysis.simulationsCount * 0.1;
+            var standardScoresAchievedThresh = roundBidAnalysis.simulationsCount * 0.18;
+            var suggestedScoresAchievedThresh = roundBidAnalysis.simulationsCount * 0.25;
+            var safeScoresThreshFound = false;
+            var suggestedThreshFound = false;
+            var standardScoresThreshFound = false;
+            var roundScoresHistogram = roundBidAnalysis.histogramsBySuit[suits[i]];
+            for (var j=0; j<roundScoresHistogram.length; j++) {
+                if (roundScoresHistogram[j] == null) {
+                    continue;
+                }
+                scoresAchievedCount += roundScoresHistogram[j];
+                if (!safeScoresThreshFound && scoresAchievedCount >= safeScoresAchievedThresh) {
+                    safeScoresThreshFound = true;
+                    roundBidAnalysis.safeBids[i] = j;
+                }
+                if (!standardScoresThreshFound && scoresAchievedCount >= standardScoresAchievedThresh) {
+                    standardScoresThreshFound = true;
+                    roundBidAnalysis.standardBids[i] = j;
+                    if (j > roundBidAnalysis.standardBid) {
+                        roundBidAnalysis.standardBid = j;
+                    }
+                    continue;
+                }
+                if (!suggestedThreshFound && scoresAchievedCount >= suggestedScoresAchievedThresh) {
+                    suggestedThreshFound = true;
+                    roundBidAnalysis.suggestedBids[i] = j;
+                    if (j > roundBidAnalysis.suggestedBid) {
+                        roundBidAnalysis.suggestedBid = j;
+                        roundBidAnalysis.suggestedSuit = suits[i];
+                    }
+                }
+            }
+        }
+    
+        var bid;
+        if (currentPlayerSkill == 'Standard') {
+            bid = [roundBidAnalysis.standardBid, roundBidAnalysis.suggestedSuit];
+        } else { // Pro
+            bid = [roundBidAnalysis.suggestedBid, roundBidAnalysis.suggestedSuit];
+        }
+        return bid;
+    }
+
     this.OnFinishedAnalyzingBestBid = function(bestBid, minimumEndTime) {
         this.currentRoundMaximumBid = bestBid[0];
         this.currentRoundWinningBidTrump = bestBid[1];
@@ -754,21 +1032,51 @@ var PinochlePlayer = function() {
         if (this.isHuman) {
             game.PromptPlayerToPlayCard();
         } else {
-            var card = this.FindBestPlayingCard(game, false);
+            var card = this.FindBestPlayingCard(game, this.skillLevel);
             game.OnPlayerChosePlayCard(card);
         }
     }
 
-    this.FindBestPlayingCard = function(aGame) {
+    this.FindBestPlayingCard = function(aGame, aSkillLevel) {
         var possiblePlays = GetLegalCardsForCurrentPlayerTurn(aGame);
-        switch (this.skillLevel) {
+        switch (aSkillLevel) {
             case 'Easy':
                 return possiblePlays[0];
             case 'Standard':
                 return this.FindStandardPlayingCard(aGame, possiblePlays);
-            default:
-                // 'Pro'
+            case 'Pro':
                 return this.FindProPlayingCard(aGame, possiblePlays);
+            case 'Custom':
+                var unPlayedCards = [];
+                for (var j=0; j<4; j++) {
+                    if (j == this.playerPositionInt) {
+                        continue;
+                    }
+                    for (var k=0; k<aGame.players[j].cards.length; k++) {
+                        unPlayedCards.push(aGame.players[j].cards[k]);
+                    }
+                }
+                try {
+                    var customMethod = this.GetDecisionMethod(3);
+                    // Remove the method signature and paramters from the code
+                    customMethod = customMethod.substring(customMethod.indexOf("{") + 1);
+                    customMethod = customMethod.substring(customMethod.lastIndexOf("}"), -1);
+                    var f = new Function('aGame', 'handCards', 'possiblePlays', 'trickCards', 'trumpSuit', 'unPlayedCards', 'currentPlayerPosition', customMethod);
+                    var bestCard = f( 
+                        aGame, 
+                        this.cards, 
+                        possiblePlays,
+                        aGame.trickCards,
+                        aGame.trumpSuit,
+                        unPlayedCards,
+                        this.playerPositionInt);
+                    if (bestCard == undefined) {
+                        throw "Custom decision failed.";
+                    }
+                    return bestCard;
+                } catch (err) {
+                    throw err;
+                }
         }
     }
 
@@ -1539,7 +1847,225 @@ var PinochlePlayer = function() {
             switch (decisionIndex) {
                 case 0:
                 {
-                    decisionMethod = "var ChoosePassingCards = function(cards, game) { TODO";
+                    decisionMethod = "var ChooseBid = function(aGame,\n\
+            passingCardsCount,\n\
+            currentPlayerIndex,\n\
+            currentPlayerCards\n\
+            ) {\n\
+                \n\
+    // Create a game state copy that can be manipulated and restored to simulate outcomes\n\
+    var simGame = {};\n\
+    simGame.isDoubleDeck = aGame.isDoubleDeck;\n\
+    simGame.cardsPlayedThisRound = [];\n\
+    simGame.trickCards = [];\n\
+    simGame.leadIndex = aGame.leadIndex;\n\
+    simGame.dealerIndex = aGame.dealerIndex;\n\
+    simGame.turnIndex = aGame.turnIndex;\n\
+    simGame.players = [];\n\
+    var player = new PinochlePlayer();\n\
+    player.Initialize('You', true, 'Standard', 'South');\n\
+    simGame.players.push(player);\n\
+    player = new PinochlePlayer();\n\
+    player.Initialize('Catalina', false, 'Standard', 'West');\n\
+    simGame.players.push(player);\n\
+    player = new PinochlePlayer();\n\
+    player.Initialize('Amelia', false, 'Standard', 'North');\n\
+    simGame.players.push(player);\n\
+    player = new PinochlePlayer();\n\
+    player.Initialize('Seward', false, 'Standard', 'East');\n\
+    simGame.players.push(player);\n\
+\n\
+    var currentSimPlayer = simGame.players[currentPlayerIndex];\n\
+    simGame.bidWinner = currentPlayerIndex;\n\
+    simGame.currentHighestBidder = currentSimPlayer;\n\
+\n\
+    // Create the list of cards remaining in the deck\n\
+    var gameCards=aGame.GetAllCards(aGame.isDoubleDeck);\n\
+    var cardsRemaining = [];\n\
+    for (var i=0; i<gameCards.length; i++) {\n\
+        var isAlreadyPlayed = false;\n\
+        for (var j=0; j<currentPlayerCards.length; j++) {\n\
+            if (currentPlayerCards[j].id === gameCards[i].id) {\n\
+                isAlreadyPlayed = true;\n\
+                break;\n\
+            }\n\
+        }\n\
+        if (isAlreadyPlayed) {\n\
+            continue;\n\
+        }\n\
+        \n\
+        cardsRemaining.push(gameCards[i]);\n\
+    }\n\
+\n\
+    // Create a round bid analysis result\n\
+    var roundBidAnalysis = {};\n\
+    roundBidAnalysis.safeBids = [];\n\
+    roundBidAnalysis.standardBids = [];\n\
+    roundBidAnalysis.suggestedBids = [];\n\
+    var suits = ['S','H','C','D'];\n\
+    roundBidAnalysis.histogramsBySuit = [];\n\
+    for (var i=0; i<suits.length; i++) {\n\
+        roundBidAnalysis.histogramsBySuit[suits[i]] = [];\n\
+    }\n\
+\n\
+    var simulationsPerSuit = 500;\n\
+    var totalSimulations = simulationsPerSuit*4;\n\
+    for (var simIndex = 0; simIndex < totalSimulations; simIndex++) {\n\
+        // Try each suit\n\
+        simGame.trumpSuit = suits[simIndex%4];\n\
+\n\
+        // Reset the sim game state\n\
+        for (var k=0; k<4; k++) {\n\
+            var simPlayer = simGame.players[k];\n\
+            simPlayer.currentRoundMeldScore = 0;\n\
+            simPlayer.currentRoundCountersTaken = 0;\n\
+            simPlayer.melds = [];\n\
+            simPlayer.cards = [];\n\
+            simPlayer.isShownVoidInSuit = [false, false, false, false];\n\
+        }\n\
+        simGame.cardsPlayedThisRound = [];\n\
+        simGame.trickCards = [];\n\
+        simGame.dealerIndex = aGame.dealerIndex;\n\
+        simGame.leadIndex = currentSimPlayer.playerPositionInt;\n\
+        simGame.turnIndex = currentSimPlayer.playerPositionInt;\n\
+\n\
+        // Shuffle the deck\n\
+        var deckIdx = 0;\n\
+        for (var k = cardsRemaining.length - 1; k > 0; k--) {\n\
+            var randIdx = Math.floor(Math.random() * (k + 1));\n\
+            x = cardsRemaining[k];\n\
+            cardsRemaining[k] = cardsRemaining[randIdx];\n\
+            cardsRemaining[randIdx] = x;\n\
+        }\n\
+\n\
+        // Deal the cards to each player\n\
+        for (var n=0; n<currentPlayerCards.length; n++) {\n\
+            var card = currentPlayerCards[n];\n\
+            card.wasPassed = false;\n\
+            card.wasShown = false;\n\
+            currentSimPlayer.cards.push(card);\n\
+        }\n\
+        var deckIdx = 0;\n\
+        for (var n=0; n<4; n++) {\n\
+            var player = simGame.players[n];\n\
+            while (player.cards.length != currentSimPlayer.cards.length) {\n\
+                player.cards.push(cardsRemaining[deckIdx]);\n\
+                deckIdx++;\n\
+            }\n\
+        }\n\
+\n\
+        // Pass cards\n\
+        if (passingCardsCount > 0) {\n\
+            var passingPlayer = simGame.players[(currentSimPlayer.playerPositionInt+2)%4];\n\
+            var receivingPlayer = currentSimPlayer;\n\
+            receivingPlayer.receivedCards = [];\n\
+            var passingCards = passingPlayer.FindBestPassingCards(passingCardsCount, passingPlayer.skillLevel, simGame);\n\
+            for (var n=0; n<passingCards.length; n++) {\n\
+                var card = passingCards[n];\n\
+                card.wasPassed = true;\n\
+                passingPlayer.cards.splice(passingPlayer.cards.indexOf(card),1);\n\
+                receivingPlayer.cards.push(card);\n\
+                receivingPlayer.receivedCards.push(card);\n\
+            }\n\
+\n\
+            passingPlayer = currentSimPlayer;\n\
+            receivingPlayer = simGame.players[(currentSimPlayer.playerPositionInt+2)%4];\n\
+            receivingPlayer.receivedCards = [];\n\
+            var passingCards = passingPlayer.FindBestPassingCards(passingCardsCount, passingPlayer.skillLevel, simGame);\n\
+            for (var n=0; n<passingCards.length; n++) {\n\
+                var card = passingCards[n];\n\
+                card.wasPassed = true;\n\
+                passingPlayer.cards.splice(passingPlayer.cards.indexOf(card),1);\n\
+                receivingPlayer.cards.push(card);\n\
+                receivingPlayer.receivedCards.push(card);\n\
+            }\n\
+        }\n\
+\n\
+        // Count Melds\n\
+        for (var i=0; i<4; i++) {\n\
+            var player = simGame.players[i];\n\
+            player.passingCards = [];\n\
+            player.CalculateMelds(player.cards, simGame.trumpSuit, simGame.isDoubleDeck, false);\n\
+            for (var n=0; n<player.melds.length; n++) {\n\
+                var meld = player.melds[n];\n\
+                for (var k=0; k<meld.cards.length; k++) {\n\
+                    var card = meld.cards[k];\n\
+                    card.wasShown = true;\n\
+                }\n\
+            }\n\
+        }\n\
+\n\
+        // Play out trick taking\n\
+        while (currentSimPlayer.cards.length>0) {\n\
+            simGame.trickCards = [];\n\
+            while (simGame.trickCards.length < 4) {\n\
+                var nextPlayer = simGame.players[simGame.turnIndex%4];\n\
+                var nextCard = nextPlayer.FindBestPlayingCard(simGame, nextPlayer.skillLevel);\n\
+                PlayCard(simGame,nextCard);\n\
+            }\n\
+\n\
+            var trickResult = GetTrickResult(simGame);\n\
+            trickResult.trickTaker.currentRoundCountersTaken += trickResult.countersTaken;\n\
+            simGame.leadIndex = trickResult.trickTaker.playerPositionInt;\n\
+            simGame.turnIndex = simGame.leadIndex;\n\
+        }\n\
+\n\
+        // Count round score\n\
+        var teamMeldScore = simGame.players[(currentSimPlayer.playerPositionInt+2)%4].currentRoundMeldScore + currentSimPlayer.currentRoundMeldScore;\n\
+        var teamCountersScore = simGame.players[(currentSimPlayer.playerPositionInt+2)%4].currentRoundCountersTaken + currentSimPlayer.currentRoundCountersTaken;\n\
+        var teamRoundScore = teamMeldScore + teamCountersScore;\n\
+        var curSuitHistograms = roundBidAnalysis.histogramsBySuit[simGame.trumpSuit];\n\
+        if (curSuitHistograms[teamRoundScore] == null) {\n\
+            curSuitHistograms[teamRoundScore] = 1;\n\
+        } else {\n\
+            curSuitHistograms[teamRoundScore] += 1;\n\
+        }\n\
+    }\n\
+\n\
+    roundBidAnalysis.simulationsCount = simulationsPerSuit;\n\
+    roundBidAnalysis.suggestedSuit = suits[0];\n\
+    roundBidAnalysis.standardBid = 0;\n\
+    roundBidAnalysis.suggestedBid = 0;\n\
+    for (var i=0; i<4; i++) {\n\
+        var scoresAchievedCount = 0;\n\
+        var safeScoresAchievedThresh = roundBidAnalysis.simulationsCount * 0.1;\n\
+        var standardScoresAchievedThresh = roundBidAnalysis.simulationsCount * 0.18;\n\
+        var suggestedScoresAchievedThresh = roundBidAnalysis.simulationsCount * 0.25;\n\
+        var safeScoresThreshFound = false;\n\
+        var suggestedThreshFound = false;\n\
+        var standardScoresThreshFound = false;\n\
+        var roundScoresHistogram = roundBidAnalysis.histogramsBySuit[suits[i]];\n\
+        for (var j=0; j<roundScoresHistogram.length; j++) {\n\
+            if (roundScoresHistogram[j] == null) {\n\
+                continue;\n\
+            }\n\
+            scoresAchievedCount += roundScoresHistogram[j];\n\
+            if (!safeScoresThreshFound && scoresAchievedCount >= safeScoresAchievedThresh) {\n\
+                safeScoresThreshFound = true;\n\
+                roundBidAnalysis.safeBids[i] = j;\n\
+            }\n\
+            if (!standardScoresThreshFound && scoresAchievedCount >= standardScoresAchievedThresh) {\n\
+                standardScoresThreshFound = true;\n\
+                roundBidAnalysis.standardBids[i] = j;\n\
+                if (j > roundBidAnalysis.standardBid) {\n\
+                    roundBidAnalysis.standardBid = j;\n\
+                }\n\
+                continue;\n\
+            }\n\
+            if (!suggestedThreshFound && scoresAchievedCount >= suggestedScoresAchievedThresh) {\n\
+                suggestedThreshFound = true;\n\
+                roundBidAnalysis.suggestedBids[i] = j;\n\
+                if (j > roundBidAnalysis.suggestedBid) {\n\
+                    roundBidAnalysis.suggestedBid = j;\n\
+                    roundBidAnalysis.suggestedSuit = suits[i];\n\
+                }\n\
+            }\n\
+        }\n\
+    }\n\
+\n\
+    var bid = [roundBidAnalysis.suggestedBid, roundBidAnalysis.suggestedSuit];\n\
+    return bid;\n\
+};";
                 }
                 break;
 
@@ -1860,7 +2386,300 @@ var PinochlePlayer = function() {
 
                 case 3:
                 {
-                    decisionMethod = "TODO";
+                    decisionMethod = "var ChooseTrickCard = function(\n\
+            aGame,          // Game state\n\
+            handCards,      // Array of cards in your hand\n\
+            possiblePlays,  // Array of cards you can play\n\
+            trickCards,     // Array of cards already in the trick pile\n\
+            trumpSuit,      // The trump suit\n\
+            unPlayedCards,  // Arrya of cards yet to be played by opponents\n\
+            currentPlayerPosition   // The position index of the player\n\
+        ) {\n\
+\n\
+    if (trickCards.length === 0) {\n\
+        //\n\
+        // Choose a lead card\n\
+        //\n\
+        \n\
+        // Sort all cards with trumps first and then by highest value\n\
+        possiblePlays.sort(function(a,b){\n\
+            if (a.suit == trumpSuit && b.suit != trumpSuit) {\n\
+                return -1;\n\
+            } else if (a.suit != trumpSuit && b.suit == trumpSuit) {\n\
+                return 1;\n\
+            } else {\n\
+                return b.value - a.value;\n\
+            }\n\
+        });\n\
+        \n\
+        var firstCard = possiblePlays[0];\n\
+        if (firstCard.suit == trumpSuit) {\n\
+            var higherTrumpCardExists = false;\n\
+            var anyTrumpSuitExists = false;\n\
+            for (var j=0; j<unPlayedCards.length; j++) {\n\
+                if (unPlayedCards[j].suit == trumpSuit) {\n\
+                    anyTrumpSuitExists = true;\n\
+                }\n\
+                if (unPlayedCards[j].suit == trumpSuit && unPlayedCards[j].value > firstCard.value) {\n\
+                    higherTrumpCardExists = true;\n\
+                    break;\n\
+                }\n\
+            }\n\
+            if (!higherTrumpCardExists) {\n\
+                if (anyTrumpSuitExists) {\n\
+                    // Play this gauranteed trump\n\
+                    return firstCard;\n\
+                }\n\
+            }\n\
+        }\n\
+        \n\
+        // Check for any non-trump gauranteed trick takers\n\
+        var suits = ['S', 'H', 'C', 'D'];\n\
+        var trumpSuitIndex = 0;\n\
+        for (var i=0; i<suits.length; i++) {\n\
+            if (suits[i] == trumpSuit) {\n\
+                trumpSuitIndex = i;\n\
+                break;\n\
+            }\n\
+        }\n\
+        for (var k=0; k<suits.length; k++) {\n\
+            var checkSuit = suits[k];\n\
+            if (checkSuit == trumpSuit) {\n\
+                continue;\n\
+            }\n\
+            \n\
+            var highestCardOfSuit = null;\n\
+            for (var j=possiblePlays.length-1; j>=0; j--) {\n\
+                var possibleCard = possiblePlays[j];\n\
+                if (possibleCard.suit == checkSuit &&\n\
+                    (highestCardOfSuit == null || highestCardOfSuit.value < possibleCard.value)) {\n\
+                    highestCardOfSuit = possibleCard;\n\
+                }\n\
+            }\n\
+            if (highestCardOfSuit != null) {\n\
+                // Check if it is gauranteed\n\
+                var higherCardExists = false;\n\
+                for (var j=0; j<4; j++) {\n\
+                    if (j == currentPlayerPosition) {\n\
+                        continue;\n\
+                    }\n\
+                    \n\
+                    var otherPlayer = aGame.players[j];\n\
+                    // If the other player is void in this suit\n\
+                    //and they are not void in trumps then consider that higher card exists\n\
+                    if (otherPlayer.playerPositionInt == (currentPlayerPosition+1)%4 || otherPlayer.playerPositionInt == (currentPlayerPosition+3)%4) {\n\
+                        if (otherPlayer.isShownVoidInSuit[k] && !otherPlayer.isShownVoidInSuit[trumpSuitIndex]) {\n\
+                            higherCardExists = true;\n\
+                            break;\n\
+                        }\n\
+                    }\n\
+                    \n\
+                    var otherCards = otherPlayer.cards;\n\
+                    for (var m=0; m<otherCards.length; m++) {\n\
+                        var otherCard = otherCards[m];\n\
+                        if (otherCard.suit == checkSuit && otherCard.value > highestCardOfSuit.value)\n\
+                        {\n\
+                            higherCardExists = true;\n\
+                            break;\n\
+                        }\n\
+                    }\n\
+                    if (higherCardExists)\n\
+                    {\n\
+                        break;\n\
+                    }\n\
+                }\n\
+                if (!higherCardExists) {\n\
+                    return highestCardOfSuit;\n\
+                }\n\
+            }\n\
+        }\n\
+        \n\
+        // If the only cards left are trump then play the highest trump\n\
+        if (possiblePlays[possiblePlays.length-1].suit == trumpSuit) {\n\
+            // We only have trumps\n\
+            // Don't play a counter if our opponent still has a higher trump\n\
+            var otherPlayer1 = aGame.players[(currentPlayerPosition+1)%4];\n\
+            var otherPlayer2 = aGame.players[(currentPlayerPosition+3)%4];\n\
+            var highestTrump = possiblePlays[0];\n\
+            for (var m=0; m<otherPlayer1.cards.length; m++) {\n\
+                var otherCard = otherPlayer1.cards[m];\n\
+                if (otherCard.suit == highestTrump.suit && otherCard.value > highestTrump.value) {\n\
+                    // Opponents have a higher trump so we will play our lowest to hopefully not give away a pointer\n\
+                    return possiblePlays[possiblePlays.length-1];\n\
+                }\n\
+            }\n\
+            for (var m=0; m<otherPlayer2.cards.length; m++) {\n\
+                var otherCard = otherPlayer2.cards[m];\n\
+                if (otherCard.suit == highestTrump.suit && otherCard.value > highestTrump.value) {\n\
+                    // Opponents have a higher trump so we will play our lowest to hopefully not give away a pointer\n\
+                    return possiblePlays[possiblePlays.length-1];\n\
+                }\n\
+            }\n\
+            \n\
+            // Play our highest trump\n\
+            return possiblePlays[0];\n\
+        } else {\n\
+            // Otherwise we are not going to take the trick so we might be able to save our higher counters\n\
+            return possiblePlays[possiblePlays.length-1];\n\
+        }\n\
+        \n\
+    } else {\n\
+        \n\
+        var leadCard = trickCards[0];\n\
+        var play = possiblePlays[0];\n\
+        if (play.suit == leadCard.suit) {\n\
+            //\n\
+            // Must play of same suit\n\
+            //\n\
+            possiblePlays.sort(function(a,b){\n\
+                return a.value - b.value;\n\
+            });\n\
+            \n\
+            var highestCardInTrickPosition = aGame.leadIndex;\n\
+            var highestCardInTrick = leadCard;\n\
+            for (var i=1; i<trickCards.length; i++) {\n\
+                var playedCard = trickCards[i];\n\
+                if ((playedCard.suit == highestCardInTrick.suit && playedCard.value > highestCardInTrick.value) ||\n\
+                    (playedCard.suit == trumpSuit && highestCardInTrick.suit != trumpSuit)) {\n\
+                        highestCardInTrick = playedCard;\n\
+                        highestCardInTrickPosition = (aGame.leadIndex+i)%4;\n\
+                    }\n\
+            }\n\
+            // Check if we already cant take the trick\n\
+            var cantTakeTrick = true;\n\
+            for (var i=0; i<possiblePlays.length; i++) {\n\
+                var card = possiblePlays[i];\n\
+                if ((card.suit == highestCardInTrick.suit && card.value > highestCardInTrick.value) ||\n\
+                    (card.suit == trumpSuit && highestCardInTrick.suit != trumpSuit)){\n\
+                    cantTakeTrick = false;\n\
+                    break;\n\
+                }\n\
+            }\n\
+            if (cantTakeTrick) {\n\
+                var highestTakerIsPartner = highestCardInTrickPosition == (currentPlayerPosition+2)%4;\n\
+                if (highestTakerIsPartner) {\n\
+                    // Play our lowest counter\n\
+                    for (var i=0; i<possiblePlays.length; i++) {\n\
+                        var card = possiblePlays[i];\n\
+                        if (card.rank == 13 || card.rank == 10 || card.rank == 1) {\n\
+                            return card;\n\
+                        }\n\
+                    }\n\
+                    // No counter found so play the lowest card possible\n\
+                    return possiblePlays[0];\n\
+                } else {\n\
+                    // No counter found so play the lowest card possible\n\
+                    return possiblePlays[0];\n\
+                }\n\
+            }\n\
+            \n\
+            if (trickCards.length < 3) {\n\
+                // play our highest card\n\
+                var highestCard = possiblePlays[possiblePlays.length - 1];\n\
+                return highestCard;\n\
+            } else {\n\
+                // Play the lowest card that will take the trick\n\
+                for (var i=0; i<possiblePlays.length; i++) {\n\
+                    var card = possiblePlays[i];\n\
+                    if (card.value > highestCardInTrick.value) {\n\
+                        return card;\n\
+                    }\n\
+                }\n\
+                // Safety - this should not happen\n\
+                return possiblePlays[0];\n\
+            }\n\
+        } else if (play.suit == trumpSuit) {\n\
+            //\n\
+            // Must play a trump card\n\
+            //\n\
+            var highestCardInTrickPosition = aGame.leadIndex;\n\
+            var highestCardInTrick = leadCard;\n\
+            for (var i=1; i<trickCards.length; i++) {\n\
+                var playedCard = trickCards[i];\n\
+                if ((playedCard.suit == highestCardInTrick.suit && playedCard.value > highestCardInTrick.value) ||\n\
+                    (playedCard.suit == trumpSuit && highestCardInTrick.suit != trumpSuit)) {\n\
+                        highestCardInTrick = playedCard;\n\
+                        highestCardInTrickPosition = (aGame.leadIndex+i)%4;\n\
+                    }\n\
+            }\n\
+            \n\
+            possiblePlays.sort(function(a,b){\n\
+                return a.value - b.value;\n\
+            });\n\
+            \n\
+            // Check if we already cant take the trick\n\
+            var cantTakeTrick = true;\n\
+            for (var i=0; i<possiblePlays.length; i++) {\n\
+                var card = possiblePlays[i];\n\
+                if ((card.suit == highestCardInTrick.suit && card.value > highestCardInTrick.value) ||\n\
+                    (card.suit == trumpSuit && highestCardInTrick.suit != trumpSuit)){\n\
+                    cantTakeTrick = false;\n\
+                    break;\n\
+                }\n\
+            }\n\
+            if (cantTakeTrick) {\n\
+                var highestTakerIsPartner = highestCardInTrickPosition == (currentPlayerPosition+2)%4;\n\
+                if (highestTakerIsPartner) {\n\
+                    // Play our lowest counter\n\
+                    for (var i=0; i<possiblePlays.length; i++) {\n\
+                        var card = possiblePlays[i];\n\
+                        if (card.rank == 13 || card.rank == 10 || card.rank == 1) {\n\
+                            return card;\n\
+                        }\n\
+                    }\n\
+                    // No counter found so play the lowest card possible\n\
+                    return possiblePlays[0];\n\
+                } else {\n\
+                    // No counter found so play the lowest card possible\n\
+                    return possiblePlays[0];\n\
+                }\n\
+            } else {\n\
+                if (trickCards.length < 3) {\n\
+                    // Play highest card\n\
+                    return possiblePlays[possiblePlays.length-1];\n\
+                } else {\n\
+                    // Play lowest card\n\
+                    return possiblePlays[0];\n\
+                }\n\
+            }\n\
+        } else {\n\
+            //\n\
+            // Must play a non trump, off suit card\n\
+            //\n\
+            \n\
+            var highestCardInTrickPosition = aGame.leadIndex;\n\
+            var highestCardInTrick = leadCard;\n\
+            for (var i=1; i<trickCards.length; i++) {\n\
+                var playedCard = trickCards[i];\n\
+                if ((playedCard.suit == highestCardInTrick.suit && playedCard.value > highestCardInTrick.value) ||\n\
+                    (playedCard.suit == trumpSuit && highestCardInTrick.suit != trumpSuit)) {\n\
+                        highestCardInTrick = playedCard;\n\
+                        highestCardInTrickPosition = (aGame.leadIndex+i)%4;\n\
+                    }\n\
+            }\n\
+            \n\
+            possiblePlays.sort(function(a,b){\n\
+                return a.value - b.value;\n\
+            });\n\
+            \n\
+            var highestTakerIsPartner = highestCardInTrickPosition == (currentPlayerPosition+2)%4;\n\
+            if (highestTakerIsPartner) {\n\
+                // Play our lowest counter\n\
+                for (var i=0; i<possiblePlays.length; i++) {\n\
+                    var card = possiblePlays[i];\n\
+                    if (card.rank == 13 || card.rank == 10 || card.rank == 1) {\n\
+                        return card;\n\
+                    }\n\
+                }\n\
+                // No counter found so play the lowest card possible\n\
+                return possiblePlays[0];\n\
+            } else {\n\
+                // Play lowest card\n\
+                return possiblePlays[0];\n\
+            }\n\
+        }\n\
+    }\n\
+};";
                 }
                 break;
             }

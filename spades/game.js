@@ -2601,7 +2601,6 @@ var SpadesGame = function () {
         }
         catch (err) {
             IndicateCodeError(err);
-            this.ClearAllCustomDecisionIndicators();
         }
     }
 

@@ -45,7 +45,7 @@ function Initialize() {
     */
 
     // Allow users to set break points
-    // TODO: this just visualizes the break point but it does nothing else
+    // this just visualizes the break point but it does nothing else
     /*
     editor.on("guttermousedown", function(e) {
         var target = e.domEvent.target; 
@@ -75,6 +75,7 @@ function Initialize() {
         }
         
         game.SaveCurrentDecisionMethod(currentDecisionIndex, curCode);
+        game.ClearAllCustomDecisionIndicators();
         game.TryCurrentDecisionMethod(currentDecisionIndex);
     });
 

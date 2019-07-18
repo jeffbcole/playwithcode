@@ -1,3 +1,4 @@
+// TODO: remove this file
 self.addEventListener('message', function(e){
     importScripts('player.js');
     var data = e.data;
@@ -297,7 +298,7 @@ var FindRoundBidAnalysis = function(aGame, passingCardsCount, currentPlayerSkill
             simGame.trickCards = [];
             while (simGame.trickCards.length < 4) {
                 var nextPlayer = simGame.players[simGame.turnIndex%4];
-                var nextCard = nextPlayer.FindBestPlayingCard(simGame);
+                var nextCard = nextPlayer.FindBestPlayingCard(simGame, nextPlayer.skillLevel);
                 PlayCard(simGame,nextCard);
             }
 

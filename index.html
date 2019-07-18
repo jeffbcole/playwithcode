@@ -2,11 +2,13 @@
 <html lang="en">
 
 <head>
-	<title>Humans vs Computers | Program the AI for your favorite card games!</title>
+	<title>Strategy Simulator | Program the AI for your favorite card games!</title>
 	<meta charset="utf-8">
-	<meta name="description" content="Play With Code:  Write the code to play card games.  Its humans vs computers."> <!-- TODO: write -->
-	<meta name="author" content="Play With Cards">
+	<meta name="description" content="Card Game Strategy Simulator:  Write the code to play card games."> <!-- TODO: write -->
+	<meta name="author" content="Strategy Simulator">
 
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+	
 	<link rel="stylesheet" href="index.css">
 	<link rel="stylesheet" href="shared/cards.css">
 	<link rel="stylesheet" href="shared/menus.css">
@@ -64,6 +66,7 @@
 			<i id="menu_bar_right_arrow"></i>
 		</div>
 		<center>
+			<div id="menu_bar_title">Strategy Simulator</div>
 			<div>
 				<select id="menu_bar_select_game" class="menu_bar_select_game" onchange="selectGameMenuChanged()">
 					<option value="1">Hearts</option>
@@ -84,7 +87,7 @@
 	<div id="game_main_container">
 		<div id="humansvscomputers_title">
 			<center>
-				<div id="humansvscomputerstitle">Humans vs Computers</div>
+				<div id="humansvscomputerstitle">Strategy Simulator</div>
 				<div>
 					<select id="select_game_large" class="select_game" onchange="selectGameLargeChanged()">
 						<option value="0" selected>Select A Game...</option>
@@ -123,7 +126,13 @@
 	</div>
 	<div id="code_container_gutter"></div>
 	<div id="code_container">
-		<div id="code_computer_player_info"></div>
+		<div id="code_simulator_info">
+			<div id="code_simulator_title">Simulator</div>
+			<button id="code_simulator_play_button"><i class="fa fa-play"></i></button>
+			<span id="code_simulator_step_toggle"><span id="code_simulator_step_label">Step:</span><input id="code_simulator_step_checkbox" type="checkbox" name="step_simulator" value="step"></span>
+			
+			<input type="text" id="code_computer_player_info_name" value="Strategies">	
+		</div>
 		<div id="code_decisions_bar"></div>
 		<div id="code_editor"></div>
 		<div id="code_console"></div>

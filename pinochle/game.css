@@ -90,7 +90,7 @@
 }
 
 #pinochle_trump_suit_image {
-    background-image:url('images/score_heart.png');
+    background-image:url('../shared/images/score_heart.png');
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;

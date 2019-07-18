@@ -953,6 +953,19 @@ var PinochleGame = function () {
         return cards;
     }
 
+    this.GetAllCards = function(isDoubleDeck) {
+        gameCards=[];
+        for (i=0; i<allCards.length; i++) {
+            var card = allCards[i];
+            if (isDoubleDeck && card.rank != 9) {
+                gameCards.push(card);
+            } else if (!isDoubleDeck && card.deckID<2) {
+                gameCards.push(card);
+            }
+        }
+        return gameCards;
+    }
+
     var cardsRegion = document.getElementById('cards_region');
     cardsRegion.onmousedown = dragMouseDown;
 
@@ -3950,7 +3963,7 @@ var PinochleGame = function () {
             case 'ChoosingTrickCard':
             {
                 var player = this.players[0];
-                var bestCard = player.FindBestPlayingCard(game, true);
+                var bestCard = player.FindBestPlayingCard(game, 'Pro');
                 BumpCard(bestCard.cardView);
             }
             break;
@@ -5125,8 +5138,9 @@ var PinochleGame = function () {
     }
 
     //
-    // Async Workers
+    // // TODO: remove this: Async Workers
     //
+    /*
     this.worker = new Worker('pinochle/GameSimulator.js');
     this.worker.addEventListener('message', function(e){
         var data = e.data;
@@ -5168,9 +5182,9 @@ var PinochleGame = function () {
         }
         return cloneableCards;
     }
-
+*/
     this.OnTerminateGame = function() {
-        this.worker.terminate();
+        //this.worker.terminate();
     }
 
     //
@@ -6131,7 +6145,7 @@ var PinochleGame = function () {
                 // Pass cards to bid winner
                 var passingCardsCount = Number(game.settings.GetSetting('setting_passing_cards_count'));
                 var passingPlayer = game.players[(game.currentHighestBidder.playerPositionInt+2)%4];
-                var bestCards = passingPlayer.FindBestPassingCards(passingCardsCount, passingPlayer.skillLevel, game);
+                var bestCards = passingPlayer.FindBestPassingCards(passingCardsCount, 'Standard', game);
                 passingPlayer.passingCards = bestCards;
                 passingPlayer.cards = passingPlayer.cards.filter((el) => !bestCards.includes(el));
                 var receivingPlayer = game.players[game.currentHighestBidder.playerPositionInt];
@@ -6145,7 +6159,7 @@ var PinochleGame = function () {
                 // Pass cards back
                 receivingPlayer = passingPlayer;
                 passingPlayer = game.currentHighestBidder;
-                bestCards = passingPlayer.FindBestPassingCards(passingCardsCount, passingPlayer.skillLevel, game);
+                bestCards = passingPlayer.FindBestPassingCards(passingCardsCount, 'Standard', game);
                 passingPlayer.passingCards = bestCards;
                 passingPlayer.cards = passingPlayer.cards.filter((el) => !bestCards.includes(el));
                 receivingPlayer.receivedCards = [];
@@ -6178,7 +6192,7 @@ var PinochleGame = function () {
                     game.trickCards = [];
                     while (game.trickCards.length < 4) {
                         var nextPlayer = game.players[game.turnIndex%4];
-                        var nextCard = nextPlayer.FindBestPlayingCard(game);
+                        var nextCard = nextPlayer.FindBestPlayingCard(game, 'Standard');
                         PlayCard(game,nextCard);
                     }
 
@@ -6194,7 +6208,7 @@ var PinochleGame = function () {
                 game.trickCards = [];
                 while (game.turnIndex%4 != 0) {
                     var nextPlayer = game.players[game.turnIndex%4];
-                    var nextCard = nextPlayer.FindBestPlayingCard(game);
+                    var nextCard = nextPlayer.FindBestPlayingCard(game, 'Standard');
                     PlayCard(game,nextCard);
                 }
 
@@ -6220,11 +6234,11 @@ var PinochleGame = function () {
             switch (decisionIndex) {
                 case 0: // Choose Bid
                 {
-                    // TODO:
+                    var passingCardsCount = Number(this.settings.GetSetting('setting_passing_cards_count'));
                     var player = this.players[0];
-                    //var bid = player.FindBestBid(game, player.skillLevel);
+                    var bid = player.FindBestBid(game, player.skillLevel, passingCardsCount);
                     // TODO: indicate the current custom decision bid output
-                    //console.log("Custom Bid: " + bid);
+                    console.log("Custom Bid: " + bid);
                 }
                 break;
 
@@ -6257,7 +6271,7 @@ var PinochleGame = function () {
                 case 3: // Choose trick card
                 {
                     var player = this.players[0];
-                    var bestCard = player.FindBestPlayingCard(game, player.skillLevel, true);
+                    var bestCard = player.FindBestPlayingCard(game, player.skillLevel);
                     optimalCards.push(bestCard);
                 }
                 break;
@@ -6272,7 +6286,6 @@ var PinochleGame = function () {
         }
         catch (err) {
             IndicateCodeError(err);
-            this.ClearAllCustomDecisionIndicators();
         }
     }
 
