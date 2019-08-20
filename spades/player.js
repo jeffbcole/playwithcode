@@ -342,7 +342,7 @@ var SpadesPlayer = function() {
                         return possiblePlays[0];
                     }
 
-                    if (game.trickCards.length < 3) {
+                    if (aGame.trickCards.length < 3) {
                         // play our highest card
                         var highestCard = possiblePlays[possiblePlays.length - 1];
                         return highestCard;
@@ -379,7 +379,7 @@ var SpadesPlayer = function() {
             }
         } else {
             // Try not to take the trick
-            if (game.trickCards.length == 0) {
+            if (aGame.trickCards.length == 0) {
                 // Lead with the lowest card value possible
                 var play = possiblePlays[0];
                 for (var i=1; i<possiblePlays.length; i++) {
@@ -407,7 +407,7 @@ var SpadesPlayer = function() {
                         }
                     }
 
-                    if (game.trickCards.length < 3) {
+                    if (aGame.trickCards.length < 3) {
                     // Play the highest card that will not take the hand
                     var curPlay = possiblePlays[0];
                     if (curPlay.value > highestCardInTrick.value) {

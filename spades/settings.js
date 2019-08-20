@@ -3,7 +3,7 @@ var SpadesSettings = function() {
 	this.game_suffix = '_Spades';
 	this.setting_hints_default = false;
 	this.setting_sandbaggingpenalty_default = true;
-	this.setting_winning_score_default = 500;
+	this.setting_winning_score_default = 250;
 	this.GetSetting = function(setting) {
 		switch (setting) {
 			case "setting_hints":

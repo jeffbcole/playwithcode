@@ -133,7 +133,7 @@ var HeartsScoreboard = function () {
         difficultyView.innerHTML = "";
     }
 
-    this.UpdateScores = function(animate) {
+    this.UpdateScores = function(animate, signalWhenFinished) {
         for (var i=0; i<game.players.length; i++) {
             var player = game.players[i];
             var playerBarFill = document.getElementById('scoreboardPlayerBarFill' + player.playerPosition);
@@ -184,12 +184,14 @@ var HeartsScoreboard = function () {
                 }
         }
 
-        if (animate) {
-            setTimeout(function() {
+        if (signalWhenFinished) {
+            if (animate) {
+                setTimeout(function() {
+                    game.OnFinishedAnimatingUpdateGameScoreboard();
+                }, 1500);
+            } else {
                 game.OnFinishedAnimatingUpdateGameScoreboard();
-            }, 1500);
-        } else {
-            game.OnFinishedAnimatingUpdateGameScoreboard();
+            }
         }
     }
 }

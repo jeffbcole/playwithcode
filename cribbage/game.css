@@ -1363,3 +1363,29 @@ a:hover {
     width: 100px;
     text-shadow: 2px 2px rgba(0,0,0,0.5);
 }
+
+#cribbage_simulator_stats_table {
+    width: 350px;
+    top: 30px;
+	font-size: 12px;
+}
+
+#cribbage_simulator_stats_table th,td {
+    padding: 0px;
+    line-height: 13px;
+}
+
+.cribbage_simulator_table_category {
+	text-align: right;
+	width: 130pt;
+}
+
+.cribbage_simulator_table_stat_total {
+	font-size: 12px;
+	font-weight: bold;
+	text-align: center;
+}
+
+.cribbage_simulator_table_stat {
+	text-align: center;
+}

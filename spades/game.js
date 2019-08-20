@@ -65,7 +65,7 @@ var SpadesGame = function () {
                 <div id="spades_scoreboardPlayerRegionNorth" class="spades_scoreboardPlayerRegion">\
                     <div id="scoreboardPlayerNameNorth" class="spades_scoreboardPlayerName">North</div>\
                     <div id="scoreboardPlayerBarNorth" class="spades_scoreboardPlayerBar">\
-                        <div id="scoreboardPlayerBarFillNorth" class="spdaes_scoreboardPlayerBarFill"></div>\
+                        <div id="scoreboardPlayerBarFillNorth" class="spades_scoreboardPlayerBarFill"></div>\
                     </div>\
                     <div id="scoreboardPlayerScoreNorth" class="spades_scoreboardPlayerScore">10</div>\
                 </div>\
@@ -84,10 +84,6 @@ var SpadesGame = function () {
     </div>\
     \
     <div id="cards_region"></div>\
-    \
-    <div id="adView" align="center">\
-    \
-    </div>\
     \
     <div id="choose_bid_view">\
         <div id="choose_bid_title">Choose a bid:</div>\
@@ -980,12 +976,12 @@ var SpadesGame = function () {
 
         scoreboard.Initialize();
 
-        this.CreatePlayerInfoViews();
+        this.CreatePlayerInfoViews(0);
         
         this.AnimateDealCardsForRound();
     }
 
-    this.CreatePlayerInfoViews = function() {
+    this.CreatePlayerInfoViews = function(delay) {
         for (var i=0; i<4; i++) {
             var playerName = document.getElementById('player_name_' + this.players[i].playerPosition);
             playerName.positionFunction = "GetPlayerNamePosition('" + this.players[i].playerPosition + "')";
@@ -1012,10 +1008,10 @@ var SpadesGame = function () {
                 playerScore.style.visibility = "visible";
                 playerScore.style.opacity = 1;
             }
-        }, 1000);
+        }, delay);
     }
 
-    this.ResetPlayerRoundScores = function() {
+    this.ResetPlayerRoundScores = function(animate) {
         for (var i=0; i<4; i++) {
             var playerScore = document.getElementById('player_score_' + this.players[i].playerPosition);
             playerScore.positionFunction = "GetPlayerScorePosition('" + this.players[i].playerPosition + "')";
@@ -1026,7 +1022,7 @@ var SpadesGame = function () {
         
             if (i===0) {
                 var playerName = document.getElementById('player_name_' + this.players[i].playerPosition);
-                playerName.style.transition = "0.2s linear";
+                playerName.style.transition = animate ? "0.2s linear" : "none";
                 var pos = eval(playerName.positionFunction);
                 playerName.style.left = pos[0] + 'px';
                 playerName.style.top = pos[1] + 'px';
@@ -1127,7 +1123,7 @@ var SpadesGame = function () {
             player.isShownVoidInSuit = [false,false,false,false];
         }
 
-        this.ResetPlayerRoundScores();
+        this.ResetPlayerRoundScores(true);
 
         // Deal cards for round
         this.isSpadesBroken = false;
@@ -1333,10 +1329,10 @@ var SpadesGame = function () {
         }
     }
 
-    var HideChooseBidView = function() {
+    var HideChooseBidView = function(animate) {
         var el = document.getElementById('choose_bid_view');
         with(el.style) {
-            WebkitTransition = MozTransition = OTransition = msTransition = "0.4s ease-in";
+            WebkitTransition = MozTransition = OTransition = msTransition = animate ? "0.4s ease-in" : "none";
             opacity = 0;
             pointerEvents = "none";
         }
@@ -1350,7 +1346,7 @@ var SpadesGame = function () {
 
     this.OnPlayerFinishedChoosingBid = function(player) {
         if (player.isHuman) {
-            HideChooseBidView();
+            HideChooseBidView(true);
         }
 
         bidsReceived = bidsReceived + 1;
@@ -1379,7 +1375,9 @@ var SpadesGame = function () {
         position = eval(playerScore.positionFunction);
         playerScore.style.left = position[0] + 'px';
         playerScore.style.top = position[1] + 'px';
-        if (player.currentRoundTricksTaken < 0) {
+        if (player.currentRoundBid < 0) {
+            playerScore.innerText = "";
+        } else if (player.currentRoundTricksTaken < 0) {
             playerScore.innerText = "Bid: " + player.currentRoundBid;        
         } else {
             playerScore.innerText = player.currentRoundTricksTaken + "/" + player.currentRoundBid;        
@@ -1741,7 +1739,7 @@ var SpadesGame = function () {
         this.roundTricksTaken.push(aRoundTricksTaken);
         this.dealerIndex += 1;
 
-        scoreboard.UpdateScores(this.roundNumber !== 1);
+        scoreboard.UpdateScores(this.roundNumber !== 1, true);
     }
 
     this.OnFinishedAnimatingUpdateGameScoreboard = function() {
@@ -2401,7 +2399,7 @@ var SpadesGame = function () {
         MenuCardAppear("menu_tutorial");
     }
 
-    this.GetCurrentComputerPlayerDecisions = function() {
+    this.GetCurrentComputerPlayerDecisionNames = function() {
         var selectedIndex = 0;
         switch (game.currentMoveStage) {
             case 'ChoosingBids':
@@ -2436,9 +2434,9 @@ var SpadesGame = function () {
 
         scoreboard.Initialize();
         game.CreatePlayerInfoViews(0);
-        game.ResetPlayerRoundScores();
+        game.ResetPlayerRoundScores(false);
         HidePlayerPrompt();
-        HideChooseBidView();
+        HideChooseBidView(false);
         
         // Deal cards for round
         game.isSpadesBroken = false;
@@ -2568,6 +2566,14 @@ var SpadesGame = function () {
         }
     }
 
+    this.GetAllDecisionMethods = function() {
+        var decisionMethods = [];
+        for (var i=0; i<2; i++) {
+            decisionMethods[i] = game.players[0].GetDecisionMethod(i);
+        }
+        return decisionMethods;
+    }
+
     this.GetCustomPlayerMethod = function(decisionIndex) {
         return game.players[0].GetDecisionMethod(decisionIndex);
     }
@@ -2607,6 +2613,364 @@ var SpadesGame = function () {
     this.ClearAllCustomDecisionIndicators = function() {
         for (var i=0; i<cards.length; i++) {
             RemoveCustomDecisionIndicator(cards[i].cardView);
+        }
+    }
+
+    this.LoadSimulationGameState = function(gameState) {
+
+        var lines = gameState.split("\n");
+        var gameStateComps = lines[0].split(",");
+        game.skillLevel = gameStateComps[0];
+        game.currentDecisionIndex = Number(gameStateComps[1]);
+        game.winningScore = Number(gameStateComps[2]);
+        game.currentMoveStage = gameStateComps[3];
+        game.roundNumber = Number(gameStateComps[4]);
+        game.dealerIndex = Number(gameStateComps[5]);
+        game.leadIndex = Number(gameStateComps[6]);
+        game.turnIndex = Number(gameStateComps[7]);
+        game.isSpadesBroken = gameStateComps[8]=='true';
+
+        game.cardsPlayedThisRound = [];
+        if (lines[1].length > 0) {
+            var cardsThisRoundStrings = lines[1].split('.');
+            for (var i=0; i<cardsThisRoundStrings.length; i++) {
+                var cardID = cardsThisRoundStrings[i];
+                if (cardID.length>0) {
+                    var card = game.GetCardFromString(cardID);
+                    game.cardsPlayedThisRound.push(card);
+                }
+            }
+        }
+
+        game.trickCards = [];
+        if (lines[2].length > 0) {
+            var cardsThisRoundStrings = lines[2].split('.');
+            for (var i=0; i<cardsThisRoundStrings.length; i++) {
+                var cardID = cardsThisRoundStrings[i];
+                if (cardID.length>0) {
+                    var card = this.GetCardFromString(cardID);
+                    game.trickCards.push(card);
+                }
+            }
+        }
+
+        game.players = [];
+        for (var i=0; i<4; i++) {
+            var playerInfo = lines[3+i].split(",");
+            var playerName = playerInfo[0];
+            var playerIsHuman = playerInfo[1]=='true';
+            var playerSkill = playerInfo[2];
+            var playerPosition = playerInfo[3];
+            var playerPositionInt = playerInfo[4];
+            var player = new SpadesPlayer();
+            player.Initialize(playerName, playerIsHuman, playerSkill, playerPosition);
+            player.currentRoundBid = Number(playerInfo[5]);
+            player.currentRoundTricksTaken = Number(playerInfo[6]);
+            player.gameScore = Number(playerInfo[7]);
+            
+            player.cards = [];
+            var playerCardsData = playerInfo[8].split(".");
+            for (var j=0; j<playerCardsData.length; j++) {
+                var cardData = playerCardsData[j];
+                if (cardData.length>0) {
+                    var card = game.GetCardFromString(cardData);
+                    player.cards.push(card);
+                }
+            }
+            
+            player.isShownVoidInSuit = [];
+            var playerVoidData = playerInfo[9].split(".");
+            for (var j=0; j<4; j++) {
+                player.isShownVoidInSuit[j] = playerVoidData[j]=='true';
+            }
+
+            game.players.push(player);
+        }
+
+        game.roundScores = [];
+        var roundScoresText = lines[7];
+        if (roundScoresText.length>0) {
+            var roundScoresRounds = roundScoresText.split(",");
+            for (var i=0; i<roundScoresRounds.length; i++) {
+                var roundScores = roundScoresRounds[i].split(".");
+                if (roundScores.length == 4) {
+                    var roundScoresArray = [];
+                    roundScoresArray.push(Number(roundScores[0]));
+                    roundScoresArray.push(Number(roundScores[1]));
+                    roundScoresArray.push(Number(roundScores[2]));
+                    roundScoresArray.push(Number(roundScores[3]));
+                    game.roundScores.push(roundScoresArray);
+                }
+            }
+        }
+
+        game.roundBids = [];
+        var roundBidsText = lines[8];
+        if (roundBidsText.length>0) {
+            var roundBidsRounds = roundBidsText.split(",");
+            for (var i=0; i<roundBidsRounds.length; i++) {
+                var roundBids = roundBidsRounds[i].split(".");
+                if (roundBids.length == 4) {
+                    var roundBidsArray = [];
+                    roundBidsArray.push(Number(roundBids[0]));
+                    roundBidsArray.push(Number(roundBids[1]));
+                    roundBidsArray.push(Number(roundBids[2]));
+                    roundBidsArray.push(Number(roundBids[3]));
+                    game.roundBids.push(roundBidsArray);
+                }
+            }
+        }
+
+        game.roundTricksTaken = [];
+        var roundTricksTakenText = lines[9];
+        if (roundTricksTakenText.length>0) {
+            var roundTricksTakenRounds = roundTricksTakenText.split(",");
+            for (var i=0; i<roundTricksTakenRounds.length; i++) {
+                var roundTricksTaken = roundTricksTakenRounds[i].split(".");
+                if (roundTricksTaken.length == 4) {
+                    var roundTricksTakenArray = [];
+                    roundTricksTakenArray.push(Number(roundTricksTaken[0]));
+                    roundTricksTakenArray.push(Number(roundTricksTaken[1]));
+                    roundTricksTakenArray.push(Number(roundTricksTaken[2]));
+                    roundTricksTakenArray.push(Number(roundTricksTaken[3]));
+                    game.roundTricksTaken.push(roundTricksTakenArray);
+                }
+            }
+        }
+
+        //
+        // Update the game view with this new game state
+        //
+
+        var difficultyView = document.getElementById('spades_scoreboardDifficulty');
+        difficultyView.innerHTML = "Difficulty: " + game.skillLevel;
+        for (var i=0; i<game.players.length; i++) {
+            var player = game.players[i];
+            var playerName = document.getElementById('scoreboardPlayerName' + player.playerPosition);
+            playerName.innerHTML = player.name;
+            var playerBarFill = document.getElementById('scoreboardPlayerBarFill' + player.playerPosition);
+            with (playerBarFill.style) {
+                transition = "none";
+                width = "0%";
+            }
+            var playerScore = document.getElementById('scoreboardPlayerScore' + player.playerPosition);
+            playerScore.innerHTML = player.gameScore;
+        }   
+
+        if (game.roundScores.length>0) {
+            scoreboard.UpdateScores(false, false);
+            scoreboard.SlideDown();
+        }
+        game.CreatePlayerInfoViews(0);
+        game.ResetPlayerRoundScores(false);
+        HidePlayerPrompt();
+        HideChooseBidView(false);
+
+        for (var i=0; i<cards.length; i++) {
+            var cardView = cards[i].cardView;
+            UnshadeCard(cardView);
+        }
+
+        switch (game.currentDecisionIndex) {
+            case 0: // Choosing bid
+
+                for (var i=3; i>0; i--) {
+                    if (i==game.dealerIndex) {
+                        break;
+                    }
+                    UpdatePlayerRoundScore(game.players[i]);
+                }
+                
+                // Sort the players hand
+                game.players[0].cards.sort(function(a,b) {
+                    if (a.suit != b.suit) {
+                        return a.suitInt - b.suitInt;
+                    } else {
+                        return a.value - b.value;
+                    }
+                });
+
+                for (var i=0; i<4; i++) {
+                    AnimatePlayerHandCardsIntoPosition(game.players[i].playerPosition, '0.2s', false);
+                }
+
+                game.PromptPlayerToChooseBid();
+
+            break;
+            case 1: // Choose trick card
+
+                // Hide all played cards
+                for (var i=0; i<game.cardsPlayedThisRound.length; i++) {
+                    var card = game.cardsPlayedThisRound[i];
+                    card.cardView.style.transition = "none";
+                    card.cardView.style.transitionDelay = "none";
+                    card.cardView.style.visibility = "hidden";
+                    card.cardView.style.opacity = 0;
+                }
+                
+                var trickCardPositionInt = 3;
+                for (var i=game.trickCards.length-1; i>=0; i--) {
+                    var trickCard = game.trickCards[i];
+                    var cardView = trickCard.cardView;
+                    cardView.positionFunction = "GetTrickDiscardLocation('" + game.players[trickCardPositionInt].playerPosition + "')";
+                    var loc = eval(cardView.positionFunction);
+                    flipUpCard(cardView, false);
+                    with (cardView.style) {
+                        transition = "none";
+                        transitionDelay = "0s";
+                        left = loc[0] + 'px';
+                        top = loc[1] + 'px';
+                        transform = 'none';
+                        zIndex = 0;
+                        visibility = "visible";
+                        opacity = 1;
+                    }
+                    trickCardPositionInt--;
+                }
+                
+                // Update the tricks taken displays
+                for (var i=0; i<4; i++) {
+                    var player = game.players[i];
+                    UpdatePlayerRoundScore(player);
+                }
+
+                // Sort the players hand
+                game.players[0].cards.sort(function(a,b) {
+                    if (a.suit != b.suit) {
+                        return a.suitInt - b.suitInt;
+                    } else {
+                        return a.value - b.value;
+                    }
+                });
+
+                for (var i=0; i<4; i++) {
+                    AnimatePlayerHandCardsIntoPosition(game.players[i].playerPosition, '0s', false);
+                }
+
+                game.PromptPlayerToPlayCard();
+
+            break;
+        }
+
+    }
+
+    this.LoadStatsView = function() {
+        var statsView = document.getElementById('simulator_stats');
+        statsView.innerHTML = "<table id='spades_simulator_stats_table'>\
+        <tr>\
+            <td></td>\
+            <td class='spades_simulator_table_stat'>Easy</td>\
+            <td class='spades_simulator_table_stat'>Standard</td>\
+            <td class='spades_simulator_table_stat'>Pro</td>\
+            <td class='spades_simulator_table_stat_total'>Total</td>\
+        </tr>\
+        <tr>\
+            <td class='spades_simulator_table_category'>Games Played</td>\
+            <td class='spades_simulator_table_stat' id='spades_stat_games_played_Easy'></td>\
+            <td class='spades_simulator_table_stat' id='spades_stat_games_played_Standard'></td>\
+            <td class='spades_simulator_table_stat' id='spades_stat_games_played_Pro'></td>\
+            <td class='spades_simulator_table_stat_total' id='spades_stat_games_played_Total'>0</td>\
+        </tr>\
+        <tr>\
+            <td class='spades_simulator_table_category'>Wins</td>\
+            <td class='spades_simulator_table_stat' id='spades_stat_wins_Easy'></td>\
+            <td class='spades_simulator_table_stat' id='spades_stat_wins_Standard'></td>\
+            <td class='spades_simulator_table_stat' id='spades_stat_wins_Pro'></td>\
+            <td class='spades_simulator_table_stat_total' id='spades_stat_wins_Total'>0</td>\
+        </tr>\
+        <tr>\
+            <td class='spades_simulator_table_category'>2nd Places</td>\
+            <td class='spades_simulator_table_stat' id='spades_stat_2nd_Easy'></td>\
+            <td class='spades_simulator_table_stat' id='spades_stat_2nd_Standard'></td>\
+            <td class='spades_simulator_table_stat' id='spades_stat_2nd_Pro'></td>\
+            <td class='spades_simulator_table_stat_total' id='spades_stat_2nd_Total'>0</td>\
+        </tr>\
+        <tr>\
+            <td class='spades_simulator_table_category'>3rd Places</td>\
+            <td class='spades_simulator_table_stat' id='spades_stat_3rd_Easy'></td>\
+            <td class='spades_simulator_table_stat' id='spades_stat_3rd_Standard'></td>\
+            <td class='spades_simulator_table_stat' id='spades_stat_3rd_Pro'></td>\
+            <td class='spades_simulator_table_stat_total' id='spades_stat_3rd_Total'>0</td>\
+        </tr>\
+        <tr>\
+            <td class='spades_simulator_table_category'>4th Places</td>\
+            <td class='spades_simulator_table_stat' id='spades_stat_4th_Easy'></td>\
+            <td class='spades_simulator_table_stat' id='spades_stat_4th_Standard'></td>\
+            <td class='spades_simulator_table_stat' id='spades_stat_4th_Pro'></td>\
+            <td class='spades_simulator_table_stat_total' id='spades_stat_4th_Total'>0</td>\
+        </tr>\
+        <tr>\
+            <td class='spades_simulator_table_category'>Win Percentage</td>\
+            <td class='spades_simulator_table_stat' id='spades_stat_win_percent_Easy'></td>\
+            <td class='spades_simulator_table_stat' id='spades_stat_win_percent_Standard'></td>\
+            <td class='spades_simulator_table_stat' id='spades_stat_win_percent_Pro'></td>\
+            <td class='spades_simulator_table_stat_total' id='spades_stat_win_percent_Total'></td>\
+        </tr>\
+        </table>";
+    }
+
+    this.UpdateSimulationStats = function(stats) {
+        var opponentSkillLevels = ['Easy', 'Standard', 'Pro'];
+        var total = 0;
+        for (var i=0; i<opponentSkillLevels.length; i++) {
+            var elem = document.getElementById('spades_stat_games_played_' + opponentSkillLevels[i]);
+            total += stats.gamesPlayed[opponentSkillLevels[i]];
+            elem.innerText = stats.gamesPlayed[opponentSkillLevels[i]];
+        }
+        document.getElementById('spades_stat_games_played_Total').innerText = total;
+        
+        total = 0;
+        for (var i=0; i<opponentSkillLevels.length; i++) {
+            var elem = document.getElementById('spades_stat_wins_' + opponentSkillLevels[i]);
+            total += stats.wins[opponentSkillLevels[i]];
+            elem.innerText = stats.wins[opponentSkillLevels[i]];
+        }
+        document.getElementById('spades_stat_wins_Total').innerText = total;
+
+        total = 0;
+        for (var i=0; i<opponentSkillLevels.length; i++) {
+            var elem = document.getElementById('spades_stat_2nd_' + opponentSkillLevels[i]);
+            total += stats.seconds[opponentSkillLevels[i]];
+            elem.innerText = stats.seconds[opponentSkillLevels[i]];
+        }
+        document.getElementById('spades_stat_2nd_Total').innerText = total;
+
+        total = 0;
+        for (var i=0; i<opponentSkillLevels.length; i++) {
+            var elem = document.getElementById('spades_stat_3rd_' + opponentSkillLevels[i]);
+            total += stats.thirds[opponentSkillLevels[i]];
+            elem.innerText = stats.thirds[opponentSkillLevels[i]];
+        }
+        document.getElementById('spades_stat_3rd_Total').innerText = total;
+
+        total = 0;
+        for (var i=0; i<opponentSkillLevels.length; i++) {
+            var elem = document.getElementById('spades_stat_4th_' + opponentSkillLevels[i]);
+            total += stats.fourths[opponentSkillLevels[i]];
+            elem.innerText = stats.fourths[opponentSkillLevels[i]];
+        }
+        document.getElementById('spades_stat_4th_Total').innerText = total;
+
+        var totalWins = 0;
+        var totalGamesPlayed = 0;
+        for (var i=0; i<opponentSkillLevels.length; i++) {
+            var elem = document.getElementById('spades_stat_win_percent_' + opponentSkillLevels[i]);
+            var gamesPlayedCount = stats.gamesPlayed[opponentSkillLevels[i]];
+            var wins = stats.wins[opponentSkillLevels[i]];
+            totalGamesPlayed += gamesPlayedCount;
+            totalWins += wins;
+            if (gamesPlayedCount > 0) {
+                var winPercent = 100 * ( wins / gamesPlayedCount);
+                elem.innerText = winPercent.toFixed(0) + "%";
+            } else {
+                elem.innerText = "";
+            }
+        }
+        if (totalGamesPlayed > 0) {
+            var winPercent = 100 * (totalWins / totalGamesPlayed);
+            document.getElementById('spades_stat_win_percent_Total').innerText = winPercent.toFixed(0) + "%";
+        } else {
+            document.getElementById('spades_stat_win_percent_Total').innerText = "";
         }
     }
 }
@@ -2846,10 +3210,8 @@ var SpadesFindOptimalPlayForCurrentPlayer = function(aGame) {
     var currentPlayer = aGame.players[aGame.turnIndex%4];
     var possiblePlays = SpadesGetLegalCardsForCurrentPlayerTurnInSimulator(aGame);
     var playProbabilities = SpadesFindPossiblePlayProbabilities(aGame);
-    console.log("PROBABILITIES:");
     for (var i=0; i<possiblePlays.length; i++) {
         possiblePlays[i].trickTakingProbability = playProbabilities[i];
-        console.log(possiblePlays[i].id + " - " + possiblePlays[i].trickTakingProbability);
     }
 
     // Sort the possible plays by their probability of taking the trick

@@ -995,7 +995,7 @@ var PinochlePlayer = function() {
                         customMethod = customMethod.substring(customMethod.indexOf("{") + 1);
                         customMethod = customMethod.substring(customMethod.lastIndexOf("}"), -1);
 
-                        this.CalculateMelds(handCards, game.trumpSuit, game.isDoubleDeck, true);
+                        this.CalculateMelds(handCards, game.trumpSuit, game.isDoubleDeck, false);
                         
                         var f = new Function('handCards', 'receivedCards', 'melds', 'trumpSuit', 'isDoubleDeck', 'passingCardsCount', customMethod);
                         var bestCards = f(handCards, this.receivedCards, this.melds, game.trumpSuit, game.isDoubleDeck, passingCardsCount);
@@ -1010,7 +1010,7 @@ var PinochlePlayer = function() {
                         customMethod = customMethod.substring(customMethod.indexOf("{") + 1);
                         customMethod = customMethod.substring(customMethod.lastIndexOf("}"), -1);
 
-                        this.CalculateMelds(handCards, game.trumpSuit, game.isDoubleDeck, true);
+                        this.CalculateMelds(handCards, game.trumpSuit, game.isDoubleDeck, false);
                         
                         var f = new Function('handCards', 'melds', 'trumpSuit', 'isDoubleDeck', 'passingCardsCount', customMethod);
                         var bestCards = f(handCards, this.melds, game.trumpSuit, game.isDoubleDeck, passingCardsCount);

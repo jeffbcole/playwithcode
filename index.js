@@ -5,9 +5,13 @@ var codeEditor;
 var codeContainerGutter;
 var codeContainerGutterRightPosition = 0;
 var menuBarHeight = 50;
+var gameContainerZoom = 0.75;
 var isDraggingGutter = false;
 var editor;
 var currentDecisionIndex;
+var simulationWorker;
+var isSimulatorRunning = false;
+var isStepping = false;
 
 function Initialize() {
     UpdateBackgroundImageFromSettings();
@@ -79,6 +83,13 @@ function Initialize() {
         game.TryCurrentDecisionMethod(currentDecisionIndex);
     });
 
+    var stepCheckbox = document.getElementById('code_simulator_step_checkbox');
+    stepCheckbox.checked = isStepping;
+
+    simulationWorker = new Worker('shared/simulator.js');
+    simulationWorker.addEventListener('message', onSimulatorMessage, false);
+    simulationWorker.addEventListener('error', onSimulatorError, true);
+
     window.onresize = AdjustCodeContainerWidths;
     var preferredGame = window.localStorage.getItem("preferredGame");
     if (preferredGame == null) {
@@ -117,7 +128,8 @@ function CodeContainerGutterMouseUp(e) {
 }
 
 function AdjustCodeContainerWidths() {
-    gameContainer.innerWidth = window.innerWidth - codeContainerGutterRightPosition - 2;
+    gameContainer.innerWidth = (window.innerWidth - codeContainerGutterRightPosition - 2)/gameContainerZoom;
+    gameContainer.innerHeight = (window.innerHeight/gameContainerZoom - 50);
     if (isDraggingGutter) {
         gameContainer.style.transition = 'none';
         codeContainerGutter.style.transition = 'none';
@@ -308,7 +320,7 @@ function LoadComputerPlayerDecisions() {
     decisionsBar.innerHTML = "";
     
     currentDecisionButtons = [];
-    var computerPlayerDecisions = game.GetCurrentComputerPlayerDecisions();
+    var computerPlayerDecisions = game.GetCurrentComputerPlayerDecisionNames();
     for (var i=0; i<computerPlayerDecisions.displayNames.length; i++) {
         var decisionButton = document.createElement('button');
         decisionButton.className = "decision_bar_button";
@@ -364,6 +376,11 @@ function LoadEditorCodeForDecisionIndex(decisionIndex) {
 
 function StartPlayingAsComputer() {
 
+    gameContainer.style.transform = "scale(" + gameContainerZoom + ")";
+    gameContainer.style.transformOrigin = "0% 0% 0px";
+    gameContainer.innerWidth = (window.innerWidth - codeContainerGutterRightPosition - 2)/gameContainerZoom;
+    gameContainer.innerHeight = (window.innerHeight/gameContainerZoom - 50);
+
     // Create an active game if there is not one
     if (game == null) {
         var preferredGame = window.localStorage.getItem('preferredGame');
@@ -396,4 +413,114 @@ function StartPlayingAsComputer() {
 function IndicateCodeError(codeError) {
     var codeConsole = document.getElementById('code_console');
     codeConsole.innerText = codeError;
+}
+
+function onStepCheckboxClick(cb) {
+    isStepping = cb.checked;
+    simulationWorker.postMessage({
+        'cmd': 'setIsStepping', 
+        'isStepping': isStepping
+    });
+
+    var playButtonIcon = document.getElementById('code_simulator_play_button_icon');
+    if (isStepping) {
+        playButtonIcon.className = 'fa fa-step-forward';
+    } else {
+        if (isSimulatorRunning) {
+            playButtonIcon.className = 'fa fa-stop';
+        } else {
+            playButtonIcon.className = 'fa fa-play';
+        }
+    }
+}
+
+var onSimulatorMessage = function(e){
+    var data = e.data;
+    switch (data.cmd) {
+        case 'stepped':
+            var playButtonIcon = document.getElementById('code_simulator_play_button_icon');
+            playButtonIcon.className = 'fa fa-step-forward';
+            LoadSimulationGameState(data.gameState);
+        break;
+        case 'statsUpdate':
+            game.UpdateSimulationStats(data.stats);
+        break;
+    }
+}
+
+var onSimulatorError = function(e) {
+    console.log("Error: " + e);
+}
+
+function onSimulatorPlayClick() {
+    
+    var playButtonIcon = document.getElementById('code_simulator_play_button_icon');
+
+    if (isSimulatorRunning) {
+        if (isStepping) {
+            simulationWorker.postMessage({
+                'cmd': 'stepForward'
+            });
+            playButtonIcon.className = 'fa fa-step-forward';
+        } else {
+            simulationWorker.postMessage({
+                'cmd': 'stopSimulation'
+            });
+            isSimulatorRunning = false;
+            playButtonIcon.className = 'fa fa-play';
+        }
+    } else {
+        var preferredGame = window.localStorage.getItem('preferredGame');
+        var settings = {};
+        switch (preferredGame) {
+            case 'Hearts':
+                settings.losing_score = Number(game.settings.GetSetting('setting_losing_score'));
+                break;
+            case 'Spades':
+                settings.winningScore = Number(game.settings.GetSetting('setting_winning_score'));
+                settings.sandbaggingPenalty = game.settings.GetSetting('setting_sandbaggingpenalty');
+                break;
+            case 'Pinochle':
+                settings.winningScore = Number(game.settings.GetSetting('setting_winning_score'));
+                settings.isDoubleDeck = game.settings.GetSetting('setting_deck_count')==1;
+                settings.passingCardsCount = Number(game.settings.GetSetting('setting_passing_cards_count'));
+                settings.minimumBid = Number(game.settings.GetSetting('setting_minimum_bid'));
+                break;
+            case 'Cribbage':
+                //TODO
+                break;
+        }
+        game.LoadStatsView();
+        var decisionMethods = game.GetAllDecisionMethods();
+        simulationWorker.postMessage({
+            'cmd': 'startSimulation', 
+            'gameName': preferredGame,
+            'settings': settings,
+            'decisionMethods': decisionMethods
+        });
+
+        isSimulatorRunning = true;
+        if (isStepping) {
+            playButtonIcon.className = 'fa fa-step-forward';
+        } else {
+            playButtonIcon.className = 'fa fa-stop';
+        }
+    }
+}
+
+function LoadSimulationGameState(gameState) {
+    game.LoadSimulationGameState(gameState);
+    game.ClearAllCustomDecisionIndicators();
+    currentDecisionIndex = game.currentDecisionIndex;
+    
+    for (var i=0; i<currentDecisionButtons.length; i++) {
+        var decisionButton = currentDecisionButtons[i];
+        if (i==currentDecisionIndex) {
+            decisionButton.className = "decision_bar_button decision_bar_button_selected";
+        } else {
+            decisionButton.className = "decision_bar_button";
+        }
+    }
+    
+    LoadEditorCodeForDecisionIndex(currentDecisionIndex);
 }

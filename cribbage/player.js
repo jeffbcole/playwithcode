@@ -223,7 +223,7 @@ var CribbagePlayer = function() {
                 for (var i=0; i<cardsUnder31.length; i++) {
                     var trialCard = cardsUnder31[i];
                     currentPeggingCards.push(trialCard);
-                    var points = CribbageGame.GetPeggingPointsForCards(currentPeggingCards);
+                    var points = GetPeggingPointsForCards(currentPeggingCards);
                     currentPeggingCards.pop();
                     var possibleScore = 0;
                     for (var j=0; j<points.length; j++) {
@@ -244,7 +244,7 @@ var CribbagePlayer = function() {
                 for (var i=0; i<cardsUnder31.length; i++) {
                     var trialCard = cardsUnder31[i];
                     currentPeggingCards.push(trialCard);
-                    var points = CribbageGame.GetPeggingPointsForCards(currentPeggingCards);
+                    var points = GetPeggingPointsForCards(currentPeggingCards);
                     currentPeggingCards.pop();
                     var possibleScore = 0;
                     for (var j=0; j<points.length; j++) {
@@ -318,7 +318,7 @@ var CribbagePlayer = function() {
         for (var i=0; i<cardsUnder31.length; i++) {
             var trialCard = cardsUnder31[i];
             currentPeggingCards.push(trialCard);
-            var points = CribbageGame.GetPeggingPointsForCards(currentPeggingCards);
+            var points = GetPeggingPointsForCards(currentPeggingCards);
             currentPeggingCards.pop();
             var possibleScore = 0;
             for (var j=0; j<points.length; j++) {
@@ -826,7 +826,7 @@ var CribbagePlayer = function() {
     for (var i=0; i<cardsUnder31.length; i++) {\n\
         var trialCard = cardsUnder31[i];\n\
         currentPeggingCards.push(trialCard);\n\
-        var points = CribbageGame.GetPeggingPointsForCards(currentPeggingCards);\n\
+        var points = GetPeggingPointsForCards(currentPeggingCards);\n\
         currentPeggingCards.pop();\n\
         var possibleScore = 0;\n\
         for (var j=0; j<points.length; j++) {\n\

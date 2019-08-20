@@ -107,10 +107,6 @@ var PinochleGame = function () {
         \
         <div id="cards_region"></div>\
         \
-        <div id="adView" align="center">\
-            \
-        </div>\
-        \
         <div id="pinochle_choose_bid_view">\
             <table>\
                 <tr>\
@@ -839,7 +835,7 @@ var PinochleGame = function () {
                 <br>\
             </div>\
         </div>';
-
+    
     var deckTopIndex = 0;
     var allCards = [
         { id: 'AS0', hash: 'AS', deckID:0, rank: 1, value: 5, suit: 'S', suitInt: 0, wasShown: false, wasPassed: false, image: "url('shared/images/Card_Spade_Ace.jpg')" },
@@ -1708,6 +1704,10 @@ var PinochleGame = function () {
         return gameStateString;
     }
 
+    this.LoadSimulationGameState = function(gameState) {
+        this.LoadGameState(gameState);
+    }
+
     this.LoadGameState = function(gameState) {
         var lines = gameState.split("\n");
         var gameStateComps = lines[0].split(",");
@@ -1721,6 +1721,9 @@ var PinochleGame = function () {
         game.trumpSuit = gameStateComps[7];
         game.bidWinner = Number(gameStateComps[8]);
         game.isDoubleDeck = gameStateComps[9]=='true';
+        if (gameStateComps.length>10) {
+            game.currentDecisionIndex = Number(gameStateComps[10]);
+        }
 
         var alreadyCards = [];
         game.cardsPlayedThisRound = [];
@@ -5137,54 +5140,7 @@ var PinochleGame = function () {
         }
     }
 
-    //
-    // // TODO: remove this: Async Workers
-    //
-    /*
-    this.worker = new Worker('pinochle/GameSimulator.js');
-    this.worker.addEventListener('message', function(e){
-        var data = e.data;
-        switch (data.cmd) {
-            case 'UpdateRoundSimulationsView':
-                game.UpdateRoundSimulationsView(data.roundBidAnalysis);
-            break;
-            case 'PlayerFoundBestBid':
-                var player = game.players[data.playerIndex];
-                player.OnFinishedAnalyzingBestBid(data.bid, data.minimumEndTime);
-            break;
-        }
-    }, false);
-
-    this.CreateClonableGameState = function(aGame) {
-        return {
-            'isDoubleDeck': aGame.isDoubleDeck,
-            'leadIndex': aGame.leadIndex,
-            'dealerIndex': aGame.dealerIndex,
-            'turnIndex': aGame.turnIndex
-        };
-    }
-
-    this.CreateClonableCards = function(cards) {
-        var cloneableCards = [];
-        for (var i=0; i<cards.length; i++) {
-            var card = cards[i];
-            cloneableCards.push({ 
-                id: card.id, 
-                hash: card.hash, 
-                deckID: card.deckID, 
-                rank: card.rank, 
-                value: card.value, 
-                suit: card.suit, 
-                suitInt: card.suitInt, 
-                wasShown: card.wasShown, 
-                wasPassed: card.wasPassed
-            });
-        }
-        return cloneableCards;
-    }
-*/
     this.OnTerminateGame = function() {
-        //this.worker.terminate();
     }
 
     //
@@ -5961,7 +5917,7 @@ var PinochleGame = function () {
         }
     }
 
-    this.GetCurrentComputerPlayerDecisions = function() {
+    this.GetCurrentComputerPlayerDecisionNames = function() {
         var selectedIndex = 0;
         switch (game.currentMoveStage) {
             case 'ChoosingBids':
@@ -6219,6 +6175,14 @@ var PinochleGame = function () {
 
     }
 
+    this.GetAllDecisionMethods = function() {
+        var decisionMethods = [];
+        for (var i=0; i<4; i++) {
+            decisionMethods[i] = game.players[0].GetDecisionMethod(i);
+        }
+        return decisionMethods;
+    }
+
     this.GetCustomPlayerMethod = function(decisionIndex) {
         return game.players[0].GetDecisionMethod(decisionIndex);
     }
@@ -6293,5 +6257,320 @@ var PinochleGame = function () {
         for (var i=0; i<cards.length; i++) {
             RemoveCustomDecisionIndicator(cards[i].cardView);
         }
+    }
+
+    this.LoadStatsView = function() {
+        var statsView = document.getElementById('simulator_stats');
+        statsView.innerHTML = "<div id='pinochle_simulator_stats'><center>\
+                <table style='width: calc(100% - 20px); font-size: 12pt;'>\
+                    <tr>\
+                        <td class='pinochle_simulator_table_category'></td>\
+                        <td class='pinochle_simulator_table_stat'>Easy</td>\
+                        <td class='pinochle_simulator_table_stat'>Standard</td>\
+                        <td class='pinochle_simulator_table_stat'>Pro</td>\
+                        <td class='pinochle_simulator_table_stat_total'>Total</td>\
+                    </tr>\
+                </table>\
+            </center>\
+            <div id='pinochle_simulator_statistics_body'>\
+                <center>\
+                    <table class='pinochle_simulator_table_outline'>\
+                        <tr>\
+                            <td class='pinochle_simulator_table_category'>Games Played</td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_games_played_Easy'></td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_games_played_Standard'></td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_games_played_Pro'></td>\
+                            <td class='pinochle_simulator_table_stat_total' id='pinochle_simulator_games_played_Total'>0</td>\
+                        </tr>\
+                        <tr>\
+                            <td class='pinochle_simulator_table_category'>Wins</td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_wins_Easy'></td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_wins_Standard'></td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_wins_Pro'></td>\
+                            <td class='pinochle_simulator_table_stat_total' id='pinochle_simulator_wins_Total'>0</td>\
+                        </tr>\
+                        <tr>\
+                            <td class='pinochle_simulator_table_category'>Win Percentage</td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_win_percent_Easy'></td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_win_percent_Standard'></td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_win_percent_Pro'></td>\
+                            <td class='pinochle_simulator_table_stat_total' id='pinochle_simulator_win_percent_Total'></td>\
+                        </tr>\
+                    </table>\
+                    \
+                    <div style='margin-top:10pt; font-size:12pt;'>Averages when you declare trump:</div>\
+                    <table class='pinochle_simulator_table_outline'>\
+                        <tr>\
+                            <td class='pinochle_simulator_table_category'>Avg Bid Contract</td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_avg_bid_contract_with_bid_Easy'></td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_avg_bid_contract_with_bid_Standard'></td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_avg_bid_contract_with_bid_Pro'></td>\
+                            <td class='pinochle_simulator_table_stat_total' id='pinochle_simulator_avg_bid_contract_with_bid_Total'>0</td>\
+                        </tr>\
+                        <tr>\
+                            <td class='pinochle_simulator_table_category'>Avg Meld</td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_avg_meld_with_bid_Easy'></td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_avg_meld_with_bid_Standard'></td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_avg_meld_with_bid_Pro'></td>\
+                            <td class='pinochle_simulator_table_stat_total' id='pinochle_simulator_avg_meld_with_bid_Total'>0</td>\
+                        </tr>\
+                        <tr>\
+                            <td class='pinochle_simulator_table_category'>Avg Counters</td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_avg_counters_with_bid_Easy'></td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_avg_counters_with_bid_Standard'></td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_avg_counters_with_bid_Pro'></td>\
+                            <td class='pinochle_simulator_table_stat_total' id='pinochle_simulator_avg_counters_with_bid_Total'></td>\
+                        </tr>\
+                        <tr>\
+                            <td class='pinochle_simulator_table_category' style='font-size:10pt'>Avg Positive Round Score</td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_avg_round_score_with_bid_Easy'></td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_avg_round_score_with_bid_Standard'></td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_avg_round_score_with_bid_Pro'></td>\
+                            <td class='pinochle_simulator_table_stat_total' id='pinochle_simulator_avg_round_score_with_bid_Total'></td>\
+                        </tr>\
+                        <tr>\
+                            <td class='pinochle_simulator_table_category'>Make Contract %</td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_make_contract_percent_Easy'></td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_make_contract_percent_Standard'></td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_make_contract_percent_Pro'></td>\
+                            <td class='pinochle_simulator_table_stat_total' id='pinochle_simulator_make_contract_percent_Total'></td>\
+                        </tr>\
+                    </table>\
+                    \
+                    <div style='margin-top:10pt; font-size:12pt;'>Averages when opponent declares trump:</div>\
+                    <table class='pinochle_simulator_table_outline'>\
+                        <tr>\
+                            <td class='pinochle_simulator_table_category'>Avg Meld</td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_avg_meld_without_bid_Easy'></td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_avg_meld_without_bid_Standard'></td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_avg_meld_without_bid_Pro'></td>\
+                            <td class='pinochle_simulator_table_stat_total' id='pinochle_simulator_avg_meld_without_bid_Total'>0</td>\
+                        </tr>\
+                        <tr>\
+                            <td class='pinochle_simulator_table_category'>Avg Counters</td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_avg_counters_without_bid_Easy'></td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_avg_counters_without_bid_Standard'></td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_avg_counters_without_bid_Pro'></td>\
+                            <td class='pinochle_simulator_table_stat_total' id='pinochle_simulator_avg_counters_without_bid_Total'></td>\
+                        </tr>\
+                        <tr>\
+                            <td class='pinochle_simulator_table_category'>Avg Round Score</td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_avg_round_score_without_bid_Easy'></td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_avg_round_score_without_bid_Standard'></td>\
+                            <td class='pinochle_simulator_table_stat' id='pinochle_simulator_avg_round_score_without_bid_Pro'></td>\
+                            <td class='pinochle_simulator_table_stat_total' id='pinochle_simulator_avg_round_score_without_bid_Total'></td>\
+                        </tr>\
+                    </table>\
+                </center>\
+            </div>\
+            </div>";
+    }
+
+    this.UpdateSimulationStats = function(stats) {
+        var opponentSkillLevels = ['Easy', 'Standard', 'Pro'];
+        var total = 0;
+        for (var i=0; i<opponentSkillLevels.length; i++) {
+            var elem = document.getElementById('pinochle_simulator_games_played_' + opponentSkillLevels[i]);
+            total += stats.gamesPlayed[opponentSkillLevels[i]];
+            elem.innerText = stats.gamesPlayed[opponentSkillLevels[i]];
+        }
+        document.getElementById('pinochle_simulator_games_played_Total').innerText = total;
+        
+        total = 0;
+        for (var i=0; i<opponentSkillLevels.length; i++) {
+            var elem = document.getElementById('pinochle_simulator_wins_' + opponentSkillLevels[i]);
+            total += stats.wins[opponentSkillLevels[i]];
+            elem.innerText = stats.wins[opponentSkillLevels[i]];
+        }
+        document.getElementById('pinochle_simulator_wins_Total').innerText = total;
+
+        var totalWins = 0;
+        var totalGamesPlayed = 0;
+        for (var i=0; i<opponentSkillLevels.length; i++) {
+            var elem = document.getElementById('pinochle_simulator_win_percent_' + opponentSkillLevels[i]);
+            var gamesPlayedCount = stats.gamesPlayed[opponentSkillLevels[i]];
+            var wins = stats.wins[opponentSkillLevels[i]];
+            totalGamesPlayed += gamesPlayedCount;
+            totalWins += wins;
+            if (gamesPlayedCount > 0) {
+                var winPercent = 100 * ( wins / gamesPlayedCount);
+                elem.innerText = winPercent.toFixed(0) + "%";
+            } else {
+                elem.innerText = "";
+            }
+        }
+        if (totalGamesPlayed > 0) {
+            var winPercent = 100 * (totalWins / totalGamesPlayed);
+            document.getElementById('pinochle_simulator_win_percent_Total').innerText = winPercent.toFixed(0) + "%";
+        } else {
+            document.getElementById('pinochle_simulator_win_percent_Total').innerText = "";
+        }
+
+        total = 0;
+        var totalCount = 0;
+        for (var i=0; i<opponentSkillLevels.length; i++) {
+            var elem = document.getElementById('pinochle_simulator_avg_bid_contract_with_bid_' + opponentSkillLevels[i]);
+            var contract = stats.contractTotal[opponentSkillLevels[i]];
+            var count = stats.contractCount[opponentSkillLevels[i]];
+            if (count > 0) {
+                var avg = contract/count;
+                elem.innerText = avg.toFixed(0);
+            }
+            total += contract;
+            totalCount += count;
+        }
+        if (totalCount > 0) {
+            var totalAvg = total/totalCount;
+            document.getElementById('pinochle_simulator_avg_bid_contract_with_bid_Total').innerText = totalAvg.toFixed(0);
+        } else {
+            document.getElementById('pinochle_simulator_avg_bid_contract_with_bid_Total').innerText = "";    
+        }
+
+        total = 0;
+        totalCount = 0;
+        for (var i=0; i<opponentSkillLevels.length; i++) {
+            var elem = document.getElementById('pinochle_simulator_avg_meld_with_bid_' + opponentSkillLevels[i]);
+            var meld = stats.meldWithBidTotal[opponentSkillLevels[i]];
+            var count = stats.meldWithBidCount[opponentSkillLevels[i]];
+            if (count > 0) {
+                var avg = meld/count;
+                elem.innerText = avg.toFixed(0);
+            }
+            total += meld;
+            totalCount += count;
+        }
+        if (totalCount > 0) {
+            var totalAvg = total/totalCount;
+            document.getElementById('pinochle_simulator_avg_meld_with_bid_Total').innerText = totalAvg.toFixed(0);
+        } else {
+            document.getElementById('pinochle_simulator_avg_meld_with_bid_Total').innerText = "";    
+        }
+        
+        total = 0;
+        totalCount = 0;
+        for (var i=0; i<opponentSkillLevels.length; i++) {
+            var elem = document.getElementById('pinochle_simulator_avg_counters_with_bid_' + opponentSkillLevels[i]);
+            var counters = stats.countersWithBidTotal[opponentSkillLevels[i]];
+            var count = stats.countersWithBidCount[opponentSkillLevels[i]];
+            if (count > 0) {
+                var avg = counters/count;
+                elem.innerText = avg.toFixed(0);
+            }
+            total += counters;
+            totalCount += count;
+        }
+        if (totalCount > 0) {
+            var totalAvg = total/totalCount;
+            document.getElementById('pinochle_simulator_avg_counters_with_bid_Total').innerText = totalAvg.toFixed(0);
+        } else {
+            document.getElementById('pinochle_simulator_avg_counters_with_bid_Total').innerText = "";    
+        }
+
+        total = 0;
+        totalCount = 0;
+        for (var i=0; i<opponentSkillLevels.length; i++) {
+            var elem = document.getElementById('pinochle_simulator_avg_round_score_with_bid_' + opponentSkillLevels[i]);
+            var score = stats.roundScoresWithBidTotal[opponentSkillLevels[i]];
+            var count = stats.roundScoresWithBidCount[opponentSkillLevels[i]];
+            if (count > 0) {
+                var avg = score/count;
+                elem.innerText = avg.toFixed(0);
+            }
+            total += score;
+            totalCount += count;
+        }
+        if (totalCount > 0) {
+            var totalAvg = total/totalCount;
+            document.getElementById('pinochle_simulator_avg_round_score_with_bid_Total').innerText = totalAvg.toFixed(0);
+        } else {
+            document.getElementById('pinochle_simulator_avg_round_score_with_bid_Total').innerText = "";    
+        }
+
+        var totalContractsMade = 0;
+        var totalContractsAttempted = 0;
+        for (var i=0; i<opponentSkillLevels.length; i++) {
+            var elem = document.getElementById('pinochle_simulator_make_contract_percent_' + opponentSkillLevels[i]);
+            var contractsMadeCount = stats.contractMadeCount[opponentSkillLevels[i]];
+            var contractsWonCount = stats.contractMadeAttemptsCount[opponentSkillLevels[i]];
+            totalContractsMade += contractsMadeCount;
+            totalContractsAttempted += contractsWonCount;
+            if (contractsWonCount > 0) {
+                var makeContractPercent = 100 * ( contractsMadeCount / contractsWonCount);
+                elem.innerText = makeContractPercent.toFixed(0) + "%";
+            } else {
+                elem.innerText = "";
+            }
+        }
+        if (totalContractsAttempted > 0) {
+            var winPercent = 100 * (totalContractsMade / totalContractsAttempted);
+            document.getElementById('pinochle_simulator_make_contract_percent_Total').innerText = winPercent.toFixed(0) + "%";
+        } else {
+            document.getElementById('pinochle_simulator_make_contract_percent_Total').innerText = "";
+        }
+
+        //
+        // Without Bid
+        // 
+
+        total = 0;
+        totalCount = 0;
+        for (var i=0; i<opponentSkillLevels.length; i++) {
+            var elem = document.getElementById('pinochle_simulator_avg_meld_without_bid_' + opponentSkillLevels[i]);
+            var meld = stats.meldWithoutBidTotal[opponentSkillLevels[i]];
+            var count = stats.meldWithoutBidCount[opponentSkillLevels[i]];
+            if (count > 0) {
+                var avg = meld/count;
+                elem.innerText = avg.toFixed(0);
+            }
+            total += meld;
+            totalCount += count;
+        }
+        if (totalCount > 0) {
+            var totalAvg = total/totalCount;
+            document.getElementById('pinochle_simulator_avg_meld_without_bid_Total').innerText = totalAvg.toFixed(0);
+        } else {
+            document.getElementById('pinochle_simulator_avg_meld_without_bid_Total').innerText = "";    
+        }
+        
+        total = 0;
+        totalCount = 0;
+        for (var i=0; i<opponentSkillLevels.length; i++) {
+            var elem = document.getElementById('pinochle_simulator_avg_counters_without_bid_' + opponentSkillLevels[i]);
+            var counters = stats.countersWithoutBidTotal[opponentSkillLevels[i]];
+            var count = stats.countersWithoutBidCount[opponentSkillLevels[i]];
+            if (count > 0) {
+                var avg = counters/count;
+                elem.innerText = avg.toFixed(0);
+            }
+            total += counters;
+            totalCount += count;
+        }
+        if (totalCount > 0) {
+            var totalAvg = total/totalCount;
+            document.getElementById('pinochle_simulator_avg_counters_without_bid_Total').innerText = totalAvg.toFixed(0);
+        } else {
+            document.getElementById('pinochle_simulator_avg_counters_without_bid_Total').innerText = "";    
+        }
+
+        total = 0;
+        totalCount = 0;
+        for (var i=0; i<opponentSkillLevels.length; i++) {
+            var elem = document.getElementById('pinochle_simulator_avg_round_score_without_bid_' + opponentSkillLevels[i]);
+            var score = stats.roundScoresWithoutBidTotal[opponentSkillLevels[i]];
+            var count = stats.roundScoresWithoutBidCount[opponentSkillLevels[i]];
+            if (count > 0) {
+                var avg = score/count;
+                elem.innerText = avg.toFixed(0);
+            }
+            total += score;
+            totalCount += count;
+        }
+        if (totalCount > 0) {
+            var totalAvg = total/totalCount;
+            document.getElementById('pinochle_simulator_avg_round_score_without_bid_Total').innerText = totalAvg.toFixed(0);
+        } else {
+            document.getElementById('pinochle_simulator_avg_round_score_without_bid_Total').innerText = "";    
+        }
+
     }
 }

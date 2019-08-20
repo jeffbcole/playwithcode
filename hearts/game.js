@@ -15,6 +15,7 @@ var HeartsGame = function () {
 
     // Members
     this.currentMoveStage = "";
+    this.currentDecisionIndex = 0;
     this.skillLevel = "";
     this.losingScore = 0;
     this.players = [];
@@ -94,10 +95,6 @@ var HeartsGame = function () {
     </div>\
     \
     <div id="cards_region"></div>\
-    \
-    <div id="adView" align="center">\
-        \
-    </div>\
     \
     <div id="HeartsGameOverView">\
         <div id="HeartsGameOverResultText">You won!</div>\
@@ -1251,20 +1248,23 @@ var HeartsGame = function () {
             var player = this.players[i];
             player.SelectPassingCards();
         }
+        this.PromptPlayerToChoosePassCards(passingIndex, animate);
+    }
 
+    this.PromptPlayerToChoosePassCards = function(passingIndex, animate) {
         currentPassingCardView_0 = null;
         currentPassingCardView_1 = null;
         currentPassingCardView_2 = null;
 
         var selectPassingCardsMessage = document.getElementById('hearts_select_passing_cards_message');
         switch (passingIndex) {
-            case 0:
+            case 1:
                 selectPassingCardsMessage.innerText = "Select 3 cards to pass left:";
                 break;
-            case 1:
+            case 2:
                 selectPassingCardsMessage.innerText = "Select 3 cards to pass right:";
                 break;
-            default:
+            case 3:
                 selectPassingCardsMessage.innerText = "Select 3 cards to pass across:";
                 break;
         }
@@ -2314,7 +2314,7 @@ var HeartsGame = function () {
     }
 
     this.ContinueAfterRoundResultAnimations = function() {
-        scoreboard.UpdateScores(this.roundNumber !== 1);
+        scoreboard.UpdateScores(this.roundNumber !== 1, true);
     }
 
     this.OnFinishedAnimatingUpdateGameScoreboard = function() {
@@ -2978,7 +2978,7 @@ var HeartsGame = function () {
         this.InitializeStatisticsView();
     }
 
-    this.GetCurrentComputerPlayerDecisions = function() {
+    this.GetCurrentComputerPlayerDecisionNames = function() {
         var selectedIndex = 0;
         switch (game.currentMoveStage) {
             case 'ChoosingPassCards':
@@ -3167,6 +3167,14 @@ var HeartsGame = function () {
         }
     }
 
+    this.GetAllDecisionMethods = function() {
+        var decisionMethods = [];
+        for (var i=0; i<2; i++) {
+            decisionMethods[i] = game.players[0].GetDecisionMethod(i);
+        }
+        return decisionMethods;
+    }
+
     this.GetCustomPlayerMethod = function(decisionIndex) {
         return game.players[0].GetDecisionMethod(decisionIndex);
     }
@@ -3207,6 +3215,367 @@ var HeartsGame = function () {
     this.ClearAllCustomDecisionIndicators = function() {
         for (var i=0; i<cards.length; i++) {
             RemoveCustomDecisionIndicator(cards[i].cardView);
+        }
+    }
+
+    this.LoadSimulationGameState = function(gameState) {
+
+        var lines = gameState.split("\n");
+        var gameStateComps = lines[0].split(",");
+        game.skillLevel = gameStateComps[0];
+        game.currentDecisionIndex = Number(gameStateComps[1]);
+        game.losingScore = Number(gameStateComps[2]);
+        game.currentMoveStage = gameStateComps[3];
+        game.roundNumber = Number(gameStateComps[4]);
+        game.leadIndex = Number(gameStateComps[5]);
+        game.turnIndex = Number(gameStateComps[6]);
+        game.isHeartsBroken = gameStateComps[7]=='true';
+
+        game.cardsPlayedThisRound = [];
+        if (lines[1].length > 0) {
+            var cardsThisRoundStrings = lines[1].split('.');
+            for (var i=0; i<cardsThisRoundStrings.length; i++) {
+                var cardID = cardsThisRoundStrings[i];
+                if (cardID.length>0) {
+                    var card = game.GetCardFromString(cardID);
+                    game.cardsPlayedThisRound.push(card);
+                }
+            }
+        }
+
+        game.trickCards = [];
+        if (lines[2].length > 0) {
+            var cardsThisRoundStrings = lines[2].split('.');
+            for (var i=0; i<cardsThisRoundStrings.length; i++) {
+                var cardID = cardsThisRoundStrings[i];
+                if (cardID.length>0) {
+                    var card = this.GetCardFromString(cardID);
+                    game.trickCards.push(card);
+                }
+            }
+        }
+
+        game.players = [];
+        for (var i=0; i<4; i++) {
+            var playerInfo = lines[3+i].split(",");
+            var playerName = playerInfo[0];
+            var playerIsHuman = playerInfo[1]=='true';
+            var playerSkill = playerInfo[2];
+            var playerPosition = playerInfo[3];
+            var playerPositionInt = playerInfo[4];
+            var player = new HeartsPlayer();
+            player.Initialize(playerName, playerIsHuman, playerSkill, playerPosition);
+            player.currentRoundPoints = Number(playerInfo[5]);
+            player.gameScore = Number(playerInfo[6]);
+            
+            player.cards = [];
+            var playerCardsData = playerInfo[7].split(".");
+            for (var j=0; j<playerCardsData.length; j++) {
+                var cardData = playerCardsData[j];
+                if (cardData.length>0) {
+                    var card = game.GetCardFromString(cardData);
+                    player.cards.push(card);
+                }
+            }
+            var playerPassingCards = playerInfo[8].split(".");
+            for (var j=0; j<playerPassingCards.length; j++) {
+                var cardData = playerPassingCards[j];
+                if (cardData.length>0) {
+                    var card = game.GetCardFromString(cardData);
+                    player.passingCards.push(card);
+                }
+            }
+            var playerReceivedCards = playerInfo[9].split(".");
+            for (var j=0; j<playerReceivedCards.length; j++) {
+                var cardData = playerReceivedCards[j];
+                if (cardData.length>0) {
+                    var card = game.GetCardFromString(cardData);
+                    player.receivedCards.push(card);
+                }
+            }
+
+            player.isShownVoidInSuit = [];
+            var playerVoidData = playerInfo[10].split(".");
+            for (var j=0; j<4; j++) {
+                player.isShownVoidInSuit[j] = playerVoidData[j]=='true';
+            }
+
+            game.players.push(player);
+        }
+
+        game.roundScores = [];
+        var roundScoresText = lines[7];
+        if (roundScoresText.length>0) {
+            var roundScoresRounds = roundScoresText.split(",");
+            for (var i=0; i<roundScoresRounds.length; i++) {
+                var roundScores = roundScoresRounds[i].split(".");
+                if (roundScores.length == 4) {
+                    var roundScoresArray = [];
+                    roundScoresArray.push(Number(roundScores[0]));
+                    roundScoresArray.push(Number(roundScores[1]));
+                    roundScoresArray.push(Number(roundScores[2]));
+                    roundScoresArray.push(Number(roundScores[3]));
+                    game.roundScores.push(roundScoresArray);
+                }
+            }
+        }
+
+        //
+        // Update the game view with this new game state
+        //
+
+        var difficultyView = document.getElementById('hearts_scoreboardDifficulty');
+        difficultyView.innerHTML = "Difficulty: " + game.skillLevel;
+        for (var i=0; i<game.players.length; i++) {
+            var player = game.players[i];
+            var playerName = document.getElementById('scoreboardPlayerName' + player.playerPosition);
+            playerName.innerHTML = player.name;
+            var playerBarFill = document.getElementById('scoreboardPlayerBarFill' + player.playerPosition);
+            with (playerBarFill.style) {
+                transition = "none";
+                width = "0%";
+            }
+            var playerScore = document.getElementById('scoreboardPlayerScore' + player.playerPosition);
+            playerScore.innerHTML = player.gameScore;
+        }    
+
+        if (game.roundScores.length>0) {
+            scoreboard.UpdateScores(false, false);
+            scoreboard.SlideDown();
+        }
+        game.CreatePlayerInfoViews(0);
+        game.ResetPlayerRoundScores(false);
+        HidePlayerPrompt();
+        HidePassCardsButton();
+        HidePassCardsSlots();
+
+        for (var i=0; i<cards.length; i++) {
+            var cardView = cards[i].cardView;
+            UnshadeCard(cardView);
+        }
+
+        switch (game.currentDecisionIndex) {
+            case 0: // Choose passing cards
+
+                // Sort the players hand
+                game.players[0].cards.sort(function(a,b) {
+                    if (a.suit != b.suit) {
+                        return a.suitInt - b.suitInt;
+                    } else {
+                        return a.value - b.value;
+                    }
+                });
+
+                for (var i=0; i<4; i++) {
+                    AnimatePlayerHandCardsIntoPosition(game.players[i].playerPosition, '0.2s', false);
+                }
+
+                this.PromptPlayerToChoosePassCards(game.roundNumber%4, false);
+
+            break;
+            case 1: // Choose trick card
+
+                // Hide all played cards
+                for (var i=0; i<game.cardsPlayedThisRound.length; i++) {
+                    var card = game.cardsPlayedThisRound[i];
+                    card.cardView.style.transition = "none";
+                    card.cardView.style.transitionDelay = "none";
+                    card.cardView.style.visibility = "hidden";
+                    card.cardView.style.opacity = 0;
+                }
+                
+                var trickCardPositionInt = 3;
+                for (var i=game.trickCards.length-1; i>=0; i--) {
+                    var trickCard = game.trickCards[i];
+                    var cardView = trickCard.cardView;
+                    cardView.positionFunction = "GetTrickDiscardLocation('" + game.players[trickCardPositionInt].playerPosition + "')";
+                    var loc = eval(cardView.positionFunction);
+                    flipUpCard(cardView, false);
+                    with (cardView.style) {
+                        transition = "none";
+                        transitionDelay = "0s";
+                        left = loc[0] + 'px';
+                        top = loc[1] + 'px';
+                        transform = 'none';
+                        zIndex = 0;
+                        visibility = "visible";
+                        opacity = 1;
+                    }
+                    trickCardPositionInt--;
+                }
+                
+                // Update the hearts taken displays
+                for (var i=0; i<4; i++) {
+                    var player = game.players[i];
+                    var scoreView = document.getElementById('player_score_' + player.playerPosition);
+                    if (player.playerPosition === 'South') {
+                        var southName = document.getElementById('player_name_South');
+                        var loc = eval(southName.positionFunction);
+                        with (southName.style) {
+                            transition = "none";
+                            transitionDelay = "none";
+                            top = loc[1] + 'px';
+                        }
+                    }
+                    if (player.currentRoundPoints > 0) {
+                        scoreView.innerHTML = player.currentRoundPoints;
+                    } else {
+                        scoreView.innerHTML = "";
+                    }
+                }
+
+                // Sort the players hand
+                game.players[0].cards.sort(function(a,b) {
+                    if (a.suit != b.suit) {
+                        return a.suitInt - b.suitInt;
+                    } else {
+                        return a.value - b.value;
+                    }
+                });
+
+                for (var i=0; i<4; i++) {
+                    AnimatePlayerHandCardsIntoPosition(game.players[i].playerPosition, '0s', false);
+                }
+
+                game.PromptPlayerToPlayCard();
+
+            break;
+        }
+
+    }
+
+    this.LoadStatsView = function() {
+        var statsView = document.getElementById('simulator_stats');
+        statsView.innerHTML = "<table id='hearts_simulator_stats_table'>\
+        <tr>\
+            <td></td>\
+            <td class='hearts_simulator_table_stat'>Easy</td>\
+            <td class='hearts_simulator_table_stat'>Standard</td>\
+            <td class='hearts_simulator_table_stat'>Pro</td>\
+            <td class='hearts_simulator_table_stat_total'>Total</td>\
+        </tr>\
+        <tr>\
+            <td class='hearts_simulator_table_category'>Games Played</td>\
+            <td class='hearts_simulator_table_stat' id='hearts_stat_games_played_Easy'></td>\
+            <td class='hearts_simulator_table_stat' id='hearts_stat_games_played_Standard'></td>\
+            <td class='hearts_simulator_table_stat' id='hearts_stat_games_played_Pro'></td>\
+            <td class='hearts_simulator_table_stat_total' id='hearts_stat_games_played_Total'>0</td>\
+        </tr>\
+        <tr>\
+            <td class='hearts_simulator_table_category'>Wins</td>\
+            <td class='hearts_simulator_table_stat' id='hearts_stat_wins_Easy'></td>\
+            <td class='hearts_simulator_table_stat' id='hearts_stat_wins_Standard'></td>\
+            <td class='hearts_simulator_table_stat' id='hearts_stat_wins_Pro'></td>\
+            <td class='hearts_simulator_table_stat_total' id='hearts_stat_wins_Total'>0</td>\
+        </tr>\
+        <tr>\
+            <td class='hearts_simulator_table_category'>2nd Places</td>\
+            <td class='hearts_simulator_table_stat' id='hearts_stat_2nd_Easy'></td>\
+            <td class='hearts_simulator_table_stat' id='hearts_stat_2nd_Standard'></td>\
+            <td class='hearts_simulator_table_stat' id='hearts_stat_2nd_Pro'></td>\
+            <td class='hearts_simulator_table_stat_total' id='hearts_stat_2nd_Total'>0</td>\
+        </tr>\
+        <tr>\
+            <td class='hearts_simulator_table_category'>3rd Places</td>\
+            <td class='hearts_simulator_table_stat' id='hearts_stat_3rd_Easy'></td>\
+            <td class='hearts_simulator_table_stat' id='hearts_stat_3rd_Standard'></td>\
+            <td class='hearts_simulator_table_stat' id='hearts_stat_3rd_Pro'></td>\
+            <td class='hearts_simulator_table_stat_total' id='hearts_stat_3rd_Total'>0</td>\
+        </tr>\
+        <tr>\
+            <td class='hearts_simulator_table_category'>4th Places</td>\
+            <td class='hearts_simulator_table_stat' id='hearts_stat_4th_Easy'></td>\
+            <td class='hearts_simulator_table_stat' id='hearts_stat_4th_Standard'></td>\
+            <td class='hearts_simulator_table_stat' id='hearts_stat_4th_Pro'></td>\
+            <td class='hearts_simulator_table_stat_total' id='hearts_stat_4th_Total'>0</td>\
+        </tr>\
+        <tr>\
+            <td class='hearts_simulator_table_category'>Moons Shot</td>\
+            <td class='hearts_simulator_table_stat' id='hearts_stat_moons_shot_Easy'></td>\
+            <td class='hearts_simulator_table_stat' id='hearts_stat_moons_shot_Standard'></td>\
+            <td class='hearts_simulator_table_stat' id='hearts_stat_moons_shot_Pro'></td>\
+            <td class='hearts_simulator_table_stat_total' id='hearts_stat_moons_shot_Total'>0</td>\
+        </tr>\
+        <tr>\
+            <td class='hearts_simulator_table_category'>Win Percentage</td>\
+            <td class='hearts_simulator_table_stat' id='hearts_stat_win_percent_Easy'></td>\
+            <td class='hearts_simulator_table_stat' id='hearts_stat_win_percent_Standard'></td>\
+            <td class='hearts_simulator_table_stat' id='hearts_stat_win_percent_Pro'></td>\
+            <td class='hearts_simulator_table_stat_total' id='hearts_stat_win_percent_Total'></td>\
+        </tr>\
+        </table>";
+    }
+
+    this.UpdateSimulationStats = function(stats) {
+        var opponentSkillLevels = ['Easy', 'Standard', 'Pro'];
+        var total = 0;
+        for (var i=0; i<opponentSkillLevels.length; i++) {
+            var elem = document.getElementById('hearts_stat_games_played_' + opponentSkillLevels[i]);
+            total += stats.gamesPlayed[opponentSkillLevels[i]];
+            elem.innerText = stats.gamesPlayed[opponentSkillLevels[i]];
+        }
+        document.getElementById('hearts_stat_games_played_Total').innerText = total;
+        
+        total = 0;
+        for (var i=0; i<opponentSkillLevels.length; i++) {
+            var elem = document.getElementById('hearts_stat_wins_' + opponentSkillLevels[i]);
+            total += stats.wins[opponentSkillLevels[i]];
+            elem.innerText = stats.wins[opponentSkillLevels[i]];
+        }
+        document.getElementById('hearts_stat_wins_Total').innerText = total;
+
+        total = 0;
+        for (var i=0; i<opponentSkillLevels.length; i++) {
+            var elem = document.getElementById('hearts_stat_2nd_' + opponentSkillLevels[i]);
+            total += stats.seconds[opponentSkillLevels[i]];
+            elem.innerText = stats.seconds[opponentSkillLevels[i]];
+        }
+        document.getElementById('hearts_stat_2nd_Total').innerText = total;
+
+        total = 0;
+        for (var i=0; i<opponentSkillLevels.length; i++) {
+            var elem = document.getElementById('hearts_stat_3rd_' + opponentSkillLevels[i]);
+            total += stats.thirds[opponentSkillLevels[i]];
+            elem.innerText = stats.thirds[opponentSkillLevels[i]];
+        }
+        document.getElementById('hearts_stat_3rd_Total').innerText = total;
+
+        total = 0;
+        for (var i=0; i<opponentSkillLevels.length; i++) {
+            var elem = document.getElementById('hearts_stat_4th_' + opponentSkillLevels[i]);
+            total += stats.fourths[opponentSkillLevels[i]];
+            elem.innerText = stats.fourths[opponentSkillLevels[i]];
+        }
+        document.getElementById('hearts_stat_4th_Total').innerText = total;
+
+        total = 0;
+        for (var i=0; i<opponentSkillLevels.length; i++) {
+            var elem = document.getElementById('hearts_stat_moons_shot_' + opponentSkillLevels[i]);
+            total += stats.moonsShot[opponentSkillLevels[i]];
+            elem.innerText = stats.moonsShot[opponentSkillLevels[i]];
+        }
+        document.getElementById('hearts_stat_moons_shot_Total').innerText = total;
+        
+        var totalWins = 0;
+        var totalGamesPlayed = 0;
+        for (var i=0; i<opponentSkillLevels.length; i++) {
+            var elem = document.getElementById('hearts_stat_win_percent_' + opponentSkillLevels[i]);
+            var gamesPlayedCount = stats.gamesPlayed[opponentSkillLevels[i]];
+            var wins = stats.wins[opponentSkillLevels[i]];
+            totalGamesPlayed += gamesPlayedCount;
+            totalWins += wins;
+            if (gamesPlayedCount > 0) {
+                var winPercent = 100 * ( wins / gamesPlayedCount);
+                elem.innerText = winPercent.toFixed(0) + "%";
+            } else {
+                elem.innerText = "";
+            }
+        }
+        if (totalGamesPlayed > 0) {
+            var winPercent = 100 * (totalWins / totalGamesPlayed);
+            document.getElementById('hearts_stat_win_percent_Total').innerText = winPercent.toFixed(0) + "%";
+        } else {
+            document.getElementById('hearts_stat_win_percent_Total').innerText = "";
         }
     }
 }

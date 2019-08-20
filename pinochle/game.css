@@ -655,6 +655,7 @@
     border-bottom-left-radius: 0px;
     border-bottom-right-radius: 0px;
     overflow: hidden;
+    z-index: 9999;
 }
 
 #PinochleScoreboardDifficulty {
@@ -902,4 +903,46 @@
     font-size: 22px;
     text-align: center;
     color: white;
+}
+
+#pinochle_simulator_stats {
+    width: 80%;
+    margin-left: 10%;
+    height: calc(100% - 60px);
+    overflow-y: scroll;
+    background: black;
+}
+
+.pinochle_simulator_table_stat {
+    font-size: 12px;
+    text-align: center;
+    min-width: 35pt;
+}
+
+.pinochle_simulator_table_stat_total {
+	font-size: 12px;
+	font-weight: bold;
+	text-align: center;
+    min-width: 35pt;
+}
+
+.pinochle_simulator_table_category {
+	text-align: right;
+	width: 130pt;
+	padding-top: 4pt;
+    padding-bottom: 4pt;
+    font-size: 12px;
+}
+
+#pinochle_simulator_statistics_body {
+	overflow: auto;
+	height:250pt; 
+	margin-bottom: 5pt;
+}
+
+.pinochle_simulator_table_outline {
+	border: 1px solid white;
+	border-collapse: collapse;
+	width: calc(100% - 20px);
+	font-size: 12pt;
 }

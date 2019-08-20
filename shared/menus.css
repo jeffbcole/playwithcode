@@ -19,17 +19,6 @@ body {
 	user-select: none;
 }
 
-#adView {
-	background: rgba(10, 10, 10, 0.7);
-	position: absolute;
-	top: 100%;
-	left: 50%;
-	width: 728px;
-	height: 90px;
-	transform: translate(-50%, -100%);
-	z-index: 500;
-}
-
 .t1, .t2 {
 	line-height: 90%; 
 	font-family: 'Times New Roman', Times, serif; 
